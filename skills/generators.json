@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "name": "skills",
+  "generators": {
+    "plugin": {
+      "factory": "./src/generators/plugin/generator",
+      "schema": "./src/generators/plugin/schema.json",
+      "description": "Gera um novo plugin para o DevXP Portal"
+    },
+    "entity": {
+      "factory": "./src/generators/entity/generator",
+      "schema": "./src/generators/entity/schema.json",
+      "description": "Gera uma nova entidade CRUD completa"
+    }
+  }
+}

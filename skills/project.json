@@ -1,0 +1,41 @@
+{
+  "name": "skills",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "skills/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/skills",
+        "main": "skills/src/index.ts",
+        "tsConfig": "skills/tsconfig.lib.json",
+        "assets": [
+          "skills/*.md",
+          {
+            "input": "./skills/src",
+            "glob": "**/!(*.ts)",
+            "output": "./src"
+          },
+          {
+            "input": "./skills/src",
+            "glob": "**/*.d.ts",
+            "output": "./src"
+          },
+          {
+            "input": "./skills",
+            "glob": "generators.json",
+            "output": "."
+          },
+          {
+            "input": "./skills",
+            "glob": "executors.json",
+            "output": "."
+          }
+        ]
+      }
+    }
+  }
+}

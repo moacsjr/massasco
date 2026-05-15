@@ -1,0 +1,9 @@
+{
+  "name": "ui-registry",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/core/ui-registry/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project ui-registry --web",
+  "targets": {}
+}

@@ -1,0 +1,26 @@
+import React from 'react';
+import { DevXPPlugin } from '@temp-workspace/plugin-loader';
+import { useUI } from '@temp-workspace/ui-registry';
+
+const <%= name %>Page = () => {
+  const { resolve } = useUI();
+  const Card = resolve('Card');
+
+  return (
+    <Card title="Plugin <%= name %>" padding="lg">
+      <p>Este é o conteúdo gerado automaticamente para o plugin <strong><%= name %></strong>.</p>
+    </Card>
+  );
+};
+
+export const <%= name %>Plugin: DevXPPlugin = {
+  id: '<%= name %>',
+  name: '<%= name %>',
+  routes: [
+    {
+      path: 'index',
+      component: <%= name %>Page,
+      label: 'Home do <%= name %>',
+    },
+  ],
+};

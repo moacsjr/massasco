@@ -1,0 +1,19 @@
+{
+  "name": "ui-validator-cli",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tools/ui-validator-cli/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/tools/ui-validator-cli",
+        "main": "tools/ui-validator-cli/src/index.ts",
+        "tsConfig": "tools/ui-validator-cli/tsconfig.lib.json",
+        "assets": ["tools/ui-validator-cli/*.md"]
+      }
+    }
+  },
+  "tags": []
+}

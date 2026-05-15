@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+@theme {
+  /* shadcn HSL-based tokens */
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --radius-radius: var(--radius);
+
+  /* Massas.co brand tokens */
+  --color-brand: #FFC107;
+  --color-surface: #121212;
+  --color-surface-elevated: #1E1E1E;
+  --color-border-solid: #2A2A2A;
+}
+
+/* ========================================================================
+   z-Index Scale
+   ======================================================================== */
+:root {
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 300;
+  --z-drawer: 400;
+  --z-modal: 500;
+  --z-toast: 600;
+  --z-tooltip: 700;
+}
+
+/* ========================================================================
+   Shadcn Dark Theme — Massas.co "Dark-Core Tech"
+   ======================================================================== */
+:root {
+  --background: 0 0% 0%;           /* #000000 — Preto absoluto */
+  --foreground: 0 0% 98%;          /* near-white text */
+  --card: 0 0% 7%;                 /* #121212 — Cinza antracite */
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 7%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 45 93% 52%;           /* #FFC107 — Amarelo branding */
+  --primary-foreground: 0 0% 0%;   /* texto preto sobre amarelo */
+  --secondary: 0 0% 12%;           /* #1E1E1E */
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 15%;               /* superfície sutil */
+  --muted-foreground: 0 0% 63%;    /* #A0A0A0 — texto mutado */
+  --accent: 45 93% 52%;            /* amarelo como accent também */
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 84% 60%;        /* #EF4444 */
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 16%;              /* #2A2A2A */
+  --input: 0 0% 16%;
+  --ring: 45 93% 52%;              /* focus ring amarelo */
+  --radius: 0.5rem;
+}
+
+/* ========================================================================
+   Base Reset
+   ======================================================================== */
+html {
+  -webkit-text-size-adjust: 100%;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    Segoe UI,
+    Roboto,
+    Helvetica Neue,
+    Arial,
+    Noto Sans,
+    sans-serif,
+    Apple Color Emoji,
+    Segoe UI Emoji,
+    Segoe UI Symbol,
+    Noto Color Emoji;
+  line-height: 1.5;
+  tab-size: 4;
+  scroll-behavior: smooth;
+}
+body {
+  font-family: inherit;
+  line-height: inherit;
+  margin: 0;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+h1, h2, p, pre { margin: 0; }
+*, ::before, ::after {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: currentColor;
+}
+h1, h2 { font-size: inherit; font-weight: inherit; }
+a { color: inherit; text-decoration: inherit; }
+pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    Liberation Mono, Courier New, monospace;
+}
+svg { display: block; vertical-align: middle; shape-rendering: auto; text-rendering: optimizeLegibility; }

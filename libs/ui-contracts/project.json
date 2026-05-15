@@ -1,0 +1,19 @@
+{
+  "name": "ui-contracts",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/ui-contracts/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/ui-contracts",
+        "main": "libs/ui-contracts/src/index.ts",
+        "tsConfig": "libs/ui-contracts/tsconfig.lib.json",
+        "assets": ["libs/ui-contracts/*.md"]
+      }
+    }
+  }
+}

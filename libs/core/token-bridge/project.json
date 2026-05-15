@@ -1,0 +1,19 @@
+{
+  "name": "token-bridge",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/core/token-bridge/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/core/token-bridge",
+        "main": "libs/core/token-bridge/src/index.ts",
+        "tsConfig": "libs/core/token-bridge/tsconfig.lib.json",
+        "assets": ["libs/core/token-bridge/*.md"]
+      }
+    }
+  },
+  "tags": []
+}

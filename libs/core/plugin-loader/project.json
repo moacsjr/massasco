@@ -1,0 +1,19 @@
+{
+  "name": "plugin-loader",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/core/plugin-loader/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/core/plugin-loader",
+        "main": "libs/core/plugin-loader/src/index.ts",
+        "tsConfig": "libs/core/plugin-loader/tsconfig.lib.json",
+        "assets": ["libs/core/plugin-loader/*.md"]
+      }
+    }
+  },
+  "tags": []
+}
