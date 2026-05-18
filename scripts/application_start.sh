@@ -3,7 +3,12 @@
 
 echo "Starting application..."
 
-cd /home/ec2-user/meu-app
+# Resolve the application root directory dynamically (relative to this script's location)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+echo "Application root directory resolved to: $APP_DIR"
+cd "$APP_DIR"
 
 # Define standard home and path variables for CodeDeploy environment
 export HOME="/home/ec2-user"

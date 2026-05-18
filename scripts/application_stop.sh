@@ -25,11 +25,15 @@ else
   echo "PM2 is not installed or not in PATH."
 fi
 
+# Resolve the application root directory dynamically (relative to this script's location)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 # Stop Docker Compose containers if running to allow clean restart
 if command -v docker &> /dev/null; then
-  if [ -d "/home/ec2-user/meu-app" ]; then
-    echo "Stopping docker-compose services..."
-    cd /home/ec2-user/meu-app
+  if [ -d "$APP_DIR" ]; then
+    echo "Stopping docker-compose services in $APP_DIR..."
+    cd "$APP_DIR"
     if command -v docker-compose &> /dev/null; then
       docker-compose -f docker/docker-compose.yml down || true
     elif docker compose version &> /dev/null; then

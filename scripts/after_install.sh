@@ -1,9 +1,12 @@
 #!/bin/bash
 # Install dependencies, setup database, run migrations, and build app
 
-echo "Running AfterInstall actions..."
+# Resolve the application root directory dynamically (relative to this script's location)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-cd /home/ec2-user/meu-app
+echo "Application root directory resolved to: $APP_DIR"
+cd "$APP_DIR"
 
 # Define standard home and path variables for CodeDeploy environment
 export HOME="/home/ec2-user"
