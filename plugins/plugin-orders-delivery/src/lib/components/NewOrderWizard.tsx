@@ -95,7 +95,7 @@ const NewOrderWizard: React.FC = () => {
 
   const stepLabels: Record<WizardStep, string> = {
     'product-list': 'Produtos',
-    'product-details': 'Configurar Item',
+    'product-details': 'Item',
     'order-summary': 'Resumo',
   };
 

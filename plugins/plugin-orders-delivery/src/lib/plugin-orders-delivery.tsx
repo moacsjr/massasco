@@ -11,11 +11,14 @@ export const ordersDeliveryPlugin: FeaturePlugin = {
       path: '',
       component: OrdersDeliveryPage,
       label: 'Pedidos',
+      icon: 'ShoppingCart',
+      showInMenu: true,
     },
     {
       path: 'new',
       component: NewOrderWizard,
       label: 'Novo Pedido',
+      showInMenu: false,
     },
   ],
 };

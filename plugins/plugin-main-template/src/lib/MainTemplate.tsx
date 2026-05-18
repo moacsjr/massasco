@@ -27,8 +27,10 @@ export const MainTemplate: React.FC<MainTemplateProps> = ({ children }) => {
       </div>
       <FooterSection />
 
-      {/* Mobile bottom navigation */}
-      <BottomNavBar />
+      {/* Mobile bottom navigation — strictly hidden on md+ screens */}
+      <div className="md:hidden">
+        <BottomNavBar />
+      </div>
     </div>
   );
 };

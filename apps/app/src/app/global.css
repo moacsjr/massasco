@@ -1,7 +1,17 @@
 @import "tailwindcss";
 
+/* ========================================================================
+   Content sources — Nx monorepo directories outside apps/app
+   ======================================================================== */
+@source "../../../../plugins";
+@source "../../../../ui-project";
+@source "../../../../libs";
+
+/* ========================================================================
+   Tailwind v4 — Design Tokens (@theme block)
+   ======================================================================== */
 @theme {
-  /* shadcn HSL-based tokens */
+  /* shadcn HSL-based color tokens */
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
   --color-card: hsl(var(--card));
@@ -21,17 +31,31 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
-  --radius-radius: var(--radius);
 
-  /* Massas.co brand tokens */
-  --color-brand: #FFC107;
-  --color-surface: #121212;
-  --color-surface-elevated: #1E1E1E;
-  --color-border-solid: #2A2A2A;
+  /* Massas.co brand colors — HSL values set in :root below */
+  --color-brand: hsl(var(--brand));
+  --color-surface: hsl(var(--surface));
+  --color-surface-elevated: hsl(var(--surface-elevated));
+  --color-border-solid: hsl(var(--border-solid));
+
+  /* Border radius scale */
+  --radius-sm: calc(var(--radius) * 0.625);  /* 0.3125rem (5px) */
+  --radius-md: var(--radius);                /* 0.5rem   (8px) */
+  --radius-lg: calc(var(--radius) * 1.5);    /* 0.75rem  (12px) */
+  --radius-xl: calc(var(--radius) * 2);      /* 1rem     (16px) */
+
+  /* z-index scale */
+  --z-index-dropdown: var(--z-dropdown);
+  --z-index-sticky: var(--z-sticky);
+  --z-index-overlay: var(--z-overlay);
+  --z-index-drawer: var(--z-drawer);
+  --z-index-modal: var(--z-modal);
+  --z-index-toast: var(--z-toast);
+  --z-index-tooltip: var(--z-tooltip);
 }
 
 /* ========================================================================
-   z-Index Scale
+   z-Index Variable Definitions
    ======================================================================== */
 :root {
   --z-dropdown: 100;
@@ -67,50 +91,10 @@
   --input: 0 0% 16%;
   --ring: 45 93% 52%;              /* focus ring amarelo */
   --radius: 0.5rem;
-}
 
-/* ========================================================================
-   Base Reset
-   ======================================================================== */
-html {
-  -webkit-text-size-adjust: 100%;
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    Segoe UI,
-    Roboto,
-    Helvetica Neue,
-    Arial,
-    Noto Sans,
-    sans-serif,
-    Apple Color Emoji,
-    Segoe UI Emoji,
-    Segoe UI Symbol,
-    Noto Color Emoji;
-  line-height: 1.5;
-  tab-size: 4;
-  scroll-behavior: smooth;
+  /* Massas.co brand tokens — HSL so they work with the HSL pattern */
+  --brand: 45 93% 52%;             /* #FFC107 — yellow (same as primary) */
+  --surface: 0 0% 7%;              /* #121212 — matches card */
+  --surface-elevated: 0 0% 12%;    /* #1E1E1E — matches secondary */
+  --border-solid: 0 0% 16%;        /* #2A2A2A — matches border */
 }
-body {
-  font-family: inherit;
-  line-height: inherit;
-  margin: 0;
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-}
-h1, h2, p, pre { margin: 0; }
-*, ::before, ::after {
-  box-sizing: border-box;
-  border-width: 0;
-  border-style: solid;
-  border-color: currentColor;
-}
-h1, h2 { font-size: inherit; font-weight: inherit; }
-a { color: inherit; text-decoration: inherit; }
-pre {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    Liberation Mono, Courier New, monospace;
-}
-svg { display: block; vertical-align: middle; shape-rendering: auto; text-rendering: optimizeLegibility; }

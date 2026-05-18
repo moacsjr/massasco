@@ -148,10 +148,10 @@ const Drawer: React.FC<DrawerProps> = ({ open, position = 'right', width, offset
 
   return (
     <>
-      <div onClick={onClose} className="fixed inset-0 bg-black/80 z-[var(--z-overlay)]" />
+      <div onClick={onClose} className="fixed inset-0 bg-black/80 z-overlay" />
       <div
         className={cn(
-          'fixed top-0 h-screen bg-card shadow-lg z-[var(--z-drawer)] flex flex-col overflow-auto',
+          'fixed top-0 h-screen bg-card shadow-lg z-drawer flex flex-col overflow-auto',
           isLeft ? 'left-0' : 'right-0'
         )}
         style={{
@@ -162,7 +162,7 @@ const Drawer: React.FC<DrawerProps> = ({ open, position = 'right', width, offset
         <button
           onClick={onClose}
           className={cn(
-            'absolute top-3 bg-transparent border-none text-xl cursor-pointer text-foreground z-[var(--z-tooltip)]',
+            'absolute top-3 bg-transparent border-none text-xl cursor-pointer text-foreground z-tooltip',
             isLeft ? 'right-3' : 'left-3'
           )}
           aria-label="Close drawer"

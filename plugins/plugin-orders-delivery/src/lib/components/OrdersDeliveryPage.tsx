@@ -4,6 +4,7 @@ import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUI } from '@temp-workspace/ui-registry';
 import { pluginLoader } from '@temp-workspace/plugin-loader';
+import { Fab } from '@temp-workspace/plugin-ui-components';
 import { MenuCatalogAPI } from '@temp-workspace/plugin-menu-catalog';
 import { OrderItemDTO } from '../types';
 
@@ -173,23 +174,12 @@ const OrdersDeliveryPage: React.FC = () => {
       </Card>
 
       {/* Floating Action Button — yellow brand */}
-      <button
+      <Fab
         onClick={() => router.push('/plugins/orders-delivery/new')}
-        className="
-          fixed bottom-6 right-6
-          w-14 h-14 rounded-full border-none
-          bg-brand text-black
-          text-[28px] font-bold
-          cursor-pointer
-          shadow-lg shadow-brand/30
-          flex items-center justify-center
-          z-[var(--z-sticky)]
-          hover:bg-yellow-400 transition-colors
-        "
         title="Novo Pedido"
       >
         +
-      </button>
+      </Fab>
     </div>
   );
 };

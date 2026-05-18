@@ -4,6 +4,8 @@ import React from 'react';
 import { FeaturePlugin, ExtensionContribution, ServicePlugin, pluginLoader } from '@temp-workspace/plugin-loader';
 import { useUI } from '@temp-workspace/ui-registry';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Fab, IconButton } from '@temp-workspace/plugin-ui-components';
 
 // ============================================================================
 // DTOs & Service API
@@ -588,6 +590,7 @@ const CategoryListPage: React.FC = () => {
   const { resolve } = useUI();
   const CardRef = React.useRef<React.ComponentType<any>>(resolve('Card'));
   const Card = CardRef.current;
+  const router = useRouter();
   const [categories, setCategories] = React.useState<CategoryDTO[]>([]);
 
   React.useEffect(() => {
@@ -608,9 +611,6 @@ const CategoryListPage: React.FC = () => {
     <div style={styles.page}>
       <Link href={`/plugins/${PLUGIN_ID}`} style={styles.backLink}>← Voltar</Link>
       <Card title="Categorias" padding="lg">
-        <div style={styles.headingRow}>
-          <Link href={`/plugins/${PLUGIN_ID}/categories/new`} style={{ ...styles.primaryBtn, textDecoration: 'none' }}>+ Nova Categoria</Link>
-        </div>
         {categories.length === 0 ? (
           <p style={styles.empty}>Nenhuma categoria cadastrada.</p>
         ) : (
@@ -622,14 +622,20 @@ const CategoryListPage: React.FC = () => {
                   {c.description && <div style={{ fontSize: '0.85rem', color: 'var(--devxp-color-text-muted, #A0A0A0)' }}>{c.description}</div>}
                 </div>
                 <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                  <Link href={`/plugins/${PLUGIN_ID}/categories/${c.id}`} style={{ ...styles.actionBtn('#3b82f6'), textDecoration: 'none' }}>Editar</Link>
-                  <button onClick={() => handleDelete(c.id)} style={styles.actionBtn('#ef4444')}>Excluir</button>
+                  <IconButton icon="Pencil" variant="ghost" size="sm" href={`/plugins/${PLUGIN_ID}/categories/${c.id}`} title="Editar" />
+                  <IconButton icon="Trash2" variant="danger" size="sm" onClick={() => handleDelete(c.id)} title="Excluir" />
                 </div>
               </li>
             ))}
           </ul>
         )}
       </Card>
+      <Fab
+        onClick={() => router.push(`/plugins/${PLUGIN_ID}/categories/new`)}
+        title="Nova Categoria"
+      >
+        +
+      </Fab>
     </div>
   );
 };
@@ -642,6 +648,7 @@ const ProductListPage: React.FC = () => {
   const { resolve } = useUI();
   const CardRef = React.useRef<React.ComponentType<any>>(resolve('Card'));
   const Card = CardRef.current;
+  const router = useRouter();
   const [categories, setCategories] = React.useState<CategoryDTO[]>([]);
   const [products, setProducts] = React.useState<ProductDTO[]>([]);
   const [selectedCategory, setSelectedCategory] = React.useState<string>('all');
@@ -674,10 +681,6 @@ const ProductListPage: React.FC = () => {
     <div style={styles.page}>
       <Link href={`/plugins/${PLUGIN_ID}`} style={styles.backLink}>← Voltar</Link>
       <Card title="Produtos" padding="lg">
-        <div style={styles.headingRow}>
-          <Link href={`/plugins/${PLUGIN_ID}/products/new`} style={{ ...styles.primaryBtn, textDecoration: 'none' }}>+ Novo Produto</Link>
-        </div>
-
         {/* Category filter */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto', flexWrap: 'nowrap', paddingBottom: '4px' }}>
           <button onClick={() => setSelectedCategory('all')} style={styles.pill(selectedCategory === 'all')}>Todos</button>
@@ -703,14 +706,20 @@ const ProductListPage: React.FC = () => {
                   <span style={{ fontWeight: 600, color: '#FFC107', fontSize: '0.85rem' }}>
                     {displayPrice(p)}
                   </span>
-                  <Link href={`/plugins/${PLUGIN_ID}/products/${p.id}`} style={{ ...styles.actionBtn('#3b82f6'), textDecoration: 'none' }}>Editar</Link>
-                  <button onClick={() => handleDelete(p.id)} style={styles.actionBtn('#ef4444')}>Excluir</button>
+                  <IconButton icon="Pencil" variant="ghost" size="sm" href={`/plugins/${PLUGIN_ID}/products/${p.id}`} title="Editar" />
+                  <IconButton icon="Trash2" variant="danger" size="sm" onClick={() => handleDelete(p.id)} title="Excluir" />
                 </div>
               </li>
             ))}
           </ul>
         )}
       </Card>
+      <Fab
+        onClick={() => router.push(`/plugins/${PLUGIN_ID}/products/new`)}
+        title="Novo Produto"
+      >
+        +
+      </Fab>
     </div>
   );
 };
@@ -768,12 +777,13 @@ export const menuCatalogFeaturePlugin: FeaturePlugin = {
   id: 'menu-catalog-ui',
   name: 'Menu Catalog',
   type: 'feature',
+  icon: 'ShoppingCart',
   routes: [
-    { path: '', component: CatalogPage, label: 'Cardápio', icon: '📋' },
-    { path: 'categories', component: CategoryListPage, label: 'Categorias' },
+    { path: '', component: CatalogPage, label: 'Cardápio' },
+    { path: 'categories', component: CategoryListPage, label: 'Categorias', showInMenu: true, icon: 'ShoppingCart' },
     { path: 'categories/new', component: () => <CategoryFormPage />, label: 'Nova Categoria' },
     { path: 'categories/:id', component: ({ params }: { params?: { id: string } }) => <CategoryFormPage categoryId={params?.id} />, label: 'Editar Categoria' },
-    { path: 'products', component: ProductListPage, label: 'Produtos' },
+    { path: 'products', component: ProductListPage, label: 'Produtos', showInMenu: true, icon: 'Store' },
     { path: 'products/new', component: () => <ProductFormPage />, label: 'Novo Produto' },
     { path: 'products/:id', component: ({ params }: { params?: { id: string } }) => <ProductFormPage productId={params?.id} />, label: 'Editar Produto' },
   ],

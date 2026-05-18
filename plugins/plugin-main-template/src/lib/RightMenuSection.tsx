@@ -30,7 +30,7 @@ export const RightMenuSection: React.FC = () => {
   return (
     <>
       {/* Trigger button — dark theme */}
-      <div className="absolute right-3 top-3 z-[var(--z-sticky)]">
+      <div className="absolute right-3 top-3 z-sticky">
         <button
           onClick={() => setIsOpen(true)}
           className="

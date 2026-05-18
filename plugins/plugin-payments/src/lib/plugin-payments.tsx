@@ -225,7 +225,8 @@ export const paymentsFeaturePlugin: FeaturePlugin = {
       path: '',
       component: PaymentsPage,
       label: 'Pagamentos',
-      icon: '💰'
+      icon: 'CircleDollarSign',
+      showInMenu: true,
     }
   ]
 };

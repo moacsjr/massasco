@@ -10,6 +10,8 @@ export interface PluginRoute {
   path: string;
   component: ComponentType<any>;
   label: string;
+  showInMenu?: boolean;
+  icon?: string;
 }
 
 /**

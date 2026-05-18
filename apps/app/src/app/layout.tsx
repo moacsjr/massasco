@@ -28,7 +28,7 @@ export default function RootLayout({
       </head>
       <body>
         <ClientProviders>
-          <Link href="/" className="fixed bottom-3 left-3 z-[var(--z-dropdown)] bg-card/80 backdrop-blur text-foreground px-3 py-1.5 rounded-md no-underline text-xs hover:bg-card transition-colors border border-border">
+          <Link href="/" className="fixed bottom-3 left-3 z-dropdown bg-card/80 backdrop-blur text-foreground px-3 py-1.5 rounded-md no-underline text-xs hover:bg-card transition-colors border border-border">
             🏠 Home
           </Link>
           <ExtensionPoint id="app:main-template" props={{ children }} />

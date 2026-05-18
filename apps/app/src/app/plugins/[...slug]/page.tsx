@@ -60,11 +60,7 @@ export default function PluginPage({ params }: PluginPageProps) {
   });
 
   return (
-    <div>
-      <div style={{ marginBottom: '20px', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
-        <small style={{ color: '#888' }}>Página provida por Plugin</small>
-        <h2 style={{ margin: 0 }}>{route.label}</h2>
-      </div>
+    <div>      
       <ErrorBoundary name={`Plugin Page: ${pluginId}`}>
         <Component params={routeParams} />
       </ErrorBoundary>
