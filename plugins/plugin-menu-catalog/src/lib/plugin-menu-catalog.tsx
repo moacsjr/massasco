@@ -420,7 +420,7 @@ const ProductFormPage: React.FC<ProductFormPageProps> = ({ params, productId: pr
     const seen = new Set<string>();
     const list: string[] = [];
     complements.forEach((c) => {
-      if (c.group && !seen.has(c.group)) {
+      if (c.group && c.group !== '---new---' && !seen.has(c.group)) {
         seen.add(c.group);
         list.push(c.group);
       }
@@ -544,18 +544,20 @@ const ProductFormPage: React.FC<ProductFormPageProps> = ({ params, productId: pr
               <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
                 <div style={{ flex: 1 }}>
                   <label style={styles.label}>Grupo</label>
-                  {c.group === '---new---' ? (
-                    <input style={styles.input} autoFocus value="" onChange={(e) => updateComplement(index, 'group', e.target.value)} placeholder="Nome do grupo" />
-                  ) : c.group && !groups.includes(c.group) ? (
-                    <input style={styles.input} value={c.group} onChange={(e) => updateComplement(index, 'group', e.target.value)} placeholder="Nome do grupo" />
-                  ) : groups.length > 0 ? (
+                  {c.group === '---new---' || (c.group && !groups.includes(c.group)) || groups.length === 0 ? (
+                    <input
+                      style={styles.input}
+                      autoFocus={c.group === '---new---'}
+                      value={c.group === '---new---' ? '' : c.group}
+                      onChange={(e) => updateComplement(index, 'group', e.target.value)}
+                      placeholder="Nome do grupo"
+                    />
+                  ) : (
                     <select style={styles.select} value={c.group} onChange={(e) => updateComplement(index, 'group', e.target.value)}>
                       <option value="">Selecione...</option>
                       {groups.map((g) => <option key={g} value={g}>{g}</option>)}
                       <option value="---new---">+ Novo grupo</option>
                     </select>
-                  ) : (
-                    <input style={styles.input} value={c.group} onChange={(e) => updateComplement(index, 'group', e.target.value)} placeholder="Nome do grupo" />
                   )}
                 </div>
                 <div style={{ flex: 1 }}>

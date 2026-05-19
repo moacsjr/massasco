@@ -149,7 +149,8 @@ export const kdsPlugin: FeaturePlugin = {
       path: '',
       component: KDSBoard,
       label: 'Cozinha',
-      icon: '👨‍🍳'
+      icon: 'ChefHat',
+      showInMenu: true
     }
   ]
 };
