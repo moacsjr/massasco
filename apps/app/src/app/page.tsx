@@ -8,7 +8,7 @@ export default function WelcomePage() {
 
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 20px' }}>
-      <Card title="Bem-vindo ao DevXP Portal v2.2" padding="xl">
+      <Card title="Bem-vindo ao DevXP Portal v2.2" padding="lg">
         <p style={{ fontSize: '18px', lineHeight: '1.6', color: '#444' }}>
           O sistema foi atualizado para uma arquitetura puramente baseada em <strong>Plugins</strong>.
         </p>

@@ -13,20 +13,21 @@ export default function NewFeaturePage() {
 
   return (
     <div style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto' }}>
-      <Card title="Criar Novo Feature">
+      <Card title="Criar Novo Feature" padding="md">
         <div
           style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
         >
           <Input
             name="title"
             label="Título"
+            type="text"
             placeholder="Digite o título do Feature"
           />
-          <Input name="description" label="Descrição" placeholder="Opcional" />
+          <Input name="description" label="Descrição" type="text" placeholder="Opcional" />
 
           <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-            <Button onClick={() => router.push('/feature')}>Salvar</Button>
-            <Button variant="outline" onClick={() => router.push('/feature')}>
+            <Button variant="primary" size="md" onClick={() => router.push('/feature')}>Salvar</Button>
+            <Button variant="outline" size="md" onClick={() => router.push('/feature')}>
               Cancelar
             </Button>
           </div>

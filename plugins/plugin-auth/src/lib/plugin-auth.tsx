@@ -15,7 +15,7 @@ const ProfilePage = () => {
         <strong>Email:</strong> dev@devx-portal.com
       </div>
       <div style={{ marginTop: '24px' }}>
-        <Button variant="outline">Alterar Senha</Button>
+        <Button variant="outline" size="md">Alterar Senha</Button>
       </div>
     </Card>
   );

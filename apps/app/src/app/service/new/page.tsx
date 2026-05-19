@@ -44,13 +44,14 @@ export default function NewServicePage() {
 
   return (
     <div style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto' }}>
-      <Card title="Criar Novo Service">
+      <Card title="Criar Novo Service" padding="md">
         <div
           style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
         >
           <Input
             name="title"
             label="Título"
+            type="text"
             placeholder="Digite o título do Service"
             value={formData.title}
             onChange={(e: any) =>
@@ -60,6 +61,7 @@ export default function NewServicePage() {
           <Input
             name="description"
             label="Descrição"
+            type="text"
             placeholder="Opcional"
             value={formData.description}
             onChange={(e: any) =>
@@ -68,10 +70,10 @@ export default function NewServicePage() {
           />
 
           <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-            <Button onClick={handleSave} isLoading={isSaving}>
+            <Button variant="primary" size="md" onClick={handleSave} isLoading={isSaving}>
               {isSaving ? 'Salvando...' : 'Salvar'}
             </Button>
-            <Button variant="outline" onClick={() => router.push('/service')}>
+            <Button variant="outline" size="md" onClick={() => router.push('/service')}>
               Cancelar
             </Button>
           </div>

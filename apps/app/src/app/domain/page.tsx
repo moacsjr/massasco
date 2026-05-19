@@ -8,10 +8,10 @@ export default function DomainPage() {
   const Button = resolve('Button');
 
   return (
-    <Card>
+    <Card padding="md">
       <h1>Entidade: Domain</h1>
       <p>Gerada automaticamente pela Skill.</p>
-      <Button variant="primary">Ação de Exemplo</Button>
+      <Button variant="primary" size="md">Ação de Exemplo</Button>
     </Card>
   );
 }

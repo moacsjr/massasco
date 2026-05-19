@@ -20,12 +20,12 @@ export default function FeaturePage() {
         }}
       >
         <h1>Listagem de Feature</h1>
-        <Button onClick={() => router.push('/feature/new')}>
+        <Button variant="primary" size="md" onClick={() => router.push('/feature/new')}>
           Novo Feature
         </Button>
       </div>
 
-      <Card title="Exemplo de Registro">
+      <Card title="Exemplo de Registro" padding="md">
         <p>
           Este é um exemplo de como os dados da entidade Feature serão listados.
         </p>

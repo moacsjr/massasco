@@ -32,7 +32,7 @@ export default function ServicePage() {
         }}
       >
         <h1>Listagem de Service</h1>
-        <Button onClick={() => router.push('/service/new')}>
+        <Button variant="primary" size="md" onClick={() => router.push('/service/new')}>
           Novo Service
         </Button>
       </div>
@@ -44,7 +44,7 @@ export default function ServicePage() {
       ) : (
         <div style={{ display: 'grid', gap: '1rem' }}>
           {entities.map((entity) => (
-            <Card key={entity.id} title={entity.title}>
+            <Card key={entity.id} title={entity.title} padding="md">
               <p>{entity.description || 'Sem descrição'}</p>
               <Button variant="outline" size="sm">
                 Ver detalhes
