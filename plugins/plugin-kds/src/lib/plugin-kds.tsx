@@ -60,6 +60,7 @@ const KDSBoard: React.FC = () => {
 
   const pending = items.filter((i) => i.status === 'PENDING');
   const preparing = items.filter((i) => i.status === 'PREPARING');
+  const ready = items.filter((i) => i.status === 'READY');
 
   const renderCard = (item: KDSItem) => (
     <div
@@ -103,14 +104,26 @@ const KDSBoard: React.FC = () => {
             ✅ Pronto
           </button>
         )}
+        {item.status === 'READY' && (
+          <button
+            onClick={() => updateItemStatus(item.id, 'DELIVERED')}
+            className="
+              flex-1 px-2 py-1.5 border-none rounded-md
+              bg-blue-600 text-white font-semibold text-xs
+              cursor-pointer hover:bg-blue-500 transition-colors
+            "
+          >
+            🚚 Entregar
+          </button>
+        )}
       </div>
     </div>
   );
 
   return (
-    <div className="max-w-[1000px]">
+    <div className="max-w-[1200px]">
       <Card title="Cozinha — KDS" padding="lg">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* Pending column */}
           <div>
             <h3 className="mt-0 text-muted-foreground text-xs uppercase tracking-wide">
@@ -132,6 +145,18 @@ const KDSBoard: React.FC = () => {
               <p className="text-muted-foreground/50 text-sm">Nenhum item em preparo.</p>
             ) : (
               preparing.map(renderCard)
+            )}
+          </div>
+
+          {/* Ready column */}
+          <div>
+            <h3 className="mt-0 text-green-500 text-xs uppercase tracking-wide">
+              Prontos ({ready.length})
+            </h3>
+            {ready.length === 0 ? (
+              <p className="text-muted-foreground/50 text-sm">Nenhum item aguardando entrega.</p>
+            ) : (
+              ready.map(renderCard)
             )}
           </div>
         </div>

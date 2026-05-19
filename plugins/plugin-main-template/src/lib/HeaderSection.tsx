@@ -14,10 +14,12 @@ export const HeaderSection: React.FC = () => {
       {/* Main header bar */}
       <div className="px-3 md:px-5 flex items-center h-14 gap-4">
         {/* App icon */}
-        <Icon name="🚀" size="md" />
+        <span className="text-brand flex items-center">
+          <Icon name="ChefHat" size="md" />
+        </span>
         {/* App name */}
         <span className="font-bold text-lg tracking-tight text-brand">
-          Massas<span className="text-foreground">.co</span>
+          massas<span className="text-foreground">.co</span>
         </span>
         {/* Header menu extension point */}
         <div className="flex-1 flex items-center gap-3">
