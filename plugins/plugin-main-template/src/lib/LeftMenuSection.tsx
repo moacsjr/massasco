@@ -33,7 +33,7 @@ export const LeftMenuSection: React.FC = () => {
   return (
     <nav
       className="
-        w-48 bg-card border-r border-border
+        w-16 bg-card border-r border-border
         flex flex-col items-stretch
         py-3 gap-2 flex-shrink-0
       "
@@ -47,8 +47,8 @@ export const LeftMenuSection: React.FC = () => {
             href={href}
             title={item.label}
             className="
-              mx-2 px-3 py-2 rounded-lg
-              flex items-center gap-1
+              mx-2 py-2 rounded-lg
+              flex items-center justify-center
               transition-colors duration-150
               bg-transparent text-muted-foreground hover:text-foreground hover:bg-secondary
             "
