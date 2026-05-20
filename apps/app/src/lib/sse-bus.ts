@@ -18,7 +18,10 @@ class SSEBus {
 
   constructor() {
     // Restore from globalThis if available (survives hot reload)
-    if (typeof globalThis !== 'undefined' && (globalThis as any).__sseBusListeners) {
+    if (
+      typeof globalThis !== 'undefined' &&
+      (globalThis as any).__sseBusListeners
+    ) {
       this.listeners = (globalThis as any).__sseBusListeners;
     } else {
       this.listeners = new Set();

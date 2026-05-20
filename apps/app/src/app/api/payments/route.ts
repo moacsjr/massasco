@@ -7,7 +7,11 @@ export async function GET(req: Request) {
   const orderId = searchParams.get('orderId');
 
   const where: Record<string, unknown> = orderId ? { orderId } : {};
-  const payments = await prisma.payment.findMany({ where, include: { order: true }, orderBy: { createdAt: 'desc' } });
+  const payments = await prisma.payment.findMany({
+    where,
+    include: { order: true },
+    orderBy: { createdAt: 'desc' },
+  });
   return NextResponse.json(payments);
 }
 
@@ -37,16 +41,27 @@ export async function POST(req: Request) {
   if (order) {
     // Compute total from selected prices + complements
     const total = order.items.reduce((sum: number, item: any) => {
-      const priceValue = item.selectedPrice ? Number(item.selectedPrice.value) : 0;
+      const priceValue = item.selectedPrice
+        ? Number(item.selectedPrice.value)
+        : 0;
       const complementsTotal = Array.isArray(item.selectedComplements)
-        ? item.selectedComplements.reduce((s: number, c: any) => s + Number(c.value), 0)
+        ? item.selectedComplements.reduce(
+            (s: number, c: any) => s + Number(c.value),
+            0,
+          )
         : 0;
       return sum + (priceValue + complementsTotal) * item.quantity;
     }, 0);
-    const paid = allPayments.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+    const paid = allPayments.reduce(
+      (sum: number, p: any) => sum + Number(p.amount),
+      0,
+    );
 
     if (paid >= total) {
-      await prisma.order.update({ where: { id: orderId }, data: { status: 'PAID' } });
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { status: 'PAID' },
+      });
       sseBus.publish('ORDER_CLOSED', { orderId, total, paid });
     } else {
       sseBus.publish('PARTIAL_PAYMENT_ACCEPTED', { orderId, total, paid });

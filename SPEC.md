@@ -71,10 +71,10 @@ devx-portal/                          # Nx monorepo root (@temp-workspace/source
 
 ### 3.1 Plugin Types
 
-| Type | Purpose | Example |
-|---|---|---|
-| **Feature Plugin** | Adds UI pages and routes. Rendered at `/plugins/<id>/<path>` | `orders-delivery`, `menu-catalog-ui` |
-| **Service Plugin** | Provides backend APIs consumed by other plugins via `pluginLoader.getService<T>()` | `menu-catalog`, `payments`, `audit` |
+| Type               | Purpose                                                                            | Example                              |
+| ------------------ | ---------------------------------------------------------------------------------- | ------------------------------------ |
+| **Feature Plugin** | Adds UI pages and routes. Rendered at `/plugins/<id>/<path>`                       | `orders-delivery`, `menu-catalog-ui` |
+| **Service Plugin** | Provides backend APIs consumed by other plugins via `pluginLoader.getService<T>()` | `menu-catalog`, `payments`, `audit`  |
 
 ### 3.2 Plugin Loader (`libs/core/plugin-loader/`)
 
@@ -88,20 +88,21 @@ devx-portal/                          # Nx monorepo root (@temp-workspace/source
 
 16 extension points for UI composition:
 
-| Extension Point | Props | Defined By | Contributes To |
-|---|---|---|---|
-| `app:main-template` | `MainTemplateProps` | `main-template` | `layout.tsx` renders full portal layout |
-| `main-template:header-menu` | `{}` | `main-template` | `menubarPlugin` renders top nav |
-| `main-template:header-footer-left/center/right` | `{}` | `main-template` | (unused — reserved slots) |
-| `main-template:left-menu` | `LeftMenuItemProps` {name, icon} | `main-template` | `menuNavBarPlugin` adds nav items |
-| `main-template:right-menu` | `RightMenuItemProps` {tabName, tabIcon} | `main-template` | (unused — reserved slots) |
-| `main-template:content-top/left/right/bottom` | `{}` | `main-template` | (unused — reserved slots) |
-| `main-template:footer-left/center/right` | `{}` | `main-template` | (unused — reserved slots) |
-| `menubar:items` | `{}` | `menubarPlugin` | `userManagementPlugin` adds menu links |
+| Extension Point                                 | Props                                   | Defined By      | Contributes To                          |
+| ----------------------------------------------- | --------------------------------------- | --------------- | --------------------------------------- |
+| `app:main-template`                             | `MainTemplateProps`                     | `main-template` | `layout.tsx` renders full portal layout |
+| `main-template:header-menu`                     | `{}`                                    | `main-template` | `menubarPlugin` renders top nav         |
+| `main-template:header-footer-left/center/right` | `{}`                                    | `main-template` | (unused — reserved slots)               |
+| `main-template:left-menu`                       | `LeftMenuItemProps` {name, icon}        | `main-template` | `menuNavBarPlugin` adds nav items       |
+| `main-template:right-menu`                      | `RightMenuItemProps` {tabName, tabIcon} | `main-template` | (unused — reserved slots)               |
+| `main-template:content-top/left/right/bottom`   | `{}`                                    | `main-template` | (unused — reserved slots)               |
+| `main-template:footer-left/center/right`        | `{}`                                    | `main-template` | (unused — reserved slots)               |
+| `menubar:items`                                 | `{}`                                    | `menubarPlugin` | `userManagementPlugin` adds menu links  |
 
 ### 3.4 UI Resolution (`libs/core/ui-registry/`)
 
 **Resolution order**: (1) Context-provided component → (2) Native fallback (hardcoded defaults)
+
 - In dev mode, wraps with **Zod validation** (`withValidation()`) for contract enforcement
 - **6 UI contracts**: Button, Card, Input, Icon, Drawer, Tabs (Zod schemas in `ui-contracts`)
 - **Fallbacks**: plain HTML elements styled with minimal CSS
@@ -120,7 +121,7 @@ layout.tsx (server) → initializePlugins()
 
 ClientProviders (client) → initializePlugins() [duplicate — logs warning, skips re-register]
   └── UIProvider wraps app with ui-project components
-  
+
 plugins/[...slug]/page.tsx → resolves URL to plugin route → renders component
 ```
 
@@ -130,28 +131,28 @@ plugins/[...slug]/page.tsx → resolves URL to plugin route → renders componen
 
 ### Feature Plugins
 
-| # | ID | Name | Routes | Description |
-|---|---|---|---|---|
-| 1 | `auth` | Autenticação | `profile` | User profile card page |
-| 2 | `menubar` | Menu Bar | (none) | Renders top menu bar via `main-template:header-menu`; provides `menubar:items` slot |
-| 3 | `user-management` | Gestão de Usuários | `` | Lists users via `UserServiceAPI`; contributes link to menubar |
-| 4 | `main-template` | Main Template | (none) | Full page layout: header, nav rail (left/right menus), content area (4 slots), footer (3 slots) |
-| 5 | `menu-nav-bar` | Menu Navigation Bar | (none) | Auto-generates navigation entries from all registered feature plugin routes; contributes to `main-template:left-menu` |
-| 6 | `menu-catalog-ui` | Menu Catalog | ``, `categories`, `categories/new`, `categories/:id`, `products`, `products/new`, `products/:id` | Full CRUD UI for categories, products, prices, and complements |
-| 7 | `orders-delivery` | Orders & Delivery | ``, `new` | **Tab 1**: Active orders + items in preparation. **Tab 2**: Items ready for delivery. **FAB (+)**: Opens order creation wizard (3 steps: product list → product details → order summary) |
-| 8 | `kds` | Kitchen Display System | `` | Two-column KDS board: Pending / Preparing. Real-time SSE updates. Action buttons: start preparing → mark ready |
-| 9 | `payments-ui` | Payments | `` | Select open order → view items + total → register payment (cash/card/pix). Shows paid/remaining amounts |
+| #   | ID                | Name                   | Routes                                                                                           | Description                                                                                                                                                                              |
+| --- | ----------------- | ---------------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `auth`            | Autenticação           | `profile`                                                                                        | User profile card page                                                                                                                                                                   |
+| 2   | `menubar`         | Menu Bar               | (none)                                                                                           | Renders top menu bar via `main-template:header-menu`; provides `menubar:items` slot                                                                                                      |
+| 3   | `user-management` | Gestão de Usuários     | ``                                                                                               | Lists users via `UserServiceAPI`; contributes link to menubar                                                                                                                            |
+| 4   | `main-template`   | Main Template          | (none)                                                                                           | Full page layout: header, nav rail (left/right menus), content area (4 slots), footer (3 slots)                                                                                          |
+| 5   | `menu-nav-bar`    | Menu Navigation Bar    | (none)                                                                                           | Auto-generates navigation entries from all registered feature plugin routes; contributes to `main-template:left-menu`                                                                    |
+| 6   | `menu-catalog-ui` | Menu Catalog           | ``, `categories`, `categories/new`, `categories/:id`, `products`, `products/new`, `products/:id` | Full CRUD UI for categories, products, prices, and complements                                                                                                                           |
+| 7   | `orders-delivery` | Orders & Delivery      | ``, `new`                                                                                        | **Tab 1**: Active orders + items in preparation. **Tab 2**: Items ready for delivery. **FAB (+)**: Opens order creation wizard (3 steps: product list → product details → order summary) |
+| 8   | `kds`             | Kitchen Display System | ``                                                                                               | Two-column KDS board: Pending / Preparing. Real-time SSE updates. Action buttons: start preparing → mark ready                                                                           |
+| 9   | `payments-ui`     | Payments               | ``                                                                                               | Select open order → view items + total → register payment (cash/card/pix). Shows paid/remaining amounts                                                                                  |
 
 ### Service Plugins
 
-| # | ID | API | Description |
-|---|---|---|---|
-| 1 | `user-service` | `UserServiceAPI`: `listUsers()`, `createUser()` | Mock user CRUD (in-memory) |
-| 2 | `order-core` | `OrderCoreAPI`: `publish(eventType, payload)` | SSE event publishing (no-op — API routes use `sseBus` directly) |
-| 3 | `menu-catalog` | `MenuCatalogAPI`: CRUD for categories, products, prices, complements | REST API wrapper calling `/api/*` endpoints |
-| 4 | `payments` | `PaymentsAPI`: `calculateTotal()`, `registerPayment()` | Order total calculation + payment registration |
-| 5 | `audit` | `AuditAPI`: `log()`, `getLogs()` | Audit logging via `/api/audit` |
-| 6 | `ui-components` | `components` map | Bridges `ui-project` components to plugin system via ExtensionPoint |
+| #   | ID              | API                                                                  | Description                                                         |
+| --- | --------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| 1   | `user-service`  | `UserServiceAPI`: `listUsers()`, `createUser()`                      | Mock user CRUD (in-memory)                                          |
+| 2   | `order-core`    | `OrderCoreAPI`: `publish(eventType, payload)`                        | SSE event publishing (no-op — API routes use `sseBus` directly)     |
+| 3   | `menu-catalog`  | `MenuCatalogAPI`: CRUD for categories, products, prices, complements | REST API wrapper calling `/api/*` endpoints                         |
+| 4   | `payments`      | `PaymentsAPI`: `calculateTotal()`, `registerPayment()`               | Order total calculation + payment registration                      |
+| 5   | `audit`         | `AuditAPI`: `log()`, `getLogs()`                                     | Audit logging via `/api/audit`                                      |
+| 6   | `ui-components` | `components` map                                                     | Bridges `ui-project` components to plugin system via ExtensionPoint |
 
 ---
 
@@ -159,42 +160,43 @@ plugins/[...slug]/page.tsx → resolves URL to plugin route → renders componen
 
 ### Order Management
 
-| Route | Methods | Description |
-|---|---|---|
-| `/api/orders` | GET, POST | GET: list orders (filter by `?status=`), includes items+payments. POST: create order with items (validates product IDs), publishes `ORDER_CREATED` SSE |
-| `/api/orders/[id]` | GET, PATCH | GET: single order with items+payments. PATCH: update order status/notes, publishes `ORDER_UPDATED` SSE |
-| `/api/order-items/[id]` | PATCH | Update item status/notes. Auto-sets `sentAt` on `READY`, `deliveredAt` on `DELIVERED`. Publishes `ITEM_UPDATED` SSE |
-| `/api/payments` | GET, POST | GET: list payments (filter by `?orderId=`). POST: create payment, auto-checks full payment → sets `PAID` status. Publishes `ORDER_CLOSED` or `PARTIAL_PAYMENT_ACCEPTED` SSE |
+| Route                   | Methods    | Description                                                                                                                                                                 |
+| ----------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/orders`           | GET, POST  | GET: list orders (filter by `?status=`), includes items+payments. POST: create order with items (validates product IDs), publishes `ORDER_CREATED` SSE                      |
+| `/api/orders/[id]`      | GET, PATCH | GET: single order with items+payments. PATCH: update order status/notes, publishes `ORDER_UPDATED` SSE                                                                      |
+| `/api/order-items/[id]` | PATCH      | Update item status/notes. Auto-sets `sentAt` on `READY`, `deliveredAt` on `DELIVERED`. Publishes `ITEM_UPDATED` SSE                                                         |
+| `/api/payments`         | GET, POST  | GET: list payments (filter by `?orderId=`). POST: create payment, auto-checks full payment → sets `PAID` status. Publishes `ORDER_CLOSED` or `PARTIAL_PAYMENT_ACCEPTED` SSE |
 
 ### Menu Catalog
 
-| Route | Methods | Description |
-|---|---|---|
-| `/api/categories` | GET, POST | GET: list categories (asc). POST: create category |
-| `/api/categories/[id]` | GET, PUT, DELETE | CRUD for single category |
-| `/api/products` | GET, POST | GET: list products (filter by `?categoryId=`), includes prices+complements. POST: create product with prices+complements (transaction) |
-| `/api/products/[id]` | GET, PUT, DELETE | CRUD for single product (PUT replaces all prices+complements) |
-| `/api/prices` | GET, POST | GET: list prices for product. POST: create price |
-| `/api/prices/[id]` | GET, PUT, DELETE | CRUD for single price |
-| `/api/complements` | GET, POST | GET: list complements for product. POST: create complement |
-| `/api/complements/[id]` | GET, PUT, DELETE | CRUD for single complement |
-| `/api/menu/categories` | GET, POST | Duplicate of `/api/categories` (simplified) |
-| `/api/menu/products` | GET, POST | Duplicate of `/api/products` (simplified) |
+| Route                   | Methods          | Description                                                                                                                            |
+| ----------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/categories`       | GET, POST        | GET: list categories (asc). POST: create category                                                                                      |
+| `/api/categories/[id]`  | GET, PUT, DELETE | CRUD for single category                                                                                                               |
+| `/api/products`         | GET, POST        | GET: list products (filter by `?categoryId=`), includes prices+complements. POST: create product with prices+complements (transaction) |
+| `/api/products/[id]`    | GET, PUT, DELETE | CRUD for single product (PUT replaces all prices+complements)                                                                          |
+| `/api/prices`           | GET, POST        | GET: list prices for product. POST: create price                                                                                       |
+| `/api/prices/[id]`      | GET, PUT, DELETE | CRUD for single price                                                                                                                  |
+| `/api/complements`      | GET, POST        | GET: list complements for product. POST: create complement                                                                             |
+| `/api/complements/[id]` | GET, PUT, DELETE | CRUD for single complement                                                                                                             |
+| `/api/menu/categories`  | GET, POST        | Duplicate of `/api/categories` (simplified)                                                                                            |
+| `/api/menu/products`    | GET, POST        | Duplicate of `/api/products` (simplified)                                                                                              |
 
 ### Infrastructure
 
-| Route | Methods | Description |
-|---|---|---|
-| `/api/hello` | GET | Health check: returns "Hello, from API!" |
-| `/api/events` | GET | SSE endpoint (`text/event-stream`). 30s heartbeat. Streams all SSEBus events |
-| `/api/audit` | GET, POST | GET: list audit logs (filter by `?module=`, `?eventType=`, last 100). POST: create audit entry |
-| `/api/test/reset` | POST | Deletes ALL data (payments → orderItems → orders → products → categories → auditLogs) |
+| Route             | Methods   | Description                                                                                    |
+| ----------------- | --------- | ---------------------------------------------------------------------------------------------- |
+| `/api/hello`      | GET       | Health check: returns "Hello, from API!"                                                       |
+| `/api/events`     | GET       | SSE endpoint (`text/event-stream`). 30s heartbeat. Streams all SSEBus events                   |
+| `/api/audit`      | GET, POST | GET: list audit logs (filter by `?module=`, `?eventType=`, last 100). POST: create audit entry |
+| `/api/test/reset` | POST      | Deletes ALL data (payments → orderItems → orders → products → categories → auditLogs)          |
 
 ---
 
 ## 6. Database Schema (Prisma)
 
 ### Enums
+
 - **OrderStatus**: `OPEN`, `AWAITING_PAYMENT`, `PAID`, `CLOSED`
 - **ItemStatus**: `PENDING`, `PREPARING`, `READY`, `DELIVERED`, `CANCELLED`
 
@@ -239,15 +241,17 @@ AuditLog
 **In-memory pub/sub** using `globalThis` to survive Next.js hot reload.
 
 ### Events Published
-| Event | Triggered By | Payload |
-|---|---|---|
-| `ORDER_CREATED` | POST `/api/orders` | `{ orderId, tableNumber, items[] }` |
-| `ORDER_UPDATED` | PATCH `/api/orders/[id]` | `{ orderId, updates }` |
-| `ORDER_CLOSED` | POST `/api/payments` (fully paid) | `{ orderId, amount }` |
-| `ITEM_UPDATED` | PATCH `/api/order-items/[id]` | `{ itemId, status, orderId }` |
-| `PARTIAL_PAYMENT_ACCEPTED` | POST `/api/payments` (partial) | `{ orderId, amount, remaining }` |
+
+| Event                      | Triggered By                      | Payload                             |
+| -------------------------- | --------------------------------- | ----------------------------------- |
+| `ORDER_CREATED`            | POST `/api/orders`                | `{ orderId, tableNumber, items[] }` |
+| `ORDER_UPDATED`            | PATCH `/api/orders/[id]`          | `{ orderId, updates }`              |
+| `ORDER_CLOSED`             | POST `/api/payments` (fully paid) | `{ orderId, amount }`               |
+| `ITEM_UPDATED`             | PATCH `/api/order-items/[id]`     | `{ itemId, status, orderId }`       |
+| `PARTIAL_PAYMENT_ACCEPTED` | POST `/api/payments` (partial)    | `{ orderId, amount, remaining }`    |
 
 ### Consumers
+
 - **KDS**: Listens to `ITEM_UPDATED` and `ORDER_CREATED` → refreshes board
 - **Orders-Delivery**: Listens to `ITEM_UPDATED` and `ORDER_CREATED` → refreshes order list
 
@@ -256,6 +260,7 @@ AuditLog
 ## 8. Key Flows
 
 ### 8.1 Order Creation Wizard (orders-delivery)
+
 ```
 OrdersDeliveryPage (/)
   └── FAB (+) → /plugins/orders-delivery/new
@@ -268,6 +273,7 @@ OrdersDeliveryPage (/)
 ```
 
 ### 8.2 Payment Processing
+
 ```
 PaymentsPage (/plugins/payments-ui/)
   └── List open orders with totals
@@ -278,6 +284,7 @@ PaymentsPage (/plugins/payments-ui/)
 ```
 
 ### 8.3 Kitchen Display
+
 ```
 KDSPage (/plugins/kds/)
   └── Two columns: Pending | Preparing
@@ -287,6 +294,7 @@ KDSPage (/plugins/kds/)
 ```
 
 ### 8.4 Menu Catalog Management
+
 ```
 MenuCatalogUI (/plugins/menu-catalog-ui/)
   └── Categories CRUD → create/edit/delete categories
@@ -299,32 +307,32 @@ MenuCatalogUI (/plugins/menu-catalog-ui/)
 
 ## 9. Known Issues & Technical Debt
 
-| Issue | Location | Impact |
-|---|---|---|
-| Legacy stub pages | `/feature`, `/service`, `/domain` | Reference `/api/entities` which doesn't exist (removed in v2.2) |
-| Broken seed script | `prisma/seed.ts` | References `prisma.entityType` — model removed from schema |
-| Duplicate API routes | `/api/menu/*` | Simplified duplicates of `/api/categories`, `/api/products` |
-| Plugin double-init | `layout.tsx` + `providers.tsx` | `initializePlugins()` called twice (second logs warning, harmless) |
-| order-core service no-op | `plugin-order-core` | `publish()` only logs; real publishing via `sseBus` in API routes |
-| `icon` on PluginRoute | plugin definitions | Not in `PluginRoute` type — TypeScript error (moved to plugin-level `icon`) |
+| Issue                    | Location                          | Impact                                                                      |
+| ------------------------ | --------------------------------- | --------------------------------------------------------------------------- |
+| Legacy stub pages        | `/feature`, `/service`, `/domain` | Reference `/api/entities` which doesn't exist (removed in v2.2)             |
+| Broken seed script       | `prisma/seed.ts`                  | References `prisma.entityType` — model removed from schema                  |
+| Duplicate API routes     | `/api/menu/*`                     | Simplified duplicates of `/api/categories`, `/api/products`                 |
+| Plugin double-init       | `layout.tsx` + `providers.tsx`    | `initializePlugins()` called twice (second logs warning, harmless)          |
+| order-core service no-op | `plugin-order-core`               | `publish()` only logs; real publishing via `sseBus` in API routes           |
+| `icon` on PluginRoute    | plugin definitions                | Not in `PluginRoute` type — TypeScript error (moved to plugin-level `icon`) |
 
 ---
 
 ## 10. Tech Stack Summary
 
-| Category | Technology |
-|---|---|
-| Framework | Next.js ~16.1 (App Router) |
-| Monorepo | Nx 22.7 |
-| UI | React 19, Tailwind CSS 4.3, shadcn, Lucide React |
-| Backend | NestJS ^11 (available, not heavily used), Next.js API Routes |
-| ORM | Prisma ^5.22 |
-| Database | PostgreSQL 15 |
-| Validation | Zod ^4.4 |
-| Real-time | SSE (Server-Sent Events) via in-memory bus |
-| Linting | ESLint 9 (typescript-eslint) |
-| Formatting | Prettier ~3.6 |
-| Testing | Playwright ^1.6 (E2E), Vitest ~4.1 (unit) |
-| Bundling | Webpack, Rollup (libs), SWC |
-| Language | TypeScript 5.9 |
-| Package Manager | pnpm |
+| Category        | Technology                                                   |
+| --------------- | ------------------------------------------------------------ |
+| Framework       | Next.js ~16.1 (App Router)                                   |
+| Monorepo        | Nx 22.7                                                      |
+| UI              | React 19, Tailwind CSS 4.3, shadcn, Lucide React             |
+| Backend         | NestJS ^11 (available, not heavily used), Next.js API Routes |
+| ORM             | Prisma ^5.22                                                 |
+| Database        | PostgreSQL 15                                                |
+| Validation      | Zod ^4.4                                                     |
+| Real-time       | SSE (Server-Sent Events) via in-memory bus                   |
+| Linting         | ESLint 9 (typescript-eslint)                                 |
+| Formatting      | Prettier ~3.6                                                |
+| Testing         | Playwright ^1.6 (E2E), Vitest ~4.1 (unit)                    |
+| Bundling        | Webpack, Rollup (libs), SWC                                  |
+| Language        | TypeScript 5.9                                               |
+| Package Manager | pnpm                                                         |

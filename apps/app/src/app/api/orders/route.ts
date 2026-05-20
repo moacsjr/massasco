@@ -64,7 +64,7 @@ export async function POST(req: Request) {
   if (missingIds.length > 0) {
     return NextResponse.json(
       { error: 'Products not found', missingIds },
-      { status: 400 }
+      { status: 400 },
     );
   }
 

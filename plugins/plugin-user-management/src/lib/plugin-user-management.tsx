@@ -18,8 +18,11 @@ const UserManagementPage: React.FC = () => {
   return (
     <Card title="Gestão de Usuários" padding="lg">
       <ul style={{ listStyle: 'none', padding: 0 }}>
-        {users.map(user => (
-          <li key={user.id} style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
+        {users.map((user) => (
+          <li
+            key={user.id}
+            style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}
+          >
             <strong>{user.name}</strong> ({user.email})
           </li>
         ))}
@@ -30,7 +33,10 @@ const UserManagementPage: React.FC = () => {
 
 const UserMenuContribution: React.FC = () => {
   return (
-    <a href="/plugins/user-management" style={{ color: '#aaa', textDecoration: 'none', fontSize: '0.9rem' }}>
+    <a
+      href="/plugins/user-management"
+      style={{ color: '#aaa', textDecoration: 'none', fontSize: '0.9rem' }}
+    >
       👥 Usuários
     </a>
   );
@@ -44,14 +50,14 @@ export const userManagementPlugin: FeaturePlugin = {
     {
       path: '',
       component: UserManagementPage,
-      label: 'Usuários'
-    }
+      label: 'Usuários',
+    },
   ],
 
   contributions: [
     {
       point: 'menubar:items',
-      component: UserMenuContribution
-    }
-  ]
+      component: UserMenuContribution,
+    },
+  ],
 };

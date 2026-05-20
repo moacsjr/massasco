@@ -1,14 +1,19 @@
 'use client';
 
 import React from 'react';
-import { FeaturePlugin, ExtensionPointDefinition, ExtensionContribution } from '@temp-workspace/plugin-loader';
+import {
+  FeaturePlugin,
+  ExtensionPointDefinition,
+  ExtensionContribution,
+} from '@temp-workspace/plugin-loader';
 import { MainTemplate } from './MainTemplate';
 
 const extensionPoints: ExtensionPointDefinition[] = [
   {
     name: 'main-template:header-menu',
     title: 'Header Menu',
-    description: 'Items displayed in the main header bar, next to the app name.',
+    description:
+      'Items displayed in the main header bar, next to the app name.',
   },
   {
     name: 'main-template:header-footer-left',
@@ -28,12 +33,14 @@ const extensionPoints: ExtensionPointDefinition[] = [
   {
     name: 'main-template:left-menu',
     title: 'Left Menu',
-    description: 'Navigation rail + drawer destinations. Provide name, icon, and component.',
+    description:
+      'Navigation rail + drawer destinations. Provide name, icon, and component.',
   },
   {
     name: 'main-template:right-menu',
     title: 'Right Menu',
-    description: 'Right-side drawer tabs. Provide tabName, tabIcon, and component.',
+    description:
+      'Right-side drawer tabs. Provide tabName, tabIcon, and component.',
   },
   {
     name: 'main-template:content-top',

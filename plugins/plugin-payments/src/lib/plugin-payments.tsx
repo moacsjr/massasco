@@ -1,7 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FeaturePlugin, ExtensionContribution, ServicePlugin, pluginLoader } from '@temp-workspace/plugin-loader';
+import {
+  FeaturePlugin,
+  ExtensionContribution,
+  ServicePlugin,
+  pluginLoader,
+} from '@temp-workspace/plugin-loader';
 import { useUI } from '@temp-workspace/ui-registry';
 
 // ============================================================================
@@ -10,7 +15,11 @@ import { useUI } from '@temp-workspace/ui-registry';
 
 export interface PaymentsAPI {
   calculateTotal(orderId: string): Promise<{ total: number; items: unknown[] }>;
-  registerPayment(orderId: string, amount: number, method: string): Promise<unknown>;
+  registerPayment(
+    orderId: string,
+    amount: number,
+    method: string,
+  ): Promise<unknown>;
 }
 
 const paymentsAPI: PaymentsAPI = {
@@ -67,7 +76,11 @@ const PaymentsPage: React.FC = () => {
 
   const submitPayment = async () => {
     if (!selectedOrder || !paymentAmount) return;
-    await paymentsAPI.registerPayment(selectedOrder, Number(paymentAmount), paymentMethod);
+    await paymentsAPI.registerPayment(
+      selectedOrder,
+      Number(paymentAmount),
+      paymentMethod,
+    );
     setPaymentAmount('');
     selectOrder(selectedOrder);
   };
@@ -87,17 +100,27 @@ const PaymentsPage: React.FC = () => {
         {!selectedOrder ? (
           <>
             <h4 className="text-foreground">Pedidos Abertos</h4>
-            {orders.filter((o) => o.status === 'OPEN' || o.status === 'AWAITING_PAYMENT').length === 0 ? (
+            {orders.filter(
+              (o) => o.status === 'OPEN' || o.status === 'AWAITING_PAYMENT',
+            ).length === 0 ? (
               <p className="text-muted-foreground">Nenhum pedido aberto.</p>
             ) : (
               <ul className="list-none p-0">
                 {orders
-                  .filter((o) => o.status === 'OPEN' || o.status === 'AWAITING_PAYMENT')
+                  .filter(
+                    (o) =>
+                      o.status === 'OPEN' || o.status === 'AWAITING_PAYMENT',
+                  )
                   .map((o) => {
-                    const orderTotal = (o.items || []).reduce((sum: number, item: any) => {
-                      const price = item.selectedPrice ? Number(item.selectedPrice.value) : 0;
-                      return sum + price * item.quantity;
-                    }, 0);
+                    const orderTotal = (o.items || []).reduce(
+                      (sum: number, item: any) => {
+                        const price = item.selectedPrice
+                          ? Number(item.selectedPrice.value)
+                          : 0;
+                        return sum + price * item.quantity;
+                      },
+                      0,
+                    );
                     return (
                       <li
                         key={o.id}
@@ -133,10 +156,17 @@ const PaymentsPage: React.FC = () => {
               {/* Items */}
               <ul className="list-none p-0">
                 {(orderDetail?.items || []).map((item: any) => {
-                  const price = item.selectedPrice ? Number(item.selectedPrice.value) : 0;
+                  const price = item.selectedPrice
+                    ? Number(item.selectedPrice.value)
+                    : 0;
                   return (
-                    <li key={item.id} className="py-1.5 flex justify-between text-foreground">
-                      <span>{item.product.name} × {item.quantity}</span>
+                    <li
+                      key={item.id}
+                      className="py-1.5 flex justify-between text-foreground"
+                    >
+                      <span>
+                        {item.product.name} × {item.quantity}
+                      </span>
                       <span>R$ {(price * item.quantity).toFixed(2)}</span>
                     </li>
                   );
@@ -227,6 +257,6 @@ export const paymentsFeaturePlugin: FeaturePlugin = {
       label: 'Pagamentos',
       icon: 'CircleDollarSign',
       showInMenu: true,
-    }
-  ]
+    },
+  ],
 };

@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* ========================================================================
    Content sources — Nx monorepo directories outside apps/app
@@ -39,10 +39,10 @@
   --color-border-solid: hsl(var(--border-solid));
 
   /* Border radius scale */
-  --radius-sm: calc(var(--radius) * 0.625);  /* 0.3125rem (5px) */
-  --radius-md: var(--radius);                /* 0.5rem   (8px) */
-  --radius-lg: calc(var(--radius) * 1.5);    /* 0.75rem  (12px) */
-  --radius-xl: calc(var(--radius) * 2);      /* 1rem     (16px) */
+  --radius-sm: calc(var(--radius) * 0.625); /* 0.3125rem (5px) */
+  --radius-md: var(--radius); /* 0.5rem   (8px) */
+  --radius-lg: calc(var(--radius) * 1.5); /* 0.75rem  (12px) */
+  --radius-xl: calc(var(--radius) * 2); /* 1rem     (16px) */
 
   /* z-index scale */
   --z-index-dropdown: var(--z-dropdown);
@@ -71,30 +71,30 @@
    Shadcn Dark Theme — Massas.co "Dark-Core Tech"
    ======================================================================== */
 :root {
-  --background: 0 0% 0%;           /* #000000 — Preto absoluto */
-  --foreground: 0 0% 98%;          /* near-white text */
-  --card: 0 0% 7%;                 /* #121212 — Cinza antracite */
+  --background: 0 0% 0%; /* #000000 — Preto absoluto */
+  --foreground: 0 0% 98%; /* near-white text */
+  --card: 0 0% 7%; /* #121212 — Cinza antracite */
   --card-foreground: 0 0% 98%;
   --popover: 0 0% 7%;
   --popover-foreground: 0 0% 98%;
-  --primary: 45 93% 52%;           /* #FFC107 — Amarelo branding */
-  --primary-foreground: 0 0% 0%;   /* texto preto sobre amarelo */
-  --secondary: 0 0% 12%;           /* #1E1E1E */
+  --primary: 45 93% 52%; /* #FFC107 — Amarelo branding */
+  --primary-foreground: 0 0% 0%; /* texto preto sobre amarelo */
+  --secondary: 0 0% 12%; /* #1E1E1E */
   --secondary-foreground: 0 0% 98%;
-  --muted: 0 0% 15%;               /* superfície sutil */
-  --muted-foreground: 0 0% 63%;    /* #A0A0A0 — texto mutado */
-  --accent: 45 93% 52%;            /* amarelo como accent também */
+  --muted: 0 0% 15%; /* superfície sutil */
+  --muted-foreground: 0 0% 63%; /* #A0A0A0 — texto mutado */
+  --accent: 45 93% 52%; /* amarelo como accent também */
   --accent-foreground: 0 0% 0%;
-  --destructive: 0 84% 60%;        /* #EF4444 */
+  --destructive: 0 84% 60%; /* #EF4444 */
   --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 16%;              /* #2A2A2A */
+  --border: 0 0% 16%; /* #2A2A2A */
   --input: 0 0% 16%;
-  --ring: 45 93% 52%;              /* focus ring amarelo */
+  --ring: 45 93% 52%; /* focus ring amarelo */
   --radius: 0.5rem;
 
   /* Massas.co brand tokens — HSL so they work with the HSL pattern */
-  --brand: 45 93% 52%;             /* #FFC107 — yellow (same as primary) */
-  --surface: 0 0% 7%;              /* #121212 — matches card */
-  --surface-elevated: 0 0% 12%;    /* #1E1E1E — matches secondary */
-  --border-solid: 0 0% 16%;        /* #2A2A2A — matches border */
+  --brand: 45 93% 52%; /* #FFC107 — yellow (same as primary) */
+  --surface: 0 0% 7%; /* #121212 — matches card */
+  --surface-elevated: 0 0% 12%; /* #1E1E1E — matches secondary */
+  --border-solid: 0 0% 16%; /* #2A2A2A — matches border */
 }

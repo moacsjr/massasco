@@ -11,11 +11,14 @@ const ProfilePage = () => {
     <Card title="Perfil do Usuário" padding="lg">
       <p>Bem-vindo ao seu perfil de desenvolvedor.</p>
       <div style={{ marginTop: '16px' }}>
-        <strong>Nome:</strong> Desenvolvedor DevXP<br />
+        <strong>Nome:</strong> Desenvolvedor DevXP
+        <br />
         <strong>Email:</strong> dev@devx-portal.com
       </div>
       <div style={{ marginTop: '24px' }}>
-        <Button variant="outline" size="md">Alterar Senha</Button>
+        <Button variant="outline" size="md">
+          Alterar Senha
+        </Button>
       </div>
     </Card>
   );

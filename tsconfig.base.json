@@ -22,18 +22,38 @@
       ],
       "@temp-workspace/ui-project": ["./ui-project/src/index.tsx"],
       "@temp-workspace/plugin-auth": ["./plugins/plugin-auth/src/index.ts"],
-      "@temp-workspace/plugin-menubar": ["./plugins/plugin-menubar/src/index.ts"],
-      "@temp-workspace/plugin-user-service": ["./plugins/plugin-user-service/src/index.ts"],
-      "@temp-workspace/plugin-user-management": ["./plugins/plugin-user-management/src/index.ts"],
-      "@temp-workspace/plugin-main-template": ["./plugins/plugin-main-template/src/index.ts"],
-      "@temp-workspace/plugin-menu-nav-bar": ["./plugins/plugin-menu-nav-bar/src/index.ts"],
-      "@temp-workspace/plugin-order-core": ["./plugins/plugin-order-core/src/index.ts"],
-      "@temp-workspace/plugin-menu-catalog": ["./plugins/plugin-menu-catalog/src/index.ts"],
-      "@temp-workspace/plugin-orders-delivery": ["./plugins/plugin-orders-delivery/src/index.ts"],
+      "@temp-workspace/plugin-menubar": [
+        "./plugins/plugin-menubar/src/index.ts"
+      ],
+      "@temp-workspace/plugin-user-service": [
+        "./plugins/plugin-user-service/src/index.ts"
+      ],
+      "@temp-workspace/plugin-user-management": [
+        "./plugins/plugin-user-management/src/index.ts"
+      ],
+      "@temp-workspace/plugin-main-template": [
+        "./plugins/plugin-main-template/src/index.ts"
+      ],
+      "@temp-workspace/plugin-menu-nav-bar": [
+        "./plugins/plugin-menu-nav-bar/src/index.ts"
+      ],
+      "@temp-workspace/plugin-order-core": [
+        "./plugins/plugin-order-core/src/index.ts"
+      ],
+      "@temp-workspace/plugin-menu-catalog": [
+        "./plugins/plugin-menu-catalog/src/index.ts"
+      ],
+      "@temp-workspace/plugin-orders-delivery": [
+        "./plugins/plugin-orders-delivery/src/index.ts"
+      ],
       "@temp-workspace/plugin-kds": ["./plugins/plugin-kds/src/index.ts"],
-      "@temp-workspace/plugin-payments": ["./plugins/plugin-payments/src/index.ts"],
+      "@temp-workspace/plugin-payments": [
+        "./plugins/plugin-payments/src/index.ts"
+      ],
       "@temp-workspace/plugin-audit": ["./plugins/plugin-audit/src/index.ts"],
-      "@temp-workspace/plugin-ui-components": ["./plugins/plugin-ui-components/src/index.ts"],
+      "@temp-workspace/plugin-ui-components": [
+        "./plugins/plugin-ui-components/src/index.ts"
+      ],
       "@temp-workspace/ui-validator-cli": [
         "./tools/ui-validator-cli/src/index.ts"
       ],

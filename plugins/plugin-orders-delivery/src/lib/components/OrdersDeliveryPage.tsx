@@ -79,18 +79,22 @@ const OrdersDeliveryPage: React.FC = () => {
       <Card title="Pedidos & Entregas" padding="lg">
         {/* Tabs */}
         <div className="flex gap-0 mb-5 border-b-2 border-border">
-          {([
+          {[
             { key: 'active' as const, label: '🔥 Pedidos Ativos' },
-            { key: 'deliver' as const, label: `📦 Para Entregar${readyItems.length > 0 ? ` (${readyItems.length})` : ''}` },
-          ]).map((tab) => (
+            {
+              key: 'deliver' as const,
+              label: `📦 Para Entregar${readyItems.length > 0 ? ` (${readyItems.length})` : ''}`,
+            },
+          ].map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={`
                 px-5 py-2.5 border-b-2 font-medium cursor-pointer text-sm transition-colors
-                ${activeTab === tab.key
-                  ? 'border-brand bg-secondary text-brand font-semibold'
-                  : 'border-transparent bg-transparent text-muted-foreground hover:text-foreground'
+                ${
+                  activeTab === tab.key
+                    ? 'border-brand bg-secondary text-brand font-semibold'
+                    : 'border-transparent bg-transparent text-muted-foreground hover:text-foreground'
                 }
               `}
             >
@@ -103,7 +107,8 @@ const OrdersDeliveryPage: React.FC = () => {
         {activeTab === 'active' && (
           <div>
             <h4 className="mt-0 text-foreground">Itens em Preparo</h4>
-            {activeOrders.length === 0 || activeOrders.every((o) => (o.items || []).length === 0) ? (
+            {activeOrders.length === 0 ||
+            activeOrders.every((o) => (o.items || []).length === 0) ? (
               <p className="text-muted-foreground">Nenhum pedido ativo.</p>
             ) : (
               activeOrders.map((order) => (
@@ -115,13 +120,27 @@ const OrdersDeliveryPage: React.FC = () => {
                           ? `${item.selectedPrice.description} (R$ ${Number(item.selectedPrice.value).toFixed(2)})`
                           : '';
                         return (
-                          <li key={item.id} className="py-1.5 border-b border-border flex justify-between">
+                          <li
+                            key={item.id}
+                            className="py-1.5 border-b border-border flex justify-between"
+                          >
                             <span>
                               {item.product?.name} × {item.quantity}
-                              {priceLabel && <div className="text-xs text-muted-foreground">{priceLabel}</div>}
-                              {item.notes && <span className="text-sm text-muted-foreground"> — {item.notes}</span>}
+                              {priceLabel && (
+                                <div className="text-xs text-muted-foreground">
+                                  {priceLabel}
+                                </div>
+                              )}
+                              {item.notes && (
+                                <span className="text-sm text-muted-foreground">
+                                  {' '}
+                                  — {item.notes}
+                                </span>
+                              )}
                             </span>
-                            <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${statusBadge(item.status)}`}>
+                            <span
+                              className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${statusBadge(item.status)}`}
+                            >
                               {item.status}
                             </span>
                           </li>
@@ -151,7 +170,11 @@ const OrdersDeliveryPage: React.FC = () => {
                           {item.product?.name} × {item.quantity}
                         </strong>
                         <div className="text-sm text-muted-foreground">
-                          Mesa {activeOrders.find((o) => o.id === item.orderId)?.tableNumber}
+                          Mesa{' '}
+                          {
+                            activeOrders.find((o) => o.id === item.orderId)
+                              ?.tableNumber
+                          }
                         </div>
                       </div>
                       <button

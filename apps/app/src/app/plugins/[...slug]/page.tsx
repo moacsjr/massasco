@@ -1,7 +1,11 @@
 'use client';
 
 import React, { useEffect, useState, use } from 'react';
-import { pluginLoader, PluginRoute, ErrorBoundary } from '@temp-workspace/plugin-loader';
+import {
+  pluginLoader,
+  PluginRoute,
+  ErrorBoundary,
+} from '@temp-workspace/plugin-loader';
 import { initializePlugins } from '../../../plugins-registry';
 
 interface PluginPageProps {
@@ -25,7 +29,7 @@ export default function PluginPage({ params }: PluginPageProps) {
     const internalPath = pathParts.join('/');
 
     const resolved = pluginLoader.resolveRoute(pluginId, internalPath);
-    
+
     if (resolved) {
       setRoute(resolved);
     } else {
@@ -35,7 +39,14 @@ export default function PluginPage({ params }: PluginPageProps) {
 
   if (error) {
     return (
-      <div style={{ padding: '20px', color: 'red', border: '1px solid red', borderRadius: '8px' }}>
+      <div
+        style={{
+          padding: '20px',
+          color: 'red',
+          border: '1px solid red',
+          borderRadius: '8px',
+        }}
+      >
         <h2>Erro de Plugin</h2>
         <p>{error}</p>
       </div>
@@ -60,7 +71,7 @@ export default function PluginPage({ params }: PluginPageProps) {
   });
 
   return (
-    <div>      
+    <div>
       <ErrorBoundary name={`Plugin Page: ${pluginId}`}>
         <Component params={routeParams} />
       </ErrorBoundary>

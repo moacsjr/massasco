@@ -24,7 +24,10 @@ interface ExtensionPointProps<K extends keyof ExtensionPoints> {
  *   <ExtensionPoint id="app:layout:header" />           // ✅ OK — {} props
  *   <ExtensionPoint id="nonexistent" />                  // ❌ TS ERROR
  */
-export function ExtensionPoint<K extends keyof ExtensionPoints>({ id, props }: ExtensionPointProps<K>) {
+export function ExtensionPoint<K extends keyof ExtensionPoints>({
+  id,
+  props,
+}: ExtensionPointProps<K>) {
   const contributions = pluginLoader.getExtensions(id);
 
   if (contributions.length === 0) {
@@ -34,7 +37,9 @@ export function ExtensionPoint<K extends keyof ExtensionPoints>({ id, props }: E
   return (
     <>
       {contributions.map((contribution, index) => {
-        const Component = contribution.component as ComponentType<ExtensionPoints[K]>;
+        const Component = contribution.component as ComponentType<
+          ExtensionPoints[K]
+        >;
         return (
           <ErrorBoundary key={`${id}-${index}`} name={`${id} contribution`}>
             <Component {...props!} />

@@ -1,21 +1,37 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ProductDTO, ProductPriceDTO, ProductComplementDTO } from '@temp-workspace/plugin-menu-catalog';
+import {
+  ProductDTO,
+  ProductPriceDTO,
+  ProductComplementDTO,
+} from '@temp-workspace/plugin-menu-catalog';
 import { useUI } from '@temp-workspace/ui-registry';
 
 interface ProductDetailsStepProps {
   product: ProductDTO;
   onBack: () => void;
-  onAdd: (price: ProductPriceDTO, complements: ProductComplementDTO[], notes: string) => void;
+  onAdd: (
+    price: ProductPriceDTO,
+    complements: ProductComplementDTO[],
+    notes: string,
+  ) => void;
 }
 
-const ProductDetailsStep: React.FC<ProductDetailsStepProps> = ({ product, onBack, onAdd }) => {
+const ProductDetailsStep: React.FC<ProductDetailsStepProps> = ({
+  product,
+  onBack,
+  onAdd,
+}) => {
   const { resolve } = useUI();
   const Card = resolve('Card');
 
-  const [selectedPrice, setSelectedPrice] = useState<ProductPriceDTO | null>(null);
-  const [selectedComplements, setSelectedComplements] = useState<ProductComplementDTO[]>([]);
+  const [selectedPrice, setSelectedPrice] = useState<ProductPriceDTO | null>(
+    null,
+  );
+  const [selectedComplements, setSelectedComplements] = useState<
+    ProductComplementDTO[]
+  >([]);
   const [notes, setNotes] = useState('');
   const [priceError, setPriceError] = useState(false);
 
@@ -23,15 +39,20 @@ const ProductDetailsStep: React.FC<ProductDetailsStepProps> = ({ product, onBack
     setSelectedComplements((prev) =>
       prev.find((c) => c.id === complement.id)
         ? prev.filter((c) => c.id !== complement.id)
-        : [...prev, complement]
+        : [...prev, complement],
     );
   };
 
-  const complementGroups = (product.complements || []).reduce<Record<string, ProductComplementDTO[]>>((acc, c) => {
-    if (!acc[c.group]) acc[c.group] = [];
-    acc[c.group].push(c);
-    return acc;
-  }, {} as Record<string, ProductComplementDTO[]>);
+  const complementGroups = (product.complements || []).reduce<
+    Record<string, ProductComplementDTO[]>
+  >(
+    (acc, c) => {
+      if (!acc[c.group]) acc[c.group] = [];
+      acc[c.group].push(c);
+      return acc;
+    },
+    {} as Record<string, ProductComplementDTO[]>,
+  );
 
   const totalPrice =
     (selectedPrice ? Number(selectedPrice.value) : 0) +
@@ -63,14 +84,18 @@ const ProductDetailsStep: React.FC<ProductDetailsStepProps> = ({ product, onBack
       </div>
 
       {product.description && (
-        <p className="text-muted-foreground -mt-2 mb-5">{product.description}</p>
+        <p className="text-muted-foreground -mt-2 mb-5">
+          {product.description}
+        </p>
       )}
 
       {/* Price selection */}
       <div className="mb-4">
         <Card title="Preço" padding="md">
-          {(!product.prices || product.prices.length === 0) ? (
-            <p className="text-destructive">Este produto não possui preços configurados.</p>
+          {!product.prices || product.prices.length === 0 ? (
+            <p className="text-destructive">
+              Este produto não possui preços configurados.
+            </p>
           ) : (
             <div className="flex flex-col gap-2">
               {product.prices.map((price) => (
@@ -78,9 +103,10 @@ const ProductDetailsStep: React.FC<ProductDetailsStepProps> = ({ product, onBack
                   key={price.id}
                   className={`
                     flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-colors
-                    ${selectedPrice?.id === price.id
-                      ? 'border-2 border-brand bg-brand/10'
-                      : 'border border-border bg-card hover:bg-secondary'
+                    ${
+                      selectedPrice?.id === price.id
+                        ? 'border-2 border-brand bg-brand/10'
+                        : 'border border-border bg-card hover:bg-secondary'
                     }
                   `}
                 >
@@ -94,7 +120,9 @@ const ProductDetailsStep: React.FC<ProductDetailsStepProps> = ({ product, onBack
                     }}
                     className="accent-brand"
                   />
-                  <span className="flex-1 text-foreground">{price.description}</span>
+                  <span className="flex-1 text-foreground">
+                    {price.description}
+                  </span>
                   <span className="font-semibold text-green-400">
                     R$ {Number(price.value).toFixed(2)}
                   </span>
@@ -117,15 +145,18 @@ const ProductDetailsStep: React.FC<ProductDetailsStepProps> = ({ product, onBack
             <Card title={group} padding="md">
               <div className="flex flex-col gap-2">
                 {items.map((complement) => {
-                  const isSelected = selectedComplements.some((c) => c.id === complement.id);
+                  const isSelected = selectedComplements.some(
+                    (c) => c.id === complement.id,
+                  );
                   return (
                     <label
                       key={complement.id}
                       className={`
                         flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors
-                        ${isSelected
-                          ? 'border-2 border-brand bg-brand/10'
-                          : 'border border-border bg-card hover:bg-secondary'
+                        ${
+                          isSelected
+                            ? 'border-2 border-brand bg-brand/10'
+                            : 'border border-border bg-card hover:bg-secondary'
                         }
                       `}
                     >

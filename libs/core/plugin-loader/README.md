@@ -27,19 +27,19 @@ export interface ExtensionPoints {
 ```ts
 // Interface no plugin-loader
 interface ExtensionContribution<K extends keyof ExtensionPoints> {
-  point: K;                          // DEVE ser uma chave válida
+  point: K; // DEVE ser uma chave válida
   component: ComponentType<ExtensionPoints[K]>; // DEVE aceitar as props corretas
 }
 ```
 
 ### ✅ Vantagens
 
-| Benefício | Descrição |
-|---|---|
-| **Compilação segura** | Erro de props/nome é pego **antes** do build |
-| **Autocomplete** | IDE sugere pontos válidos e shape exato das props |
-| **Contrato vivo** | A tipagem serve como documentação automática |
-| **Zero runtime overhead** | Toda validação acontece em TypeScript puro |
+| Benefício                 | Descrição                                         |
+| ------------------------- | ------------------------------------------------- |
+| **Compilação segura**     | Erro de props/nome é pego **antes** do build      |
+| **Autocomplete**          | IDE sugere pontos válidos e shape exato das props |
+| **Contrato vivo**         | A tipagem serve como documentação automática      |
+| **Zero runtime overhead** | Toda validação acontece em TypeScript puro        |
 
 ### 💡 Em 1 frase
 
@@ -49,18 +49,18 @@ interface ExtensionContribution<K extends keyof ExtensionPoints> {
 
 ### Plugin Types
 
-| Type | Purpose |
-|---|---|
+| Type              | Purpose                                                   |
+| ----------------- | --------------------------------------------------------- |
 | **FeaturePlugin** | Adds visual UI, routes, and Extension Point contributions |
-| **ServicePlugin** | Provides backend APIs that other plugins can consume |
+| **ServicePlugin** | Provides backend APIs that other plugins can consume      |
 
 ### Core Concepts
 
-| Concept | Description |
-|---|---|
-| **Extension Point** | A named slot in the host layout where plugins can contribute components (e.g., `app:layout:header`) |
-| **Extension Contribution** | A component from a plugin that renders inside an Extension Point |
-| **Plugin Registration** | Static registration in `apps/app/src/plugins-registry.ts` |
+| Concept                    | Description                                                                                         |
+| -------------------------- | --------------------------------------------------------------------------------------------------- |
+| **Extension Point**        | A named slot in the host layout where plugins can contribute components (e.g., `app:layout:header`) |
+| **Extension Contribution** | A component from a plugin that renders inside an Extension Point                                    |
+| **Plugin Registration**    | Static registration in `apps/app/src/plugins-registry.ts`                                           |
 
 ### How It Works
 
@@ -92,15 +92,13 @@ const myPlugin: FeaturePlugin = {
   id: 'my-plugin',
   name: 'My Plugin',
   type: 'feature',
-  routes: [
-    { path: 'dashboard', component: DashboardPage, label: 'Dashboard' }
-  ],
+  routes: [{ path: 'dashboard', component: DashboardPage, label: 'Dashboard' }],
   contributions: [
     {
-      point: 'app:layout:header',        // ✅ Type-checked — must exist in ExtensionPoints
-      component: MyHeader                // ✅ Must accept {} props (as declared)
-    }
-  ]
+      point: 'app:layout:header', // ✅ Type-checked — must exist in ExtensionPoints
+      component: MyHeader, // ✅ Must accept {} props (as declared)
+    },
+  ],
 };
 
 pluginLoader.register(myPlugin);
@@ -164,14 +162,14 @@ npx nx build plugin-loader
 
 ## Exports
 
-| Export | Type | Description |
-|---|---|---|
-| `pluginLoader` | `PluginLoaderStore` (singleton) | Plugin registration and discovery |
-| `ExtensionPoint` | React Component | Renders contributions for a given point |
-| `ErrorBoundary` | React Component | Catches plugin rendering errors |
-| `ExtensionPoints` | interface | Central type-safe registry of all extension points |
-| `ExtensionContribution<K>` | interface | Typed plugin contribution to an extension point |
-| `ExtensionPointDefinition<K>` | interface | Metadata describing an extension point |
-| `FeaturePlugin` | interface | Plugin that adds UI and routes |
-| `ServicePlugin` | interface | Plugin that provides backend APIs |
-| `DevXPPlugin` | union type | `FeaturePlugin | ServicePlugin` |
+| Export                        | Type                            | Description                                        |
+| ----------------------------- | ------------------------------- | -------------------------------------------------- | -------------- |
+| `pluginLoader`                | `PluginLoaderStore` (singleton) | Plugin registration and discovery                  |
+| `ExtensionPoint`              | React Component                 | Renders contributions for a given point            |
+| `ErrorBoundary`               | React Component                 | Catches plugin rendering errors                    |
+| `ExtensionPoints`             | interface                       | Central type-safe registry of all extension points |
+| `ExtensionContribution<K>`    | interface                       | Typed plugin contribution to an extension point    |
+| `ExtensionPointDefinition<K>` | interface                       | Metadata describing an extension point             |
+| `FeaturePlugin`               | interface                       | Plugin that adds UI and routes                     |
+| `ServicePlugin`               | interface                       | Plugin that provides backend APIs                  |
+| `DevXPPlugin`                 | union type                      | `FeaturePlugin                                     | ServicePlugin` |

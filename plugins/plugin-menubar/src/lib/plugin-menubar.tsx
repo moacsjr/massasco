@@ -20,12 +20,12 @@ export const menubarPlugin: FeaturePlugin = {
       name: 'menubar:items',
       title: 'Itens do Menu',
       description: 'Permite adicionar botões e links à barra de menu superior.',
-    }
+    },
   ],
   contributions: [
     {
       point: 'main-template:header-menu',
-      component: MenuBarComponent
-    }
-  ]
+      component: MenuBarComponent,
+    },
+  ],
 };

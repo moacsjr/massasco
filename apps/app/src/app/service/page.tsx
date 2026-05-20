@@ -32,7 +32,11 @@ export default function ServicePage() {
         }}
       >
         <h1>Listagem de Service</h1>
-        <Button variant="primary" size="md" onClick={() => router.push('/service/new')}>
+        <Button
+          variant="primary"
+          size="md"
+          onClick={() => router.push('/service/new')}
+        >
           Novo Service
         </Button>
       </div>

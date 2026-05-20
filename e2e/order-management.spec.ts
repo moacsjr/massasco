@@ -35,9 +35,13 @@ test.describe('Menu Catalog Plugin', () => {
 
     // Category buttons should be visible
     await expect(page.getByRole('button', { name: 'Entradas' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Pratos Principais' })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Pratos Principais' }),
+    ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Bebidas' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Sobremesas' })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Sobremesas' }),
+    ).toBeVisible();
   });
 
   test('filters products by category', async ({ page }) => {
@@ -115,7 +119,10 @@ test.describe('Orders & Delivery Plugin', () => {
     await expect(page.getByText('Total:')).toBeVisible();
   });
 
-  test('active tab shows no active orders initially', async ({ page, request }) => {
+  test('active tab shows no active orders initially', async ({
+    page,
+    request,
+  }) => {
     await request.post('/api/test/reset');
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
@@ -157,7 +164,9 @@ test.describe('KDS Plugin', () => {
     await page.locator('nav button[title="Cozinha"]').first().click();
 
     // Should show KDS heading
-    await expect(page.getByRole('heading', { name: 'Cozinha — KDS' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Cozinha — KDS' }),
+    ).toBeVisible();
 
     // Should show two columns
     await expect(page.getByText(/Pendentes/)).toBeVisible();
@@ -170,7 +179,9 @@ test.describe('Payments Plugin', () => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
-    const navRailButton = page.locator('nav button[title="Pagamentos"]').first();
+    const navRailButton = page
+      .locator('nav button[title="Pagamentos"]')
+      .first();
     await expect(navRailButton).toBeVisible();
   });
 
@@ -181,7 +192,9 @@ test.describe('Payments Plugin', () => {
     await page.locator('nav button[title="Pagamentos"]').first().click();
 
     // Should show heading
-    await expect(page.getByRole('heading', { name: 'Pagamentos' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Pagamentos' }),
+    ).toBeVisible();
   });
 
   test('shows no open orders initially', async ({ page, request }) => {
@@ -198,10 +211,14 @@ test.describe('Payments Plugin', () => {
 test.describe('Full Order Flow', () => {
   test.beforeEach(async ({ request }) => {
     // Clean DB before each test to avoid data pollution
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     await request.post('/api/test/reset', { data: {} }).catch(() => {});
   });
 
-  test('complete order lifecycle: create → kitchen → deliver → pay', async ({ page, request }) => {
+  test('complete order lifecycle: create → kitchen → deliver → pay', async ({
+    page,
+    request,
+  }) => {
     // Seed: create category + product
     const catRes = await request.post('/api/menu/categories', {
       data: { name: 'Flow Test Cat', description: 'Test' },
@@ -217,9 +234,7 @@ test.describe('Full Order Flow', () => {
     const orderResponse = await request.post('/api/orders', {
       data: {
         tableNumber: 5,
-        items: [
-          { productId: product.id, quantity: 2, notes: 'Sem gelo' },
-        ],
+        items: [{ productId: product.id, quantity: 2, notes: 'Sem gelo' }],
       },
     });
     expect(orderResponse.ok()).toBe(true);
@@ -249,10 +264,12 @@ test.describe('Full Order Flow', () => {
     await expect(page.locator('text=Mesa 5')).toBeVisible();
 
     // Step 4: Kitchen starts preparing
-    const startButtons = page.getByRole('button', { name: '▶ Iniciar Preparo' });
+    const startButtons = page.getByRole('button', {
+      name: '▶ Iniciar Preparo',
+    });
     await startButtons.first().click();
-    await page.waitForTimeout(1000);  // Wait for SSE update
-    await page.reload({ waitUntil: 'networkidle' });  // Force KDS refresh
+    await page.waitForTimeout(1000); // Wait for SSE update
+    await page.reload({ waitUntil: 'networkidle' }); // Force KDS refresh
     await page.locator('nav button[title="Cozinha"]').first().click();
 
     // Should move to "Em Preparo" column
@@ -308,9 +325,7 @@ test.describe('Full Order Flow', () => {
     await request.post('/api/orders', {
       data: {
         tableNumber: 3,
-        items: [
-          { productId: product.id, quantity: 1, notes: 'Mal passado' },
-        ],
+        items: [{ productId: product.id, quantity: 1, notes: 'Mal passado' }],
       },
     });
 
@@ -399,7 +414,10 @@ test.describe('SSE Events', () => {
     expect(hasSSEConnection).toBe(true);
   });
 
-  test('order creation publishes events verifiable via audit log', async ({ page, request }) => {
+  test('order creation publishes events verifiable via audit log', async ({
+    page,
+    request,
+  }) => {
     // Create a category + product first
     const catRes = await request.post('/api/menu/categories', {
       data: { name: 'SSE Test Cat', description: 'Test' },
@@ -431,7 +449,13 @@ test.describe('Nav Rail Summary', () => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
-    const expectedItems = ['Navigation', 'Cardápio', 'Pedidos', 'Cozinha', 'Pagamentos'];
+    const expectedItems = [
+      'Navigation',
+      'Cardápio',
+      'Pedidos',
+      'Cozinha',
+      'Pagamentos',
+    ];
     for (const item of expectedItems) {
       const button = page.locator(`nav button[title="${item}"]`).first();
       await expect(button).toBeVisible();

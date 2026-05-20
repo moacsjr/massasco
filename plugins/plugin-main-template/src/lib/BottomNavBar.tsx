@@ -16,28 +16,29 @@ export const BottomNavBar: React.FC = () => {
   const pathname = usePathname();
 
   // Get all feature plugins and their routes where showInMenu is true
-  const plugins = pluginLoader.getAllPlugins().filter((p): p is FeaturePlugin => p.type === 'feature');
-  
-  const menuRoutes = plugins.flatMap(plugin => 
+  const plugins = pluginLoader
+    .getAllPlugins()
+    .filter((p): p is FeaturePlugin => p.type === 'feature');
+
+  const menuRoutes = plugins.flatMap((plugin) =>
     (plugin.routes || [])
-      .filter(route => route.showInMenu === true)
-      .map(route => ({
+      .filter((route) => route.showInMenu === true)
+      .map((route) => ({
         ...route,
         pluginId: plugin.id,
         // The path in the portal is /plugins/[pluginId]/[routePath]
-        fullPath: `/plugins/${plugin.id}${route.path ? `/${route.path}` : ''}`
-      }))
+        fullPath: `/plugins/${plugin.id}${route.path ? `/${route.path}` : ''}`,
+      })),
   );
 
   if (menuRoutes.length === 0) return null;
 
   return (
-    <nav
-      className="fixed bottom-0 left-0 right-0 z-sticky h-14 bg-card border-t border-border flex items-center justify-around md:hidden"
-    >
+    <nav className="fixed bottom-0 left-0 right-0 z-sticky h-14 bg-card border-t border-border flex items-center justify-around md:hidden">
       {menuRoutes.map((route, index) => {
         const iconStr = route.icon ?? '📄';
-        const isActive = pathname === route.fullPath || pathname === `${route.fullPath}/`;
+        const isActive =
+          pathname === route.fullPath || pathname === `${route.fullPath}/`;
 
         return (
           <Link
@@ -52,7 +53,9 @@ export const BottomNavBar: React.FC = () => {
             <span className="text-lg">
               <Icon name={iconStr} size="md" />
             </span>
-            <span className="text-[10px] truncate max-w-full px-1">{route.label.split(' ')[0]}</span>
+            <span className="text-[10px] truncate max-w-full px-1">
+              {route.label.split(' ')[0]}
+            </span>
           </Link>
         );
       })}

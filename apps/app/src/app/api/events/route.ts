@@ -17,7 +17,10 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
   const stream = new ReadableStream({
     start(controller) {
-      console.log('[SSE] Client connected. Listeners before:', sseBus.listenerCount());
+      console.log(
+        '[SSE] Client connected. Listeners before:',
+        sseBus.listenerCount(),
+      );
 
       const listener = (event: SSEEvent) => {
         const data = `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`;

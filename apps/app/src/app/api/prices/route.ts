@@ -7,7 +7,10 @@ export async function GET(req: Request) {
   const productId = searchParams.get('productId');
 
   if (!productId) {
-    return NextResponse.json({ error: 'productId is required' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'productId is required' },
+      { status: 400 },
+    );
   }
 
   const prices = await prisma.productPrice.findMany({
@@ -29,12 +32,18 @@ export async function POST(req: Request) {
   const { productId, description, value } = body;
 
   if (!productId || !description || value == null) {
-    return NextResponse.json({ error: 'productId, description, and value are required' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'productId, description, and value are required' },
+      { status: 400 },
+    );
   }
 
   const price = await prisma.productPrice.create({
     data: { productId, description, value },
   });
 
-  return NextResponse.json({ ...price, value: Number(price.value) }, { status: 201 });
+  return NextResponse.json(
+    { ...price, value: Number(price.value) },
+    { status: 201 },
+  );
 }

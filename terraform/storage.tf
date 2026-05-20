@@ -101,9 +101,9 @@ resource "aws_s3_bucket_policy" "media_cloudfront_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Action    = "s3:GetObject"
-        Effect    = "Allow"
-        Resource  = "${aws_s3_bucket.media.arn}/*"
+        Action   = "s3:GetObject"
+        Effect   = "Allow"
+        Resource = "${aws_s3_bucket.media.arn}/*"
         Principal = {
           Service = "cloudfront.amazonaws.com"
         }

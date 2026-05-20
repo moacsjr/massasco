@@ -20,7 +20,11 @@ export default function FeaturePage() {
         }}
       >
         <h1>Listagem de Feature</h1>
-        <Button variant="primary" size="md" onClick={() => router.push('/feature/new')}>
+        <Button
+          variant="primary"
+          size="md"
+          onClick={() => router.push('/feature/new')}
+        >
           Novo Feature
         </Button>
       </div>

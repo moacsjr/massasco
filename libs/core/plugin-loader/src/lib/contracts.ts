@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import { ComponentType, ReactNode } from 'react';
 
 // ============================================================================
@@ -144,9 +145,11 @@ export interface ExtensionPoints {
 /**
  * Helper type to extract props of an extension point
  */
-export type ExtensionPointProps<K extends keyof ExtensionPoints> = ExtensionPoints[K];
+export type ExtensionPointProps<K extends keyof ExtensionPoints> =
+  ExtensionPoints[K];
 
 /**
  * Helper type for components that contribute to an extension point
  */
-export type ExtensionContributionComponent<K extends keyof ExtensionPoints> = ComponentType<ExtensionPointProps<K>>;
+export type ExtensionContributionComponent<K extends keyof ExtensionPoints> =
+  ComponentType<ExtensionPointProps<K>>;

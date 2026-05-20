@@ -6,7 +6,11 @@ export async function GET(req: Request) {
   const categoryId = searchParams.get('categoryId');
 
   const where = categoryId ? { categoryId } : {};
-  const products = await prisma.product.findMany({ where, include: { category: true }, orderBy: { name: 'asc' } });
+  const products = await prisma.product.findMany({
+    where,
+    include: { category: true },
+    orderBy: { name: 'asc' },
+  });
   return NextResponse.json(products);
 }
 

@@ -4,9 +4,12 @@ import React from 'react';
 import { pluginLoader, ExtensionPoint } from '@temp-workspace/plugin-loader';
 
 export const HeaderFooter: React.FC = () => {
-  const hasLeft = pluginLoader.getExtensions('main-template:header-footer-left').length > 0;
-  const hasCenter = pluginLoader.getExtensions('main-template:header-footer-center').length > 0;
-  const hasRight = pluginLoader.getExtensions('main-template:header-footer-right').length > 0;
+  const hasLeft =
+    pluginLoader.getExtensions('main-template:header-footer-left').length > 0;
+  const hasCenter =
+    pluginLoader.getExtensions('main-template:header-footer-center').length > 0;
+  const hasRight =
+    pluginLoader.getExtensions('main-template:header-footer-right').length > 0;
 
   if (!hasLeft && !hasCenter && !hasRight) return null;
 

@@ -1,14 +1,21 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   const price = await prisma.productPrice.findUnique({ where: { id } });
-  if (!price) return NextResponse.json({ error: 'Price not found' }, { status: 404 });
+  if (!price)
+    return NextResponse.json({ error: 'Price not found' }, { status: 404 });
   return NextResponse.json({ ...price, value: Number(price.value) });
 }
 
-export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   const body = await req.json();
   const { description, value } = body;
@@ -24,7 +31,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   }
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
 
   try {

@@ -25,7 +25,9 @@ test.describe('Main Template Layout', () => {
     await expect(page.getByText('DevXP Portal', { exact: true })).toBeVisible();
   });
 
-  test('renders header menu area (menubar items extension point)', async ({ page }) => {
+  test('renders header menu area (menubar items extension point)', async ({
+    page,
+  }) => {
     // The menubarPlugin contributes a div with the ExtensionPoint
     // Even if empty, the container div should exist in the DOM
     const header = page.locator('header').first();
@@ -58,12 +60,16 @@ test.describe('Left Menu Section (Nav Rail + Drawer)', () => {
 });
 
 test.describe('Right Menu Section (Tab Drawer)', () => {
-  test('right menu trigger is hidden when no items registered', async ({ page }) => {
+  test('right menu trigger is hidden when no items registered', async ({
+    page,
+  }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
     // No right menu items are registered by default
-    const rightPanelTriggers = page.locator('div[style*="position: fixed"]').locator('button');
+    const rightPanelTriggers = page
+      .locator('div[style*="position: fixed"]')
+      .locator('button');
     expect(await rightPanelTriggers.count()).toBe(0);
   });
 });
@@ -98,7 +104,9 @@ test.describe('Footer Section', () => {
 });
 
 test.describe('Extension Points Availability', () => {
-  test('header menu extension point accepts contributions', async ({ page }) => {
+  test('header menu extension point accepts contributions', async ({
+    page,
+  }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
@@ -136,20 +144,28 @@ test.describe('Menu Nav Bar Plugin', () => {
 
     // The menu-nav-bar plugin contributes to main-template:left-menu
     // It should appear as a nav rail button with the 🧭 icon
-    const navRailButton = page.locator('nav button[title="Navigation"]').first();
+    const navRailButton = page
+      .locator('nav button[title="Navigation"]')
+      .first();
     await expect(navRailButton).toBeVisible();
   });
 
-  test('clicking Navigation icon opens drawer with route list', async ({ page }) => {
+  test('clicking Navigation icon opens drawer with route list', async ({
+    page,
+  }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
     // Click the nav rail button
-    const navRailButton = page.locator('nav button[title="Navigation"]').first();
+    const navRailButton = page
+      .locator('nav button[title="Navigation"]')
+      .first();
     await navRailButton.click();
 
     // Drawer should open showing "Navigation" heading
-    await expect(page.getByRole('heading', { name: 'Navigation' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Navigation' }),
+    ).toBeVisible();
   });
 
   test('drawer shows registered plugin routes', async ({ page }) => {
@@ -157,7 +173,9 @@ test.describe('Menu Nav Bar Plugin', () => {
     await page.waitForLoadState('networkidle');
 
     // Open the navigation drawer
-    const navRailButton = page.locator('nav button[title="Navigation"]').first();
+    const navRailButton = page
+      .locator('nav button[title="Navigation"]')
+      .first();
     await navRailButton.click();
 
     // Should see plugin group headers
@@ -170,7 +188,9 @@ test.describe('Menu Nav Bar Plugin', () => {
     await page.waitForLoadState('networkidle');
 
     // Open the navigation drawer
-    const navRailButton = page.locator('nav button[title="Navigation"]').first();
+    const navRailButton = page
+      .locator('nav button[title="Navigation"]')
+      .first();
     await navRailButton.click();
 
     // Click on "Meu Perfil" link

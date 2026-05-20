@@ -27,7 +27,9 @@ export interface PluginRoute {
  *     component: MyHeader          // ✅ must accept {} props
  *   };
  */
-export interface ExtensionContribution<K extends keyof ExtensionPoints = keyof ExtensionPoints> {
+export interface ExtensionContribution<
+  K extends keyof ExtensionPoints = keyof ExtensionPoints,
+> {
   point: K;
   component: ComponentType<ExtensionPoints[K]>;
   metadata?: any;
@@ -39,7 +41,9 @@ export interface ExtensionContribution<K extends keyof ExtensionPoints = keyof E
  * Like `ExtensionContribution`, the generic `K` is bounded by `keyof ExtensionPoints`
  * to guarantee that `name` is always a valid, typed extension point ID.
  */
-export interface ExtensionPointDefinition<K extends keyof ExtensionPoints = keyof ExtensionPoints> {
+export interface ExtensionPointDefinition<
+  K extends keyof ExtensionPoints = keyof ExtensionPoints,
+> {
   name: K;
   title: string;
   description: string;
@@ -78,12 +82,14 @@ class PluginLoaderStore {
 
   register(plugin: DevXPPlugin) {
     if (this.plugins.has(plugin.id)) {
-      console.warn(`[PluginLoader] Plugin with id ${plugin.id} is already registered.`);
+      console.warn(
+        `[PluginLoader] Plugin with id ${plugin.id} is already registered.`,
+      );
       return;
     }
 
     this.plugins.set(plugin.id, plugin);
-    
+
     if (plugin.type === 'service') {
       this.services.set(plugin.id, plugin.api);
     }
@@ -91,21 +97,23 @@ class PluginLoaderStore {
     if (plugin.type === 'feature') {
       // Registrar extension points oferecidos pelo plugin
       if (plugin.extensionPoints) {
-        plugin.extensionPoints.forEach(ep => {
+        plugin.extensionPoints.forEach((ep) => {
           this.extensionPoints.set(ep.name, ep);
         });
       }
 
       // Registrar contribuições do plugin
       if (plugin.contributions) {
-        plugin.contributions.forEach(contribution => {
+        plugin.contributions.forEach((contribution) => {
           const existing = this.extensions.get(contribution.point) || [];
           this.extensions.set(contribution.point, [...existing, contribution]);
         });
       }
     }
 
-    console.log(`[PluginLoader] Registered ${plugin.type}: ${plugin.name} (${plugin.id})`);
+    console.log(
+      `[PluginLoader] Registered ${plugin.type}: ${plugin.name} (${plugin.id})`,
+    );
   }
 
   getPlugin(id: string): DevXPPlugin | undefined {
@@ -116,8 +124,12 @@ class PluginLoaderStore {
     return Array.from(this.plugins.values());
   }
 
-  getExtensionPoint<K extends keyof ExtensionPoints>(name: K): ExtensionPointDefinition<K> | undefined {
-    return this.extensionPoints.get(name) as ExtensionPointDefinition<K> | undefined;
+  getExtensionPoint<K extends keyof ExtensionPoints>(
+    name: K,
+  ): ExtensionPointDefinition<K> | undefined {
+    return this.extensionPoints.get(name) as
+      | ExtensionPointDefinition<K>
+      | undefined;
   }
 
   getAllExtensionPoints(): ExtensionPointDefinition[] {
@@ -132,22 +144,28 @@ class PluginLoaderStore {
     return service as T;
   }
 
-  getExtensions<K extends keyof ExtensionPoints>(pointId: K): ExtensionContribution<K>[] {
-    return (this.extensions.get(pointId) || []) as unknown as ExtensionContribution<K>[];
+  getExtensions<K extends keyof ExtensionPoints>(
+    pointId: K,
+  ): ExtensionContribution<K>[] {
+    return (this.extensions.get(pointId) ||
+      []) as unknown as ExtensionContribution<K>[];
   }
 
   resolveRoute(pluginId: string, path: string): PluginRoute | undefined {
     const plugin = this.getPlugin(pluginId);
-    if (!plugin || plugin.type !== 'feature' || !plugin.routes) return undefined;
+    if (!plugin || plugin.type !== 'feature' || !plugin.routes)
+      return undefined;
 
-    const route = plugin.routes.find(r => {
+    const route = plugin.routes.find((r) => {
       if (r.path === path || `/${r.path}` === path) return true;
 
       // Support dynamic segments like :id
       const routeParts = r.path.split('/');
       const pathParts = path.split('/');
       if (routeParts.length !== pathParts.length) return false;
-      return routeParts.every((part, i) => part.startsWith(':') || part === pathParts[i]);
+      return routeParts.every(
+        (part, i) => part.startsWith(':') || part === pathParts[i],
+      );
     });
 
     return route;

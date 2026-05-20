@@ -1,12 +1,20 @@
 import { ServicePlugin } from '@temp-workspace/plugin-loader';
 
 export interface AuditAPI {
-  log(module: string, eventType: string, payload: Record<string, unknown>): Promise<void>;
+  log(
+    module: string,
+    eventType: string,
+    payload: Record<string, unknown>,
+  ): Promise<void>;
   getLogs(filter?: { module?: string; eventType?: string }): Promise<unknown[]>;
 }
 
 const auditAPI: AuditAPI = {
-  async log(module: string, eventType: string, payload: Record<string, unknown>) {
+  async log(
+    module: string,
+    eventType: string,
+    payload: Record<string, unknown>,
+  ) {
     try {
       await fetch('/api/audit', {
         method: 'POST',

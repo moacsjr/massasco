@@ -9,7 +9,7 @@ export default function <%= name %>Page() {
   const router = useRouter();
   const [entities, setEntities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   const Card = resolve('Card');
   const Button = resolve('Button');
 

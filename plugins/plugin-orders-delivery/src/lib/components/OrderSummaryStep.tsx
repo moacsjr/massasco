@@ -1,7 +1,10 @@
 'use client';
 
 import React from 'react';
-import { ProductPriceDTO, ProductComplementDTO } from '@temp-workspace/plugin-menu-catalog';
+import {
+  ProductPriceDTO,
+  ProductComplementDTO,
+} from '@temp-workspace/plugin-menu-catalog';
 import { useUI } from '@temp-workspace/ui-registry';
 import { CartItem } from '../types';
 
@@ -29,12 +32,14 @@ const OrderSummaryStep: React.FC<OrderSummaryStepProps> = ({
       (Number(item.selectedPrice.value) +
         item.selectedComplements.reduce((s, c) => s + Number(c.value), 0)) *
         item.quantity,
-    0
+    0,
   );
 
   return (
     <div>
-      <h3 className="mt-0 mb-4 text-foreground">Resumo do Pedido — Mesa {tableNumber}</h3>
+      <h3 className="mt-0 mb-4 text-foreground">
+        Resumo do Pedido — Mesa {tableNumber}
+      </h3>
 
       {cart.length === 0 ? (
         <p className="text-muted-foreground">Nenhum item no carrinho.</p>
@@ -45,7 +50,10 @@ const OrderSummaryStep: React.FC<OrderSummaryStepProps> = ({
             {cart.map((item, index) => {
               const itemTotal =
                 (Number(item.selectedPrice.value) +
-                  item.selectedComplements.reduce((s, c) => s + Number(c.value), 0)) *
+                  item.selectedComplements.reduce(
+                    (s, c) => s + Number(c.value),
+                    0,
+                  )) *
                 item.quantity;
 
               return (
@@ -57,11 +65,15 @@ const OrderSummaryStep: React.FC<OrderSummaryStepProps> = ({
                           {item.product.name} × {item.quantity}
                         </div>
                         <div className="text-sm text-muted-foreground mt-1">
-                          {item.selectedPrice.description} — R$ {Number(item.selectedPrice.value).toFixed(2)}
+                          {item.selectedPrice.description} — R${' '}
+                          {Number(item.selectedPrice.value).toFixed(2)}
                         </div>
                         {item.selectedComplements.length > 0 && (
                           <div className="text-sm text-muted-foreground mt-0.5">
-                            + {item.selectedComplements.map((c) => c.title).join(', ')}
+                            +{' '}
+                            {item.selectedComplements
+                              .map((c) => c.title)
+                              .join(', ')}
                           </div>
                         )}
                         {item.notes && (

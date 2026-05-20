@@ -9,7 +9,7 @@ export default function New<%= name %>Page() {
   const router = useRouter();
   const [formData, setFormData] = useState({ title: '', description: '' });
   const [isSaving, setIsSaving] = useState(false);
-  
+
   const Card = resolve('Card');
   const Button = resolve('Button');
   const Input = resolve('Input');
@@ -46,21 +46,21 @@ export default function New<%= name %>Page() {
     <div style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto' }}>
       <Card title="Criar Novo <%= name %>">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <Input 
-            name="title" 
-            label="Título" 
-            placeholder="Digite o título do <%= name %>" 
+          <Input
+            name="title"
+            label="Título"
+            placeholder="Digite o título do <%= name %>"
             value={formData.title}
             onChange={(e: any) => setFormData({ ...formData, title: e.target.value })}
           />
-          <Input 
-            name="description" 
-            label="Descrição" 
-            placeholder="Opcional" 
+          <Input
+            name="description"
+            label="Descrição"
+            placeholder="Opcional"
             value={formData.description}
             onChange={(e: any) => setFormData({ ...formData, description: e.target.value })}
           />
-          
+
           <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
             <Button onClick={handleSave} isLoading={isSaving}>
               {isSaving ? 'Salvando...' : 'Salvar'}

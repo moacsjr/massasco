@@ -8,8 +8,10 @@ interface ContentSectionProps {
 }
 
 export const ContentSection: React.FC<ContentSectionProps> = ({ children }) => {
-  const hasLeft = pluginLoader.getExtensions('main-template:content-left').length > 0;
-  const hasRight = pluginLoader.getExtensions('main-template:content-right').length > 0;
+  const hasLeft =
+    pluginLoader.getExtensions('main-template:content-left').length > 0;
+  const hasRight =
+    pluginLoader.getExtensions('main-template:content-right').length > 0;
 
   return (
     <div className="flex flex-col flex-1 min-w-0">

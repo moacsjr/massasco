@@ -17,7 +17,7 @@ module.exports = withNx(
       '@temp-workspace/ui-contracts',
       '@temp-workspace/ui-registry',
       '@temp-workspace/plugin-loader',
-      '@temp-workspace/token-bridge'
+      '@temp-workspace/token-bridge',
     ],
     format: ['esm'],
     assets: [{ input: '.', output: '.', glob: 'README.md' }],

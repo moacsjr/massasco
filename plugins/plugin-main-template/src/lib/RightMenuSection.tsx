@@ -25,7 +25,9 @@ export const RightMenuSection: React.FC = () => {
     };
   });
 
-  const triggerIcon = (contributions[activeTab]?.metadata as RightMenuItemProps | undefined)?.tabIcon ?? '📋';
+  const triggerIcon =
+    (contributions[activeTab]?.metadata as RightMenuItemProps | undefined)
+      ?.tabIcon ?? '📋';
 
   return (
     <>
@@ -50,16 +52,14 @@ export const RightMenuSection: React.FC = () => {
         width="380px"
         onClose={() => setIsOpen(false)}
       >
-        <Tabs
-          items={tabItems}
-          activeIndex={activeTab}
-          onChange={setActiveTab}
-        >
+        <Tabs items={tabItems} activeIndex={activeTab} onChange={setActiveTab}>
           {(() => {
             const contribution = contributions[activeTab];
             if (!contribution) return null;
             const ContributionComponent = contribution.component;
-            const props = contribution.metadata as RightMenuItemProps | undefined;
+            const props = contribution.metadata as
+              | RightMenuItemProps
+              | undefined;
             return React.createElement(ContributionComponent, {
               tabName: props?.tabName ?? '',
               tabIcon: props?.tabIcon ?? '',

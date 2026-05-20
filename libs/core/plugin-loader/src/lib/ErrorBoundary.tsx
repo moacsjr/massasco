@@ -16,7 +16,7 @@ interface State {
 
 export class ErrorBoundary extends Component<Props, State> {
   public override state: State = {
-    hasError: false
+    hasError: false,
   };
 
   public static getDerivedStateFromError(error: Error): State {
@@ -24,7 +24,11 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error(`[ErrorBoundary] Uncaught error in plugin ${this.props.name || 'unknown'}:`, error, errorInfo);
+    console.error(
+      `[ErrorBoundary] Uncaught error in plugin ${this.props.name || 'unknown'}:`,
+      error,
+      errorInfo,
+    );
   }
 
   public override render() {
@@ -34,17 +38,20 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div style={{ 
-          padding: '8px 12px', 
-          margin: '4px',
-          backgroundColor: '#fff1f0', 
-          border: '1px solid #ffa39e', 
-          borderRadius: '4px',
-          color: '#cf1322',
-          fontSize: '0.85rem',
-          display: 'inline-block'
-        }}>
-          ⚠️ <strong>Plugin Error</strong> {this.props.name && `(${this.props.name})`}
+        <div
+          style={{
+            padding: '8px 12px',
+            margin: '4px',
+            backgroundColor: '#fff1f0',
+            border: '1px solid #ffa39e',
+            borderRadius: '4px',
+            color: '#cf1322',
+            fontSize: '0.85rem',
+            display: 'inline-block',
+          }}
+        >
+          ⚠️ <strong>Plugin Error</strong>{' '}
+          {this.props.name && `(${this.props.name})`}
           <div style={{ fontSize: '0.75rem', marginTop: '4px', opacity: 0.8 }}>
             {this.state.error?.message}
           </div>

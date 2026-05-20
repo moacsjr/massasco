@@ -36,7 +36,10 @@ export async function POST(req: Request) {
   const { name, description, imageUrl, categoryId, prices, complements } = body;
 
   if (!name || !categoryId || !prices || prices.length === 0) {
-    return NextResponse.json({ error: 'name, categoryId, and at least 1 price are required' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'name, categoryId, and at least 1 price are required' },
+      { status: 400 },
+    );
   }
 
   const product = await prisma.$transaction(async (tx) => {
@@ -54,13 +57,20 @@ export async function POST(req: Request) {
 
     if (complements && Array.isArray(complements) && complements.length > 0) {
       await tx.productComplement.createMany({
-        data: complements.map((c: { group: string; title: string; description?: string; value?: number }) => ({
-          productId: created.id,
-          group: c.group,
-          title: c.title,
-          description: c.description,
-          value: c.value ?? 0,
-        })),
+        data: complements.map(
+          (c: {
+            group: string;
+            title: string;
+            description?: string;
+            value?: number;
+          }) => ({
+            productId: created.id,
+            group: c.group,
+            title: c.title,
+            description: c.description,
+            value: c.value ?? 0,
+          }),
+        ),
       });
     }
 

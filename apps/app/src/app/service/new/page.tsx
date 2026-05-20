@@ -70,10 +70,19 @@ export default function NewServicePage() {
           />
 
           <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-            <Button variant="primary" size="md" onClick={handleSave} isLoading={isSaving}>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleSave}
+              isLoading={isSaving}
+            >
               {isSaving ? 'Salvando...' : 'Salvar'}
             </Button>
-            <Button variant="outline" size="md" onClick={() => router.push('/service')}>
+            <Button
+              variant="outline"
+              size="md"
+              onClick={() => router.push('/service')}
+            >
               Cancelar
             </Button>
           </div>

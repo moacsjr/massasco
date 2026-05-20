@@ -1,7 +1,12 @@
 'use client';
 
 import React from 'react';
-import { FeaturePlugin, ExtensionContribution, pluginLoader, PluginRoute } from '@temp-workspace/plugin-loader';
+import {
+  FeaturePlugin,
+  ExtensionContribution,
+  pluginLoader,
+  PluginRoute,
+} from '@temp-workspace/plugin-loader';
 import { useUI } from '@temp-workspace/ui-registry';
 import { LeftMenuItemProps } from '@temp-workspace/plugin-loader';
 import Link from 'next/link';
@@ -16,28 +21,31 @@ const NavBarContent: React.FC = () => {
 
   const allPlugins = pluginLoader.getAllPlugins();
   const featurePlugins = allPlugins.filter(
-    (p): p is FeaturePlugin => p.type === 'feature' && !!(p as FeaturePlugin).routes
+    (p): p is FeaturePlugin =>
+      p.type === 'feature' && !!(p as FeaturePlugin).routes,
   );
 
   return (
     <Card title="Navigation" padding="none">
       <nav style={{ padding: '12px' }}>
-        {featurePlugins.map(plugin => (
+        {featurePlugins.map((plugin) => (
           <div key={plugin.id} style={{ marginBottom: '16px' }}>
             {/* Plugin group header */}
-            <div style={{
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              textTransform: 'uppercase',
-              color: '#6b7280',
-              marginBottom: '6px',
-              letterSpacing: '0.05em',
-            }}>
+            <div
+              style={{
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                color: '#6b7280',
+                marginBottom: '6px',
+                letterSpacing: '0.05em',
+              }}
+            >
               {plugin.name}
             </div>
             {/* Routes */}
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-              {plugin.routes!.map(route => {
+              {plugin.routes!.map((route) => {
                 const href = `/plugins/${plugin.id}/${route.path}`;
                 return (
                   <li key={route.path} style={{ marginBottom: '2px' }}>
@@ -53,10 +61,12 @@ const NavBarContent: React.FC = () => {
                         transition: 'background-color 0.15s',
                       }}
                       onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLElement).style.backgroundColor = '#f3f4f6';
+                        (e.currentTarget as HTMLElement).style.backgroundColor =
+                          '#f3f4f6';
                       }}
                       onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                        (e.currentTarget as HTMLElement).style.backgroundColor =
+                          'transparent';
                       }}
                     >
                       {route.label}

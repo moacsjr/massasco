@@ -15,12 +15,12 @@ const userServiceAPI: UserServiceAPI = {
   createUser: async (user) => {
     console.log('Creating user:', user);
     return { id: Math.random().toString(), ...user };
-  }
+  },
 };
 
 export const userServicePlugin: ServicePlugin = {
   id: 'user-service',
   name: 'User Service',
   type: 'service',
-  api: userServiceAPI
+  api: userServiceAPI,
 };

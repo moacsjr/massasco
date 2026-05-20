@@ -1,4 +1,8 @@
-import { ProductDTO, ProductPriceDTO, ProductComplementDTO } from '@temp-workspace/plugin-menu-catalog';
+import {
+  ProductDTO,
+  ProductPriceDTO,
+  ProductComplementDTO,
+} from '@temp-workspace/plugin-menu-catalog';
 
 // ============================================================================
 // Order Item (from API)

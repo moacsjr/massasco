@@ -4,7 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUI } from '@temp-workspace/ui-registry';
 import { pluginLoader } from '@temp-workspace/plugin-loader';
-import { MenuCatalogAPI, ProductDTO, ProductPriceDTO, ProductComplementDTO, CategoryDTO } from '@temp-workspace/plugin-menu-catalog';
+import {
+  MenuCatalogAPI,
+  ProductDTO,
+  ProductPriceDTO,
+  ProductComplementDTO,
+  CategoryDTO,
+} from '@temp-workspace/plugin-menu-catalog';
 import { CartItem, WizardStep } from '../types';
 import ProductListStep from './ProductListStep';
 import ProductDetailsStep from './ProductDetailsStep';
@@ -21,7 +27,9 @@ const NewOrderWizard: React.FC = () => {
 
   // Wizard state
   const [step, setStep] = useState<WizardStep>('product-list');
-  const [selectedProduct, setSelectedProduct] = useState<ProductDTO | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ProductDTO | null>(
+    null,
+  );
   const [cart, setCart] = useState<CartItem[]>([]);
   const [tableNumber, setTableNumber] = useState(1);
 
@@ -40,7 +48,11 @@ const NewOrderWizard: React.FC = () => {
     setStep('product-details');
   };
 
-  const handleAddToCart = (price: ProductPriceDTO, complements: ProductComplementDTO[], notes: string) => {
+  const handleAddToCart = (
+    price: ProductPriceDTO,
+    complements: ProductComplementDTO[],
+    notes: string,
+  ) => {
     if (!selectedProduct) return;
     setCart((prev) => [
       ...prev,
@@ -99,7 +111,11 @@ const NewOrderWizard: React.FC = () => {
     'order-summary': 'Resumo',
   };
 
-  const stepKeys: WizardStep[] = ['product-list', 'product-details', 'order-summary'];
+  const stepKeys: WizardStep[] = [
+    'product-list',
+    'product-details',
+    'order-summary',
+  ];
 
   return (
     <div className="max-w-[900px]">
@@ -127,9 +143,10 @@ const NewOrderWizard: React.FC = () => {
               <div
                 className={`
                   px-3 py-1 rounded-full text-xs font-medium transition-colors
-                  ${step === s
-                    ? 'bg-brand text-black font-semibold'
-                    : 'bg-secondary text-muted-foreground'
+                  ${
+                    step === s
+                      ? 'bg-brand text-black font-semibold'
+                      : 'bg-secondary text-muted-foreground'
                   }
                 `}
               >

@@ -27,6 +27,7 @@ The portal uses a static plugin registry system (`apps/app/src/plugins-registry.
 - **Service plugins** — provide backend APIs that other plugins can consume
 
 Currently registered plugins:
+
 - `authPlugin` — Authentication
 - `menubarPlugin` — Top menu bar
 - `userServicePlugin` — User service APIs
@@ -44,21 +45,21 @@ UI composition happens through an **Extension Point** system (`@temp-workspace/p
 
 ## Tech Stack
 
-| Category | Technology |
-|---|---|
-| Framework | **Next.js ~16.1** (App Router, `'use client'` directives) |
-| Monorepo | **Nx 22.7** |
-| UI | **React 19**, CSS (no CSS-in-JS framework) |
-| Backend | **NestJS ^11** (available, plugin services) |
-| ORM | **Prisma ^5** |
-| Database | **PostgreSQL** |
-| Validation | **Zod ^4** |
-| Linting | **ESLint 9** (typescript-eslint) |
-| Formatting | **Prettier ~3.6** |
-| Testing | **Vitest ~4.1**, **Jest** (via Nx plugins) |
-| Bundling | **Webpack**, **Rollup** (libs), **SWC** |
-| Language | **TypeScript 5.9** |
-| Package Manager | **pnpm** |
+| Category        | Technology                                                |
+| --------------- | --------------------------------------------------------- |
+| Framework       | **Next.js ~16.1** (App Router, `'use client'` directives) |
+| Monorepo        | **Nx 22.7**                                               |
+| UI              | **React 19**, CSS (no CSS-in-JS framework)                |
+| Backend         | **NestJS ^11** (available, plugin services)               |
+| ORM             | **Prisma ^5**                                             |
+| Database        | **PostgreSQL**                                            |
+| Validation      | **Zod ^4**                                                |
+| Linting         | **ESLint 9** (typescript-eslint)                          |
+| Formatting      | **Prettier ~3.6**                                         |
+| Testing         | **Vitest ~4.1**, **Jest** (via Nx plugins)                |
+| Bundling        | **Webpack**, **Rollup** (libs), **SWC**                   |
+| Language        | **TypeScript 5.9**                                        |
+| Package Manager | **pnpm**                                                  |
 
 ## Commands
 
@@ -130,6 +131,7 @@ npx nx list
 ## Environment
 
 The `.env` file configures the PostgreSQL connection:
+
 ```
 DATABASE_URL="postgresql://postgres:password@localhost:5432/devxp?schema=public"
 ```

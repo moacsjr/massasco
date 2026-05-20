@@ -1,11 +1,30 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { ButtonProps, CardProps, InputProps, IconProps, DrawerProps, TabsProps, UIComponentsMap } from '@temp-workspace/ui-contracts';
+import {
+  ButtonProps,
+  CardProps,
+  InputProps,
+  IconProps,
+  DrawerProps,
+  TabsProps,
+  UIComponentsMap,
+} from '@temp-workspace/ui-contracts';
 import { Button as ShadcnButton } from '../components/ui/button';
-import { Card as ShadcnCard, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../components/ui/card';
+import {
+  Card as ShadcnCard,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from '../components/ui/card';
 import { Input as ShadcnInput } from '../components/ui/input';
-import { Tabs as ShadcnTabs, TabsList, TabsTrigger } from '../components/ui/tabs';
+import {
+  Tabs as ShadcnTabs,
+  TabsList,
+  TabsTrigger,
+} from '../components/ui/tabs';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import * as LucideIcons from 'lucide-react';
@@ -18,14 +37,26 @@ function cn(...inputs: (string | undefined | false | null)[]) {
 // Button — primary = yellow brand (#FFC107)
 // ============================================================================
 
-const Button: React.FC<ButtonProps> = ({ variant, size, isLoading, children, onClick }) => {
-  const variantMap: Record<NonNullable<ButtonProps['variant']>, Parameters<typeof ShadcnButton>[0]['variant']> = {
-    primary: 'default',    // yellow background, black text
+const Button: React.FC<ButtonProps> = ({
+  variant,
+  size,
+  isLoading,
+  children,
+  onClick,
+}) => {
+  const variantMap: Record<
+    NonNullable<ButtonProps['variant']>,
+    Parameters<typeof ShadcnButton>[0]['variant']
+  > = {
+    primary: 'default', // yellow background, black text
     secondary: 'secondary', // elevated surface
-    outline: 'outline',     // white border
+    outline: 'outline', // white border
   };
 
-  const sizeMap: Record<NonNullable<ButtonProps['size']>, Parameters<typeof ShadcnButton>[0]['size']> = {
+  const sizeMap: Record<
+    NonNullable<ButtonProps['size']>,
+    Parameters<typeof ShadcnButton>[0]['size']
+  > = {
     sm: 'sm',
     md: 'default',
     lg: 'lg',
@@ -47,13 +78,9 @@ const Button: React.FC<ButtonProps> = ({ variant, size, isLoading, children, onC
 // Card — dark surface (#121212)
 // ============================================================================
 
-const Card: React.FC<CardProps & { description?: string; footer?: React.ReactNode }> = ({
-  title,
-  description,
-  padding,
-  children,
-  footer,
-}) => {
+const Card: React.FC<
+  CardProps & { description?: string; footer?: React.ReactNode }
+> = ({ title, description, padding, children, footer }) => {
   const paddingMap: Record<NonNullable<CardProps['padding']>, string> = {
     none: 'p-0',
     sm: 'p-3',
@@ -69,7 +96,9 @@ const Card: React.FC<CardProps & { description?: string; footer?: React.ReactNod
           {description && <CardDescription>{description}</CardDescription>}
         </CardHeader>
       )}
-      <CardContent className={cn(paddingMap[padding || 'md'], !title && 'pt-4')}>
+      <CardContent
+        className={cn(paddingMap[padding || 'md'], !title && 'pt-4')}
+      >
         {children}
       </CardContent>
       {footer && <CardFooter>{footer}</CardFooter>}
@@ -81,10 +110,20 @@ const Card: React.FC<CardProps & { description?: string; footer?: React.ReactNod
 // Input — dark background, yellow focus ring
 // ============================================================================
 
-const Input: React.FC<InputProps> = ({ name, label, error, placeholder, type, value, onChange }) => {
+const Input: React.FC<InputProps> = ({
+  name,
+  label,
+  error,
+  placeholder,
+  type,
+  value,
+  onChange,
+}) => {
   return (
     <div className="flex flex-col gap-1.5 mb-3">
-      <label htmlFor={name} className="text-sm font-medium text-foreground">{label}</label>
+      <label htmlFor={name} className="text-sm font-medium text-foreground">
+        {label}
+      </label>
       <ShadcnInput
         id={name}
         name={name}
@@ -110,7 +149,12 @@ const Icon: React.FC<IconProps> = ({ name, size }) => {
     lg: '32px',
   };
 
-  const IconComponent = (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: string | number }>>)[name];
+  const IconComponent = (
+    LucideIcons as unknown as Record<
+      string,
+      React.ComponentType<{ size?: string | number }>
+    >
+  )[name];
 
   if (IconComponent) {
     return <IconComponent size={sizeMap[size || 'md']} />;
@@ -120,7 +164,13 @@ const Icon: React.FC<IconProps> = ({ name, size }) => {
     <span
       role="img"
       aria-label={name}
-      style={{ fontSize: sizeMap[size || 'md'], lineHeight: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+      style={{
+        fontSize: sizeMap[size || 'md'],
+        lineHeight: 1,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
     >
       {name}
     </span>
@@ -131,7 +181,14 @@ const Icon: React.FC<IconProps> = ({ name, size }) => {
 // Drawer — uses z-index CSS variables
 // ============================================================================
 
-const Drawer: React.FC<DrawerProps> = ({ open, position = 'right', width, offsetLeft, onClose, children }) => {
+const Drawer: React.FC<DrawerProps> = ({
+  open,
+  position = 'right',
+  width,
+  offsetLeft,
+  onClose,
+  children,
+}) => {
   useEffect(() => {
     if (!open) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -152,7 +209,7 @@ const Drawer: React.FC<DrawerProps> = ({ open, position = 'right', width, offset
       <div
         className={cn(
           'fixed top-0 h-screen bg-card shadow-lg z-drawer flex flex-col overflow-auto',
-          isLeft ? 'left-0' : 'right-0'
+          isLeft ? 'left-0' : 'right-0',
         )}
         style={{
           width: drawerWidth,
@@ -163,7 +220,7 @@ const Drawer: React.FC<DrawerProps> = ({ open, position = 'right', width, offset
           onClick={onClose}
           className={cn(
             'absolute top-3 bg-transparent border-none text-xl cursor-pointer text-foreground z-tooltip',
-            isLeft ? 'right-3' : 'left-3'
+            isLeft ? 'right-3' : 'left-3',
           )}
           aria-label="Close drawer"
         >
@@ -179,15 +236,27 @@ const Drawer: React.FC<DrawerProps> = ({ open, position = 'right', width, offset
 // Tabs — active underline = yellow
 // ============================================================================
 
-const Tabs: React.FC<TabsProps> = ({ items, activeIndex = 0, onChange, children }) => {
+const Tabs: React.FC<TabsProps> = ({
+  items,
+  activeIndex = 0,
+  onChange,
+  children,
+}) => {
   return (
-    <ShadcnTabs value={items[activeIndex]?.label || ''} onValueChange={(value) => {
-      const index = items.findIndex((item) => item.label === value);
-      if (index >= 0) onChange?.(index);
-    }}>
+    <ShadcnTabs
+      value={items[activeIndex]?.label || ''}
+      onValueChange={(value) => {
+        const index = items.findIndex((item) => item.label === value);
+        if (index >= 0) onChange?.(index);
+      }}
+    >
       <TabsList className="w-full justify-start bg-card">
         {items.map((item, i) => (
-          <TabsTrigger key={i} value={item.label} className="flex items-center gap-1.5 data-[state=active]:text-brand">
+          <TabsTrigger
+            key={i}
+            value={item.label}
+            className="flex items-center gap-1.5 data-[state=active]:text-brand"
+          >
             {item.icon && <span className="text-base">{item.icon}</span>}
             {item.label}
           </TabsTrigger>

@@ -10,7 +10,11 @@ interface ProductListStepProps {
   onSelectProduct: (product: ProductDTO) => void;
 }
 
-const ProductListStep: React.FC<ProductListStepProps> = ({ products, categories, onSelectProduct }) => {
+const ProductListStep: React.FC<ProductListStepProps> = ({
+  products,
+  categories,
+  onSelectProduct,
+}) => {
   const { resolve } = useUI();
   const Card = resolve('Card');
   const Icon = resolve('Icon');
@@ -19,8 +23,10 @@ const ProductListStep: React.FC<ProductListStepProps> = ({ products, categories,
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredProducts = products.filter((p) => {
-    const matchesCategory = !selectedCategory || p.categoryId === selectedCategory;
-    const matchesSearch = !searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory =
+      !selectedCategory || p.categoryId === selectedCategory;
+    const matchesSearch =
+      !searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -49,9 +55,10 @@ const ProductListStep: React.FC<ProductListStepProps> = ({ products, categories,
           onClick={() => setSelectedCategory('')}
           className={`
             px-3 py-1 rounded-full border-none cursor-pointer text-xs font-medium transition-colors
-            ${!selectedCategory
-              ? 'bg-brand text-black'
-              : 'bg-secondary text-muted-foreground hover:text-foreground'
+            ${
+              !selectedCategory
+                ? 'bg-brand text-black'
+                : 'bg-secondary text-muted-foreground hover:text-foreground'
             }
           `}
         >
@@ -63,9 +70,10 @@ const ProductListStep: React.FC<ProductListStepProps> = ({ products, categories,
             onClick={() => setSelectedCategory(cat.id)}
             className={`
               px-3 py-1 rounded-full border-none cursor-pointer text-xs font-medium transition-colors
-              ${selectedCategory === cat.id
-                ? 'bg-brand text-black'
-                : 'bg-secondary text-muted-foreground hover:text-foreground'
+              ${
+                selectedCategory === cat.id
+                  ? 'bg-brand text-black'
+                  : 'bg-secondary text-muted-foreground hover:text-foreground'
               }
             `}
           >
@@ -89,23 +97,33 @@ const ProductListStep: React.FC<ProductListStepProps> = ({ products, categories,
                   {/* Image Area */}
                   {p.imageUrl ? (
                     <div className="w-full h-24 sm:h-32 rounded-t-lg border-b border-border overflow-hidden">
-                      <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
+                      <img
+                        src={p.imageUrl}
+                        alt={p.name}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                   ) : (
                     <div className="w-full h-24 sm:h-32 bg-secondary flex items-center justify-center text-muted-foreground/30 rounded-t-lg border-b border-border">
                       <Icon name="Utensils" size="lg" />
                     </div>
                   )}
-                  
+
                   {/* Content Area */}
                   <div className="p-3 flex flex-col flex-1">
-                    <strong className="block mb-1 text-sm text-foreground truncate" title={p.name}>
+                    <strong
+                      className="block mb-1 text-sm text-foreground truncate"
+                      title={p.name}
+                    >
                       {p.name}
                     </strong>
-                    <div className="text-xs text-muted-foreground mb-2 line-clamp-2 leading-tight flex-1" title={p.description}>
+                    <div
+                      className="text-xs text-muted-foreground mb-2 line-clamp-2 leading-tight flex-1"
+                      title={p.description}
+                    >
                       {p.description || 'Sem descrição'}
                     </div>
-                    
+
                     {/* Footer Row */}
                     <div className="flex items-center justify-between mt-auto pt-1">
                       <div className="flex-1 truncate pr-1">
@@ -114,7 +132,9 @@ const ProductListStep: React.FC<ProductListStepProps> = ({ products, categories,
                             R$ {Number(firstPrice.value).toFixed(2)}
                           </span>
                         ) : (
-                          <span className="text-[10px] text-destructive">Sem preço</span>
+                          <span className="text-[10px] text-destructive">
+                            Sem preço
+                          </span>
                         )}
                       </div>
                       <div className="shrink-0 flex items-center justify-center w-7 h-7 bg-brand/10 group-hover:bg-brand text-brand group-hover:text-black rounded-full transition-colors">
@@ -130,7 +150,9 @@ const ProductListStep: React.FC<ProductListStepProps> = ({ products, categories,
       </div>
 
       {filteredProducts.length === 0 && (
-        <p className="text-muted-foreground text-center mt-6">Nenhum produto encontrado.</p>
+        <p className="text-muted-foreground text-center mt-6">
+          Nenhum produto encontrado.
+        </p>
       )}
     </div>
   );

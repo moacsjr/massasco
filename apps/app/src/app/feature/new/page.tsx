@@ -23,11 +23,26 @@ export default function NewFeaturePage() {
             type="text"
             placeholder="Digite o título do Feature"
           />
-          <Input name="description" label="Descrição" type="text" placeholder="Opcional" />
+          <Input
+            name="description"
+            label="Descrição"
+            type="text"
+            placeholder="Opcional"
+          />
 
           <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-            <Button variant="primary" size="md" onClick={() => router.push('/feature')}>Salvar</Button>
-            <Button variant="outline" size="md" onClick={() => router.push('/feature')}>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => router.push('/feature')}
+            >
+              Salvar
+            </Button>
+            <Button
+              variant="outline"
+              size="md"
+              onClick={() => router.push('/feature')}
+            >
               Cancelar
             </Button>
           </div>

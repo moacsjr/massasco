@@ -6,7 +6,10 @@ async function main() {
   console.log('Seed started...');
 
   const types = [
-    { name: 'Service', schema: { type: 'object', properties: { version: { type: 'string' } } } },
+    {
+      name: 'Service',
+      schema: { type: 'object', properties: { version: { type: 'string' } } },
+    },
     { name: 'Domain', schema: { type: 'object', properties: {} } },
     { name: 'Feature', schema: { type: 'object', properties: {} } },
   ];

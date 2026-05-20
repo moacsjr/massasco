@@ -13,15 +13,15 @@ ATTEMPT=1
 
 while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
   echo "Checking service availability (Attempt $ATTEMPT/$MAX_ATTEMPTS)..."
-  
+
   # Send an HTTP request and get the status code
   STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" $URL/api/hello || true)
-  
+
   if [ "$STATUS_CODE" = "200" ]; then
     echo "Service is healthy! HTTP Status Code: 200"
     exit 0
   fi
-  
+
   echo "Service not ready yet. Status code returned: $STATUS_CODE. Retrying in 5 seconds..."
   sleep 5
   ATTEMPT=$((ATTEMPT + 1))

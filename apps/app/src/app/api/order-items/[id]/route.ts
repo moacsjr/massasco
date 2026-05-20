@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { sseBus } from '../../../../lib/sse-bus';
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   const body = await req.json();
   const { status, notes } = body;
@@ -38,7 +41,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     tableNumber: serialized.order.tableNumber,
   });
 
-  console.log('[SSE] Published ITEM_UPDATED, listeners:', sseBus.listenerCount());
+  console.log(
+    '[SSE] Published ITEM_UPDATED, listeners:',
+    sseBus.listenerCount(),
+  );
 
   return NextResponse.json(serialized);
 }

@@ -11,7 +11,9 @@ export default function DomainPage() {
     <Card padding="md">
       <h1>Entidade: Domain</h1>
       <p>Gerada automaticamente pela Skill.</p>
-      <Button variant="primary" size="md">Ação de Exemplo</Button>
+      <Button variant="primary" size="md">
+        Ação de Exemplo
+      </Button>
     </Card>
   );
 }

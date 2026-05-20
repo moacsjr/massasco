@@ -6,10 +6,16 @@ import { userManagementPlugin } from '@temp-workspace/plugin-user-management';
 import { mainTemplatePlugin } from '@temp-workspace/plugin-main-template';
 import { menuNavBarPlugin } from '@temp-workspace/plugin-menu-nav-bar';
 import { orderCorePlugin } from '@temp-workspace/plugin-order-core';
-import { menuCatalogServicePlugin, menuCatalogFeaturePlugin } from '@temp-workspace/plugin-menu-catalog';
+import {
+  menuCatalogServicePlugin,
+  menuCatalogFeaturePlugin,
+} from '@temp-workspace/plugin-menu-catalog';
 import { ordersDeliveryPlugin } from '@temp-workspace/plugin-orders-delivery';
 import { kdsPlugin } from '@temp-workspace/plugin-kds';
-import { paymentsServicePlugin, paymentsFeaturePlugin } from '@temp-workspace/plugin-payments';
+import {
+  paymentsServicePlugin,
+  paymentsFeaturePlugin,
+} from '@temp-workspace/plugin-payments';
 import { auditPlugin } from '@temp-workspace/plugin-audit';
 import { uiComponentsPlugin } from '@temp-workspace/plugin-ui-components';
 

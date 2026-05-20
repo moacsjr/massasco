@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { sseBus } from '../../../../lib/sse-bus';
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   const body = await req.json();
   const { status, notes } = body;
@@ -35,12 +38,18 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     })),
   };
 
-  sseBus.publish('ORDER_UPDATED', { orderId: serialized.id, status: serialized.status });
+  sseBus.publish('ORDER_UPDATED', {
+    orderId: serialized.id,
+    status: serialized.status,
+  });
 
   return NextResponse.json(serialized);
 }
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   const order = await prisma.order.findUnique({
     where: { id },

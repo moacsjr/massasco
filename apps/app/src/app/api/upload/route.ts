@@ -24,12 +24,15 @@ export async function POST(req: Request) {
     const cdnUrl = process.env.NEXT_PUBLIC_CDN_URL;
 
     if (!bucketName || !cdnUrl) {
-      return NextResponse.json({ error: 'AWS S3 configuration missing' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'AWS S3 configuration missing' },
+        { status: 500 },
+      );
     }
 
     const fileExtension = file.name.split('.').pop() || 'png';
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExtension}`;
-    
+
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
@@ -43,10 +46,13 @@ export async function POST(req: Request) {
     await s3Client.send(command);
 
     const imageUrl = `${cdnUrl.replace(/\/$/, '')}/${fileName}`;
-    
+
     return NextResponse.json({ imageUrl }, { status: 201 });
   } catch (error: any) {
     console.error('Error uploading file to S3:', error);
-    return NextResponse.json({ error: 'Failed to upload file', details: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to upload file', details: error.message },
+      { status: 500 },
+    );
   }
 }

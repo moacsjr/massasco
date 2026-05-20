@@ -31,13 +31,13 @@ resource "aws_instance" "app" {
   user_data = <<-EOF
     #!/bin/bash
     dnf update -y
-    
+
     # Install Docker
     dnf install -y docker
     systemctl start docker
     systemctl enable docker
     usermod -aG docker ec2-user
-    
+
     # Install Docker Compose plugin
     DOCKER_CONFIG=/usr/local/lib/docker
     mkdir -p $DOCKER_CONFIG/cli-plugins

@@ -25,6 +25,7 @@ The goal is to make these plugin builds **functional** so they can serve two pur
 ## Decision
 
 **Dual-mode architecture:**
+
 - **Dev mode**: Plugins consumed from source via `@temp-workspace/*` path aliases → `src/`
 - **Build mode**: Plugins produce bundled outputs in `dist/` with correct type declarations, externalizing workspace dependencies
 
@@ -34,12 +35,12 @@ The rollup configs are **not** Nx scaffolding artifacts to be deleted — they a
 
 ## Scope
 
-| In scope | Out of scope |
-|---|---|
-| Fix rollup builds for all plugins | Migrate dev flow to consume dist/ |
-| Ensure correct `external` and `declaration` handling | Publish plugins to npm registry |
-| Document the dependency graph for build ordering | Migrate libs (`ui-registry`, `plugin-loader`) to buildable |
-| Verify CI pipeline uses `nx affected` correctly | |
+| In scope                                             | Out of scope                                               |
+| ---------------------------------------------------- | ---------------------------------------------------------- |
+| Fix rollup builds for all plugins                    | Migrate dev flow to consume dist/                          |
+| Ensure correct `external` and `declaration` handling | Publish plugins to npm registry                            |
+| Document the dependency graph for build ordering     | Migrate libs (`ui-registry`, `plugin-loader`) to buildable |
+| Verify CI pipeline uses `nx affected` correctly      |                                                            |
 
 ---
 
@@ -55,14 +56,14 @@ ui-contracts ──▶ ui-registry ──▶ plugins ──▶ app
 
 ### What works
 
-| Package | Build status | Type checking | Notes |
-|---|---|---|---|
-| `ui-contracts` | ✅ Passes | ✅ | Pure TypeScript, no React |
-| `plugin-loader` | ✅ Passes | ✅ | Pure TypeScript, no React |
-| `token-bridge` | ✅ Passes | ✅ | Has JSX (`TokenInjector`), renamed to `.tsx` |
-| `ui-registry` | ⚠️ Passes (warnings) | ✅ | `'use client'` stripped warning; `@temp-workspace/ui-contracts` unresolved warning |
-| `plugin-auth` | ⚠️ Passes (legacy plugin) | ✅ | Uses `useLegacyTypescriptPlugin: true` workaround |
-| Other 11 plugins | ❌ No rollup config | N/A | Not configured for independent build |
+| Package          | Build status              | Type checking | Notes                                                                              |
+| ---------------- | ------------------------- | ------------- | ---------------------------------------------------------------------------------- |
+| `ui-contracts`   | ✅ Passes                 | ✅            | Pure TypeScript, no React                                                          |
+| `plugin-loader`  | ✅ Passes                 | ✅            | Pure TypeScript, no React                                                          |
+| `token-bridge`   | ✅ Passes                 | ✅            | Has JSX (`TokenInjector`), renamed to `.tsx`                                       |
+| `ui-registry`    | ⚠️ Passes (warnings)      | ✅            | `'use client'` stripped warning; `@temp-workspace/ui-contracts` unresolved warning |
+| `plugin-auth`    | ⚠️ Passes (legacy plugin) | ✅            | Uses `useLegacyTypescriptPlugin: true` workaround                                  |
+| Other 11 plugins | ❌ No rollup config       | N/A           | Not configured for independent build                                               |
 
 ### What's broken
 
@@ -98,6 +99,7 @@ external: [
 **File:** `plugins/plugin-auth/rollup.config.cjs`
 
 **Current config:**
+
 ```js
 compiler: 'swc',
 skipTypeCheck: true,
@@ -114,20 +116,20 @@ useLegacyTypescriptPlugin: true,   // ← deprecated
 
 **Plugins needing configs:**
 
-| Plugin | Imports from `libs/`? | Complexity |
-|---|---|---|
-| `plugin-menubar` | `@temp-workspace/ui-registry` | Low |
-| `plugin-user-management` | `@temp-workspace/ui-registry`, `@temp-workspace/plugin-loader` | Low |
-| `plugin-user-service` | `@temp-workspace/plugin-loader` | Low |
-| `plugin-main-template` | `@temp-workspace/plugin-loader`, `@temp-workspace/ui-registry` | Low |
-| `plugin-menu-nav-bar` | `@temp-workspace/ui-registry`, `@temp-workspace/plugin-loader` | Low |
-| `plugin-order-core` | `@temp-workspace/plugin-loader` | Low |
-| `plugin-menu-catalog` | `@temp-workspace/ui-registry`, `@temp-workspace/plugin-loader` | Low |
-| `plugin-orders-delivery` | `@temp-workspace/plugin-loader` | Low |
-| `plugin-kds` | `@temp-workspace/plugin-loader` | Low |
-| `plugin-payments` | `@temp-workspace/plugin-loader` | Low |
-| `plugin-audit` | `@temp-workspace/plugin-loader` | Low |
-| `plugin-ui-components` | `@temp-workspace/ui-registry`, `@temp-workspace/ui-contracts` | Low |
+| Plugin                   | Imports from `libs/`?                                          | Complexity |
+| ------------------------ | -------------------------------------------------------------- | ---------- |
+| `plugin-menubar`         | `@temp-workspace/ui-registry`                                  | Low        |
+| `plugin-user-management` | `@temp-workspace/ui-registry`, `@temp-workspace/plugin-loader` | Low        |
+| `plugin-user-service`    | `@temp-workspace/plugin-loader`                                | Low        |
+| `plugin-main-template`   | `@temp-workspace/plugin-loader`, `@temp-workspace/ui-registry` | Low        |
+| `plugin-menu-nav-bar`    | `@temp-workspace/ui-registry`, `@temp-workspace/plugin-loader` | Low        |
+| `plugin-order-core`      | `@temp-workspace/plugin-loader`                                | Low        |
+| `plugin-menu-catalog`    | `@temp-workspace/ui-registry`, `@temp-workspace/plugin-loader` | Low        |
+| `plugin-orders-delivery` | `@temp-workspace/plugin-loader`                                | Low        |
+| `plugin-kds`             | `@temp-workspace/plugin-loader`                                | Low        |
+| `plugin-payments`        | `@temp-workspace/plugin-loader`                                | Low        |
+| `plugin-audit`           | `@temp-workspace/plugin-loader`                                | Low        |
+| `plugin-ui-components`   | `@temp-workspace/ui-registry`, `@temp-workspace/ui-contracts`  | Low        |
 
 **Template for all plugin rollup configs:**
 
@@ -141,15 +143,7 @@ module.exports = withNx({
   tsConfig: './tsconfig.lib.json',
   compiler: 'swc',
   skipTypeCheck: true,
-  external: [
-    'react',
-    'react-dom',
-    'react/jsx-runtime',
-    '@temp-workspace/ui-contracts',
-    '@temp-workspace/ui-registry',
-    '@temp-workspace/plugin-loader',
-    '@temp-workspace/token-bridge',
-  ],
+  external: ['react', 'react-dom', 'react/jsx-runtime', '@temp-workspace/ui-contracts', '@temp-workspace/ui-registry', '@temp-workspace/plugin-loader', '@temp-workspace/token-bridge'],
   format: ['esm'],
   assets: [{ input: '.', output: '.', glob: 'README.md' }],
 });
@@ -209,11 +203,13 @@ Expected: Only `plugin-auth` and `app` are rebuilt. Other plugins use cache.
 #### 3.1 Update CI build command
 
 **Before:**
+
 ```yaml
 - run: npx nx build app
 ```
 
 **After:**
+
 ```yaml
 - run: npx nx affected --target=build --base=origin/main~1 --parallel=3
 ```
@@ -228,13 +224,13 @@ If Nx Cloud is configured, the `affected` command will pull cached artifacts. If
 
 ## Risks and Mitigations
 
-| Risk | Impact | Mitigation |
-|---|---|---|
-| `@rollup/plugin-typescript` deprecated in Nx 23 | Medium | `skipTypeCheck: true` + `declaration: false` avoids needing any TS plugin for emit; type checking happens in Next.js build |
-| A plugin adds a new `@temp-workspace/*` import that's not in `external` | Low | Build fails with "unresolved dependency" warning — easy to catch and fix |
-| Rollup bundling changes the public API surface | Low | `index.ts` is the entry point; rollup preserves all exports |
-| Build times increase in CI | Medium | Nx `affected` + caching should offset this — only changed plugins rebuild |
-| `useLegacyTypescriptPlugin` removal causes regressions | Low | Already mitigated by `skipTypeCheck: true` + `declaration: false` |
+| Risk                                                                    | Impact | Mitigation                                                                                                                 |
+| ----------------------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `@rollup/plugin-typescript` deprecated in Nx 23                         | Medium | `skipTypeCheck: true` + `declaration: false` avoids needing any TS plugin for emit; type checking happens in Next.js build |
+| A plugin adds a new `@temp-workspace/*` import that's not in `external` | Low    | Build fails with "unresolved dependency" warning — easy to catch and fix                                                   |
+| Rollup bundling changes the public API surface                          | Low    | `index.ts` is the entry point; rollup preserves all exports                                                                |
+| Build times increase in CI                                              | Medium | Nx `affected` + caching should offset this — only changed plugins rebuild                                                  |
+| `useLegacyTypescriptPlugin` removal causes regressions                  | Low    | Already mitigated by `skipTypeCheck: true` + `declaration: false`                                                          |
 
 ---
 

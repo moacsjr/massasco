@@ -1,8 +1,12 @@
 import React from 'react';
 
-export interface FabProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
+export type FabProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
 
-export const Fab: React.FC<FabProps> = ({ className = '', children, ...props }) => {
+export const Fab: React.FC<FabProps> = ({
+  className = '',
+  children,
+  ...props
+}) => {
   return (
     <button
       {...props}

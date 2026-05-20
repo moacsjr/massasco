@@ -13,15 +13,16 @@ export const LeftMenuSection: React.FC = () => {
 
   const allPlugins = pluginLoader.getAllPlugins();
   const featurePlugins = allPlugins.filter(
-    (p): p is FeaturePlugin => p.type === 'feature' && !!(p as FeaturePlugin).routes
+    (p): p is FeaturePlugin =>
+      p.type === 'feature' && !!(p as FeaturePlugin).routes,
   );
 
-  const menuRoutes = featurePlugins.flatMap(plugin => {
+  const menuRoutes = featurePlugins.flatMap((plugin) => {
     const routes = plugin.routes;
     if (!routes) return [];
     return routes
-      .filter(route => route.showInMenu === true)
-      .map(route => ({
+      .filter((route) => route.showInMenu === true)
+      .map((route) => ({
         pluginId: plugin.id,
         pluginIcon: plugin.icon ?? '📄',
         routeIcon: route.icon,
@@ -53,9 +54,11 @@ export const LeftMenuSection: React.FC = () => {
               mx-2 py-2 rounded-lg
               flex items-center justify-center
               transition-colors duration-150
-              ${isActive 
-                ? 'bg-secondary text-brand font-medium' 
-                : 'bg-transparent text-muted-foreground hover:text-foreground hover:bg-secondary'}
+              ${
+                isActive
+                  ? 'bg-secondary text-brand font-medium'
+                  : 'bg-transparent text-muted-foreground hover:text-foreground hover:bg-secondary'
+              }
             `}
           >
             <Icon name={item.routeIcon ?? item.pluginIcon} size="md" />

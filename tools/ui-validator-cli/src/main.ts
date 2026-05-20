@@ -6,16 +6,18 @@ import { UI_CONTRACTS } from '@temp-workspace/ui-contracts';
  */
 export function validateDesignSystem(components: any) {
   console.log('\n--- Iniciando Validação de Contrato DevXP ---\n');
-  
+
   let hasErrors = false;
 
   for (const [componentName, schema] of Object.entries(UI_CONTRACTS)) {
     console.log(`Validando componente: [${componentName}]...`);
-    
+
     const component = components[componentName];
-    
+
     if (!component) {
-      console.error(`❌ ERRO: Componente [${componentName}] não encontrado no Design System.`);
+      console.error(
+        `❌ ERRO: Componente [${componentName}] não encontrado no Design System.`,
+      );
       hasErrors = true;
       continue;
     }
@@ -24,7 +26,9 @@ export function validateDesignSystem(components: any) {
     // Mas podemos validar metadados ou tentar uma renderização de teste se necessário.
     // Para este MVP, validamos a existência e o tipo básico.
     if (typeof component !== 'function' && typeof component !== 'object') {
-      console.error(`❌ ERRO: [${componentName}] deve ser um Componente React válido (função ou objeto).`);
+      console.error(
+        `❌ ERRO: [${componentName}] deve ser um Componente React válido (função ou objeto).`,
+      );
       hasErrors = true;
     } else {
       console.log(`✅ [${componentName}] validado com sucesso.`);

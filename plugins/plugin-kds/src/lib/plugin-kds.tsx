@@ -1,7 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { FeaturePlugin, ExtensionContribution } from '@temp-workspace/plugin-loader';
+import {
+  FeaturePlugin,
+  ExtensionContribution,
+} from '@temp-workspace/plugin-loader';
 import { useUI } from '@temp-workspace/ui-registry';
 
 interface KDSItem {
@@ -73,7 +76,9 @@ const KDSBoard: React.FC = () => {
         <strong className="text-sm text-foreground">{item.productName}</strong>
         <span className="text-xs text-muted-foreground">× {item.quantity}</span>
       </div>
-      <div className="text-xs text-muted-foreground mb-2">Mesa {item.tableNumber}</div>
+      <div className="text-xs text-muted-foreground mb-2">
+        Mesa {item.tableNumber}
+      </div>
       {item.notes && (
         <div className="text-xs text-destructive bg-destructive/10 px-2 py-1 rounded mb-2">
           ⚠️ {item.notes}
@@ -130,7 +135,9 @@ const KDSBoard: React.FC = () => {
               Pendentes ({pending.length})
             </h3>
             {pending.length === 0 ? (
-              <p className="text-muted-foreground/50 text-sm">Nenhum item pendente.</p>
+              <p className="text-muted-foreground/50 text-sm">
+                Nenhum item pendente.
+              </p>
             ) : (
               pending.map(renderCard)
             )}
@@ -142,7 +149,9 @@ const KDSBoard: React.FC = () => {
               Em Preparo ({preparing.length})
             </h3>
             {preparing.length === 0 ? (
-              <p className="text-muted-foreground/50 text-sm">Nenhum item em preparo.</p>
+              <p className="text-muted-foreground/50 text-sm">
+                Nenhum item em preparo.
+              </p>
             ) : (
               preparing.map(renderCard)
             )}
@@ -154,7 +163,9 @@ const KDSBoard: React.FC = () => {
               Prontos ({ready.length})
             </h3>
             {ready.length === 0 ? (
-              <p className="text-muted-foreground/50 text-sm">Nenhum item aguardando entrega.</p>
+              <p className="text-muted-foreground/50 text-sm">
+                Nenhum item aguardando entrega.
+              </p>
             ) : (
               ready.map(renderCard)
             )}
@@ -175,7 +186,7 @@ export const kdsPlugin: FeaturePlugin = {
       component: KDSBoard,
       label: 'Cozinha',
       icon: 'ChefHat',
-      showInMenu: true
-    }
-  ]
+      showInMenu: true,
+    },
+  ],
 };

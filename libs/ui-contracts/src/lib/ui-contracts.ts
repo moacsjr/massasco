@@ -4,23 +4,35 @@ import type { ReactNode, MouseEvent } from 'react';
 // === Zod Schemas para Validação em Runtime ===
 
 export const ButtonContractSchema = z.object({
-  variant: z.enum(['primary', 'secondary', 'outline']).optional().default('primary'),
+  variant: z
+    .enum(['primary', 'secondary', 'outline'])
+    .optional()
+    .default('primary'),
   size: z.enum(['sm', 'md', 'lg']).optional().default('md'),
   isLoading: z.boolean().optional(),
   onClick: z.any().optional(),
-  children: z.custom<ReactNode>((val) => val !== undefined, "children is required"),
+  children: z.custom<ReactNode>(
+    (val) => val !== undefined,
+    'children is required',
+  ),
 });
 
 export const CardContractSchema = z.object({
   title: z.string().optional(),
   padding: z.enum(['none', 'sm', 'md', 'lg']).optional().default('md'),
-  children: z.custom<ReactNode>((val) => val !== undefined, "children is required"),
+  children: z.custom<ReactNode>(
+    (val) => val !== undefined,
+    'children is required',
+  ),
 });
 
 export const InputContractSchema = z.object({
   name: z.string(),
   label: z.string(),
-  type: z.enum(['text', 'password', 'email', 'number']).optional().default('text'),
+  type: z
+    .enum(['text', 'password', 'email', 'number'])
+    .optional()
+    .default('text'),
   error: z.string().optional(),
   placeholder: z.string().optional(),
   value: z.union([z.string(), z.number()]).optional(),
@@ -38,35 +50,50 @@ export const DrawerContractSchema = z.object({
   width: z.string().optional(),
   offsetLeft: z.string().optional(),
   onClose: z.any().optional(),
-  children: z.custom<ReactNode>((val) => val !== undefined, 'children is required').optional(),
+  children: z
+    .custom<ReactNode>((val) => val !== undefined, 'children is required')
+    .optional(),
 });
 
 export const TabsContractSchema = z.object({
-  items: z.array(z.object({
-    label: z.string(),
-    icon: z.string().optional(),
-  })),
+  items: z.array(
+    z.object({
+      label: z.string(),
+      icon: z.string().optional(),
+    }),
+  ),
   activeIndex: z.number().default(0),
   onChange: z.any().optional(),
-  children: z.custom<ReactNode>((val) => val !== undefined, 'children is required').optional(),
+  children: z
+    .custom<ReactNode>((val) => val !== undefined, 'children is required')
+    .optional(),
 });
 
 // === Tipos TypeScript Derivados ===
 
 // Omitimos funções puras do Zod inference onde o Zod Function é mais flexível/menos restrito que o React
-export type ButtonProps = Omit<z.infer<typeof ButtonContractSchema>, 'onClick'> & {
+export type ButtonProps = Omit<
+  z.infer<typeof ButtonContractSchema>,
+  'onClick'
+> & {
   onClick?: (e: MouseEvent<HTMLButtonElement>) => void;
 };
 
 export type CardProps = z.infer<typeof CardContractSchema>;
 
-export type InputProps = Omit<z.infer<typeof InputContractSchema>, 'onChange'> & {
+export type InputProps = Omit<
+  z.infer<typeof InputContractSchema>,
+  'onChange'
+> & {
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 };
 
 export type IconProps = z.infer<typeof IconContractSchema>;
 
-export type DrawerProps = Omit<z.infer<typeof DrawerContractSchema>, 'onClose'> & {
+export type DrawerProps = Omit<
+  z.infer<typeof DrawerContractSchema>,
+  'onClose'
+> & {
   onClose?: () => void;
 };
 
