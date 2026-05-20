@@ -16,11 +16,23 @@ export PATH="/usr/bin:/usr/local/bin:/usr/sbin:/usr/local/sbin:/home/ec2-user/.n
 # Load Node.js and PM2 environment
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-# Ensure .env exists, if not create default one
-if [ ! -f ".env" ]; then
-  echo "Creating default .env..."
-  echo 'DATABASE_URL="postgresql://postgres:password@localhost:5432/devxp?schema=public"' > .env
-fi
+# Fetch runtime config from SSM and write .env
+echo "Fetching runtime config from SSM..."
+REGION=$(curl -s http://169.254.169.254/latest/meta-data/placement/region)
+PROJECT_NAME="devxp-portal"
+CDN_URL=$(aws ssm get-parameter \
+  --name "/${PROJECT_NAME}/cloudfront_url" \
+  --query Parameter.Value --output text --region "$REGION" 2>/dev/null || echo "")
+MEDIA_BUCKET=$(aws ssm get-parameter \
+  --name "/${PROJECT_NAME}/media_bucket_name" \
+  --query Parameter.Value --output text --region "$REGION" 2>/dev/null || echo "")
+
+{
+  echo "DATABASE_URL=\"postgresql://postgres:password@localhost:5432/devxp?schema=public\""
+  [ -n "$CDN_URL" ] && echo "NEXT_PUBLIC_CDN_URL=\"${CDN_URL}\""
+  [ -n "$MEDIA_BUCKET" ] && echo "AWS_S3_BUCKET_NAME=\"${MEDIA_BUCKET}\""
+} > .env
+echo ".env created with $(wc -l < .env) entries."
 
 # Start PostgreSQL database container
 echo "Starting PostgreSQL database container..."
