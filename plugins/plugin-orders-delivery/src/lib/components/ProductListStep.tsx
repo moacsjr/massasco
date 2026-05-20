@@ -13,6 +13,7 @@ interface ProductListStepProps {
 const ProductListStep: React.FC<ProductListStepProps> = ({ products, categories, onSelectProduct }) => {
   const { resolve } = useUI();
   const Card = resolve('Card');
+  const Icon = resolve('Icon');
 
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -74,28 +75,48 @@ const ProductListStep: React.FC<ProductListStepProps> = ({ products, categories,
       </div>
 
       {/* Products grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         {filteredProducts.map((p) => {
           const firstPrice = p.prices?.[0];
           return (
             <div
               key={p.id}
-              className="cursor-pointer transition-shadow rounded-lg hover:shadow-lg hover:shadow-brand/5"
+              className="cursor-pointer transition-shadow rounded-lg hover:shadow-lg hover:shadow-brand/5 group h-full"
               onClick={() => onSelectProduct(p)}
             >
-              <Card padding="md">
-                <strong className="block mb-1 text-foreground">{p.name}</strong>
-                {p.description && (
-                  <div className="text-xs text-muted-foreground mb-1.5">{p.description}</div>
-                )}
-                {firstPrice && (
-                  <div className="text-sm font-semibold text-green-400">
-                    R$ {Number(firstPrice.value).toFixed(2)}
+              <Card padding="none">
+                <div className="flex flex-col h-full min-h-[180px]">
+                  {/* Image Placeholder */}
+                  <div className="w-full h-24 sm:h-32 bg-secondary flex items-center justify-center text-muted-foreground/30 rounded-t-lg border-b border-border">
+                    <Icon name="Utensils" size="lg" />
                   </div>
-                )}
-                {(!p.prices || p.prices.length === 0) && (
-                  <div className="text-xs text-destructive">Sem preço configurado</div>
-                )}
+                  
+                  {/* Content Area */}
+                  <div className="p-3 flex flex-col flex-1">
+                    <strong className="block mb-1 text-sm text-foreground truncate" title={p.name}>
+                      {p.name}
+                    </strong>
+                    <div className="text-xs text-muted-foreground mb-2 line-clamp-2 leading-tight flex-1" title={p.description}>
+                      {p.description || 'Sem descrição'}
+                    </div>
+                    
+                    {/* Footer Row */}
+                    <div className="flex items-center justify-between mt-auto pt-1">
+                      <div className="flex-1 truncate pr-1">
+                        {firstPrice ? (
+                          <span className="text-sm font-bold text-green-400">
+                            R$ {Number(firstPrice.value).toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-destructive">Sem preço</span>
+                        )}
+                      </div>
+                      <div className="shrink-0 flex items-center justify-center w-7 h-7 bg-brand/10 group-hover:bg-brand text-brand group-hover:text-black rounded-full transition-colors">
+                        <Icon name="Plus" size="sm" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </Card>
             </div>
           );
