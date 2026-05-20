@@ -179,9 +179,6 @@ importers:
       ajv:
         specifier: ^8.20.0
         version: 8.20.0
-      autoprefixer:
-        specifier: ^10.5.0
-        version: 10.5.0(postcss@8.5.14)
       core-js:
         specifier: ^3.36.1
         version: 3.49.0
