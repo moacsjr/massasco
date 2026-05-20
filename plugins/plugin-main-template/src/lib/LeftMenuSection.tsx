@@ -4,10 +4,12 @@ import React from 'react';
 import { FeaturePlugin, pluginLoader } from '@temp-workspace/plugin-loader';
 import { useUI } from '@temp-workspace/ui-registry';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export const LeftMenuSection: React.FC = () => {
   const { resolve } = useUI();
   const Icon = resolve('Icon');
+  const pathname = usePathname();
 
   const allPlugins = pluginLoader.getAllPlugins();
   const featurePlugins = allPlugins.filter(
@@ -39,19 +41,22 @@ export const LeftMenuSection: React.FC = () => {
       "
     >
       {menuRoutes.map((item) => {
-        const href = `/plugins/${item.pluginId}/${item.path}`;
+        const href = `/plugins/${item.pluginId}${item.path ? `/${item.path}` : ''}`;
+        const isActive = pathname === href || pathname === `${href}/`;
 
         return (
           <Link
             key={`${item.pluginId}/${item.path}`}
             href={href}
             title={item.label}
-            className="
+            className={`
               mx-2 py-2 rounded-lg
               flex items-center justify-center
               transition-colors duration-150
-              bg-transparent text-muted-foreground hover:text-foreground hover:bg-secondary
-            "
+              ${isActive 
+                ? 'bg-secondary text-brand font-medium' 
+                : 'bg-transparent text-muted-foreground hover:text-foreground hover:bg-secondary'}
+            `}
           >
             <Icon name={item.routeIcon ?? item.pluginIcon} size="md" />
           </Link>
