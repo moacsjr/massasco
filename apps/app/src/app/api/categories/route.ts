@@ -10,10 +10,10 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { name, description } = body;
+  const { name, description, imageUrl } = body;
 
   const category = await prisma.category.create({
-    data: { name, description },
+    data: { name, description, imageUrl },
   });
 
   return NextResponse.json(category, { status: 201 });

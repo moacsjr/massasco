@@ -86,10 +86,16 @@ const ProductListStep: React.FC<ProductListStepProps> = ({ products, categories,
             >
               <Card padding="none">
                 <div className="flex flex-col h-full min-h-[180px]">
-                  {/* Image Placeholder */}
-                  <div className="w-full h-24 sm:h-32 bg-secondary flex items-center justify-center text-muted-foreground/30 rounded-t-lg border-b border-border">
-                    <Icon name="Utensils" size="lg" />
-                  </div>
+                  {/* Image Area */}
+                  {p.imageUrl ? (
+                    <div className="w-full h-24 sm:h-32 rounded-t-lg border-b border-border overflow-hidden">
+                      <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-full h-24 sm:h-32 bg-secondary flex items-center justify-center text-muted-foreground/30 rounded-t-lg border-b border-border">
+                      <Icon name="Utensils" size="lg" />
+                    </div>
+                  )}
                   
                   {/* Content Area */}
                   <div className="p-3 flex flex-col flex-1">

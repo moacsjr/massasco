@@ -15,6 +15,7 @@ model Category {
   id          String    @id @default(uuid())
   name        String
   description String?
+  imageUrl    String?
   products    Product[]
   createdAt   DateTime  @default(now())
 }
@@ -23,6 +24,7 @@ model Product {
   id          String        @id @default(uuid())
   name        String
   description String?
+  imageUrl    String?
   categoryId  String
   category    Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   prices      ProductPrice[]

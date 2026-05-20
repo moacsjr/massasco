@@ -33,7 +33,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { name, description, categoryId, prices, complements } = body;
+  const { name, description, imageUrl, categoryId, prices, complements } = body;
 
   if (!name || !categoryId || !prices || prices.length === 0) {
     return NextResponse.json({ error: 'name, categoryId, and at least 1 price are required' }, { status: 400 });
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
 
   const product = await prisma.$transaction(async (tx) => {
     const created = await tx.product.create({
-      data: { name, description, categoryId },
+      data: { name, description, imageUrl, categoryId },
     });
 
     await tx.productPrice.createMany({

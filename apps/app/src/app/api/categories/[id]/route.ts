@@ -11,12 +11,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await req.json();
-  const { name, description } = body;
+  const { name, description, imageUrl } = body;
 
   try {
     const category = await prisma.category.update({
       where: { id },
-      data: { name, description },
+      data: { name, description, imageUrl },
     });
     return NextResponse.json(category);
   } catch {

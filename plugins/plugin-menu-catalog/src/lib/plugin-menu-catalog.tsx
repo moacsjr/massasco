@@ -15,6 +15,7 @@ export interface CategoryDTO {
   id: string;
   name: string;
   description?: string;
+  imageUrl?: string;
 }
 
 export interface ProductPriceDTO {
@@ -35,6 +36,7 @@ export interface ProductDTO {
   id: string;
   name: string;
   description?: string;
+  imageUrl?: string;
   categoryId: string;
   prices: ProductPriceDTO[];
   complements: ProductComplementDTO[];
@@ -43,13 +45,13 @@ export interface ProductDTO {
 export interface MenuCatalogAPI {
   listCategories(): Promise<CategoryDTO[]>;
   getCategoryById(id: string): Promise<CategoryDTO>;
-  createCategory(data: { name: string; description?: string }): Promise<CategoryDTO>;
-  updateCategory(id: string, data: { name: string; description?: string }): Promise<CategoryDTO>;
+  createCategory(data: { name: string; description?: string; imageUrl?: string }): Promise<CategoryDTO>;
+  updateCategory(id: string, data: { name: string; description?: string; imageUrl?: string }): Promise<CategoryDTO>;
   deleteCategory(id: string): Promise<void>;
   listProducts(categoryId?: string): Promise<ProductDTO[]>;
   getProductById(id: string): Promise<ProductDTO>;
-  createProduct(data: { name: string; description?: string; categoryId: string; prices: { description: string; value: number }[]; complements?: { group: string; title: string; description?: string; value?: number }[] }): Promise<ProductDTO>;
-  updateProduct(id: string, data: { name: string; description?: string; categoryId: string; prices: { description: string; value: number }[]; complements?: { group: string; title: string; description?: string; value?: number }[] }): Promise<ProductDTO>;
+  createProduct(data: { name: string; description?: string; imageUrl?: string; categoryId: string; prices: { description: string; value: number }[]; complements?: { group: string; title: string; description?: string; value?: number }[] }): Promise<ProductDTO>;
+  updateProduct(id: string, data: { name: string; description?: string; imageUrl?: string; categoryId: string; prices: { description: string; value: number }[]; complements?: { group: string; title: string; description?: string; value?: number }[] }): Promise<ProductDTO>;
   deleteProduct(id: string): Promise<void>;
   listPrices(productId: string): Promise<ProductPriceDTO[]>;
   createPrice(data: { productId: string; description: string; value: number }): Promise<ProductPriceDTO>;
@@ -269,6 +271,54 @@ const styles = {
 };
 
 // ============================================================================
+// ImageUpload Component
+// ============================================================================
+
+const ImageUpload: React.FC<{ value?: string; onChange: (url: string) => void }> = ({ value, onChange }) => {
+  const [uploading, setUploading] = React.useState(false);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!res.ok) throw new Error('Upload failed');
+      const data = await res.json();
+      if (data.imageUrl) {
+        onChange(data.imageUrl);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao fazer upload da imagem.');
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {value && (
+        <div style={{ width: '120px', height: '120px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--devxp-color-border, #2A2A2A)' }}>
+          <img src={value} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        </div>
+      )}
+      <input type="file" accept="image/*" onChange={handleUpload} disabled={uploading} ref={inputRef} style={{ fontSize: '0.85rem' }} />
+      {uploading && <span style={{ fontSize: '0.8rem', color: '#FFC107' }}>Enviando...</span>}
+    </div>
+  );
+};
+
+// ============================================================================
 // CategoryForm — create & edit
 // ============================================================================
 
@@ -284,6 +334,7 @@ const CategoryFormPage: React.FC<CategoryFormPageProps> = ({ params, categoryId:
   const Card = CardRef.current;
   const [name, setName] = React.useState('');
   const [description, setDescription] = React.useState('');
+  const [imageUrl, setImageUrl] = React.useState('');
   const [saving, setSaving] = React.useState(false);
   const isEdit = !!categoryId;
 
@@ -292,6 +343,7 @@ const CategoryFormPage: React.FC<CategoryFormPageProps> = ({ params, categoryId:
       menuCatalogAPI.getCategoryById(categoryId).then((cat) => {
         setName(cat.name);
         setDescription(cat.description || '');
+        setImageUrl(cat.imageUrl || '');
       });
     }
   }, [categoryId, isEdit]);
@@ -302,9 +354,9 @@ const CategoryFormPage: React.FC<CategoryFormPageProps> = ({ params, categoryId:
     setSaving(true);
     try {
       if (isEdit) {
-        await menuCatalogAPI.updateCategory(categoryId, { name: name.trim(), description: description.trim() || undefined });
+        await menuCatalogAPI.updateCategory(categoryId, { name: name.trim(), description: description.trim() || undefined, imageUrl: imageUrl || undefined });
       } else {
-        await menuCatalogAPI.createCategory({ name: name.trim(), description: description.trim() || undefined });
+        await menuCatalogAPI.createCategory({ name: name.trim(), description: description.trim() || undefined, imageUrl: imageUrl || undefined });
       }
       window.history.back();
     } catch (err) {
@@ -326,6 +378,10 @@ const CategoryFormPage: React.FC<CategoryFormPageProps> = ({ params, categoryId:
           <div style={styles.fieldGroup}>
             <label style={styles.label} htmlFor="cat-desc">Descrição</label>
             <input id="cat-desc" style={styles.input} value={description} onChange={(e) => setDescription(e.target.value)} />
+          </div>
+          <div style={styles.fieldGroup}>
+            <label style={styles.label}>Imagem</label>
+            <ImageUpload value={imageUrl} onChange={setImageUrl} />
           </div>
           <div style={styles.formActions}>
             <button type="submit" style={styles.primaryBtn} disabled={saving}>{saving ? 'Salvando...' : 'Salvar'}</button>
@@ -353,6 +409,7 @@ const ProductFormPage: React.FC<ProductFormPageProps> = ({ params, productId: pr
   const Card = CardRef.current;
   const [name, setName] = React.useState('');
   const [description, setDescription] = React.useState('');
+  const [imageUrl, setImageUrl] = React.useState('');
   const [categoryId, setCategoryId] = React.useState('');
   const [prices, setPrices] = React.useState<{ id?: string; description: string; value: string }[]>([]);
   const [complements, setComplements] = React.useState<{ id?: string; group: string; title: string; description: string; value: string }[]>([]);
@@ -366,6 +423,7 @@ const ProductFormPage: React.FC<ProductFormPageProps> = ({ params, productId: pr
       menuCatalogAPI.getProductById(productId).then((prod) => {
         setName(prod.name);
         setDescription(prod.description || '');
+        setImageUrl(prod.imageUrl || '');
         setCategoryId(prod.categoryId);
         setPrices(prod.prices.map((p) => ({
           id: p.id,
@@ -447,6 +505,7 @@ const ProductFormPage: React.FC<ProductFormPageProps> = ({ params, productId: pr
       const data = {
         name: name.trim(),
         description: description.trim() || undefined,
+        imageUrl: imageUrl || undefined,
         categoryId,
         prices: parsedPrices,
         complements: parsedComplements,
@@ -483,6 +542,10 @@ const ProductFormPage: React.FC<ProductFormPageProps> = ({ params, productId: pr
           <div style={styles.fieldGroup}>
             <label style={styles.label} htmlFor="prod-desc">Descrição</label>
             <input id="prod-desc" style={styles.input} value={description} onChange={(e) => setDescription(e.target.value)} />
+          </div>
+          <div style={styles.fieldGroup}>
+            <label style={styles.label}>Imagem</label>
+            <ImageUpload value={imageUrl} onChange={setImageUrl} />
           </div>
 
           {/* Prices section */}
@@ -619,9 +682,18 @@ const CategoryListPage: React.FC = () => {
           <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
             {categories.map((c) => (
               <li key={c.id} style={styles.listItem}>
-                <div style={{ minWidth: 0 }}>
-                  <strong>{c.name}</strong>
-                  {c.description && <div style={{ fontSize: '0.85rem', color: 'var(--devxp-color-text-muted, #A0A0A0)' }}>{c.description}</div>}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                  {c.imageUrl ? (
+                    <div style={{ width: '40px', height: '40px', borderRadius: '4px', overflow: 'hidden', flexShrink: 0 }}>
+                      <img src={c.imageUrl} alt={c.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  ) : (
+                    <div style={{ width: '40px', height: '40px', borderRadius: '4px', backgroundColor: 'var(--devxp-color-surface-elevated, #2A2A2A)', flexShrink: 0 }} />
+                  )}
+                  <div style={{ minWidth: 0 }}>
+                    <strong>{c.name}</strong>
+                    {c.description && <div style={{ fontSize: '0.85rem', color: 'var(--devxp-color-text-muted, #A0A0A0)' }}>{c.description}</div>}
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
                   <IconButton icon="Pencil" variant="ghost" size="sm" href={`/plugins/${PLUGIN_ID}/categories/${c.id}`} title="Editar" />
@@ -697,12 +769,21 @@ const ProductListPage: React.FC = () => {
           <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
             {filtered.map((p) => (
               <li key={p.id} style={styles.listItem}>
-                <div style={{ minWidth: 0 }}>
-                  <strong>{p.name}</strong>
-                  {p.description && <div style={{ fontSize: '0.85rem', color: 'var(--devxp-color-text-muted, #A0A0A0)' }}>{p.description}</div>}
-                  {p.complements && p.complements.length > 0 && (
-                    <div style={{ fontSize: '0.8rem', color: 'var(--devxp-color-text-muted, #A0A0A0)' }}>🔗 {p.complements.length} complemento{p.complements.length > 1 ? 's' : ''}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                  {p.imageUrl ? (
+                    <div style={{ width: '40px', height: '40px', borderRadius: '4px', overflow: 'hidden', flexShrink: 0 }}>
+                      <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  ) : (
+                    <div style={{ width: '40px', height: '40px', borderRadius: '4px', backgroundColor: 'var(--devxp-color-surface-elevated, #2A2A2A)', flexShrink: 0 }} />
                   )}
+                  <div style={{ minWidth: 0 }}>
+                    <strong>{p.name}</strong>
+                    {p.description && <div style={{ fontSize: '0.85rem', color: 'var(--devxp-color-text-muted, #A0A0A0)' }}>{p.description}</div>}
+                    {p.complements && p.complements.length > 0 && (
+                      <div style={{ fontSize: '0.8rem', color: 'var(--devxp-color-text-muted, #A0A0A0)' }}>🔗 {p.complements.length} complemento{p.complements.length > 1 ? 's' : ''}</div>
+                    )}
+                  </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                   <span style={{ fontWeight: 600, color: '#FFC107', fontSize: '0.85rem' }}>

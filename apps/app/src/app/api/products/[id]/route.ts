@@ -18,14 +18,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await req.json();
-  const { name, description, categoryId, prices, complements } = body;
+  const { name, description, imageUrl, categoryId, prices, complements } = body;
 
   try {
     const product = await prisma.$transaction(async (tx) => {
       // Update product fields
       const updated = await tx.product.update({
         where: { id },
-        data: { name, description, categoryId },
+        data: { name, description, imageUrl, categoryId },
       });
 
       if (prices && Array.isArray(prices)) {
