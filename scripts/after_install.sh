@@ -56,8 +56,6 @@ pnpm prisma generate
 echo "Running Prisma migrations..."
 pnpm prisma migrate deploy
 
-# Build the application using Nx
-echo "Building the application..."
-pnpm nx build app
+
 
 exit 0

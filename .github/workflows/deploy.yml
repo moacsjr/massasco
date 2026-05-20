@@ -1,0 +1,54 @@
+name: CI/CD Pipeline - AWS CodeDeploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Application
+        run: npx nx build app
+
+      - name: Package Artifact
+        run: |
+          echo "Zipping application for deployment..."
+          zip -q -r deploy.zip . -x "*.git*" "*node_modules*" "*.next*" "*.nx*" "*tmp*" "*test-results*"
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Upload Artifact to S3
+        run: |
+          aws s3 cp deploy.zip s3://${{ secrets.S3_BUCKET_NAME }}/deploy-${{ github.sha }}.zip
+
+      - name: Trigger AWS CodeDeploy
+        run: |
+          aws deploy create-deployment \
+            --application-name ${{ secrets.CODEDEPLOY_APPLICATION_NAME }} \
+            --deployment-group-name ${{ secrets.CODEDEPLOY_DEPLOYMENT_GROUP_NAME }} \
+            --s3-location bucket=${{ secrets.S3_BUCKET_NAME }},key=deploy-${{ github.sha }}.zip,bundleType=zip
