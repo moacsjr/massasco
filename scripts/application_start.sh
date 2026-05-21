@@ -18,9 +18,15 @@ export PATH="/usr/bin:/usr/local/bin:/usr/sbin:/usr/local/sbin:/home/ec2-user/.n
 # Load Node.js and PM2 environment
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-# Start application using PM2
+# Stop any prior instance so we start clean (idempotent)
+pm2 delete devx-portal 2>/dev/null || true
+
+# Start Next.js directly under PM2 (no Nx in the runtime path)
 echo "Launching devx-portal using PM2..."
-pm2 start "pnpm nx start app" --name "devx-portal"
+pm2 start node_modules/next/dist/bin/next \
+  --name "devx-portal" \
+  --cwd "$APP_DIR/apps/app" \
+  -- start -p 3000
 
 # Save PM2 process list to restore on reboot
 pm2 save

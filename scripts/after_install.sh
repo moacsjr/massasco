@@ -72,6 +72,9 @@ pnpm prisma generate
 echo "Running Prisma migrations..."
 pnpm prisma migrate deploy
 
-
+# Build Next.js at deploy time so PM2 only ever runs `next start`
+echo "Building Next.js app..."
+rm -rf apps/app/.next
+pnpm nx build app
 
 exit 0
