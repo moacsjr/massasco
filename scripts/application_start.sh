@@ -20,12 +20,8 @@ export PATH="/usr/bin:/usr/local/bin:/usr/sbin:/usr/local/sbin:$PATH"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 nvm use 22 >/dev/null
 
-# Stop any prior instance so we start clean (idempotent)
-pm2 delete devx-portal 2>/dev/null || true
-
 # Load runtime env (written by after_install.sh) into the shell so PM2 passes
-# DATABASE_URL & friends directly to the Node process. Don't depend on Next.js
-# auto-loading apps/app/.env — failure mode is silent at boot.
+# DATABASE_URL & friends directly to the Node process.
 ENV_FILE="$APP_DIR/apps/app/.env"
 if [ ! -f "$ENV_FILE" ]; then
   echo "ERROR: $ENV_FILE missing — after_install.sh should have created it."
@@ -34,6 +30,19 @@ fi
 set -a
 . "$ENV_FILE"
 set +a
+
+# Kill the entire PM2 daemon (not just `pm2 delete devx-portal`) so the next
+# `pm2 start` spawns a fresh god process that inherits the current shell's env.
+# Without this, the daemon can keep stale env from a previous deploy and pass
+# it to children — the symptom is DATABASE_URL missing at Prisma init time
+# even though it's set in this script's shell.
+pm2 kill 2>/dev/null || true
+
+# Sanity-check that the env we just loaded is actually present before launch
+if [ -z "${DATABASE_URL:-}" ]; then
+  echo "ERROR: DATABASE_URL not set after sourcing $ENV_FILE."
+  exit 1
+fi
 
 # Start Next.js directly under PM2 (no Nx in the runtime path)
 echo "Launching devx-portal using PM2..."
