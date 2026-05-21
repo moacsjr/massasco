@@ -25,9 +25,9 @@ else
   echo "PM2 is not installed or not in PATH."
 fi
 
-# Resolve the application root directory dynamically (relative to this script's location)
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+# CodeDeploy runs hook scripts from its staging area; the docker-compose file
+# lives at the install destination defined in appspec.yml.
+APP_DIR="/home/ec2-user/meu-app"
 
 # Stop Docker Compose containers if running to allow clean restart
 if command -v docker &> /dev/null; then

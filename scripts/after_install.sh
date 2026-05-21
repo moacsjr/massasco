@@ -3,10 +3,12 @@
 # happens in CI; the deploy artifact already contains node_modules, .next, and dist.
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+# CodeDeploy runs hook scripts from the staging area
+# (/opt/codedeploy-agent/.../deployment-archive), but the app is installed at
+# the destination defined in appspec.yml. Always operate on the installed copy.
+APP_DIR="/home/ec2-user/meu-app"
 
-echo "Application root directory resolved to: $APP_DIR"
+echo "Application root directory: $APP_DIR"
 
 # CodeDeploy extracts files as root — fix ownership so ec2-user can write
 sudo chown -R ec2-user:ec2-user "$APP_DIR"

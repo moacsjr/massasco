@@ -3,11 +3,12 @@
 
 echo "Starting application..."
 
-# Resolve the application root directory dynamically (relative to this script's location)
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+# CodeDeploy runs hook scripts from its staging area, not from the install
+# destination. Use the destination defined in appspec.yml so PM2 doesn't run
+# against a directory CodeDeploy may rotate or remove.
+APP_DIR="/home/ec2-user/meu-app"
 
-echo "Application root directory resolved to: $APP_DIR"
+echo "Application root directory: $APP_DIR"
 cd "$APP_DIR"
 
 # Define standard home and path variables for CodeDeploy environment
