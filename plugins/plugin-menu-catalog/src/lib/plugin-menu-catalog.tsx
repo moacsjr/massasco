@@ -845,6 +845,129 @@ const ProductFormPage: React.FC<ProductFormPageProps> = ({
             ))}
           </div>
 
+          {/* Complements section */}
+          <div style={{ ...styles.pricesSection, marginTop: '20px' }}>
+            <div style={{ ...styles.headingRow, marginBottom: '12px' }}>
+              <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>
+                Complementos ({complements.length})
+              </span>
+              <button
+                type="button"
+                style={styles.primaryBtn}
+                onClick={addComplement}
+              >
+                + Adicionar Complemento
+              </button>
+            </div>
+            {complements.length === 0 && (
+              <p
+                style={{
+                  ...styles.empty,
+                  padding: '12px 0',
+                  fontSize: '0.85rem',
+                }}
+              >
+                Nenhum complemento adicionado.
+              </p>
+            )}
+            {complements.map((c, index) => (
+              <div
+                key={index}
+                style={{
+                  marginBottom: '12px',
+                  padding: '12px',
+                  backgroundColor:
+                    'var(--devxp-color-surface-elevated, #1E1E1E)',
+                  borderRadius: '6px',
+                  border: '1px solid var(--devxp-color-border, #2A2A2A)',
+                }}
+              >
+                <div
+                  style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <label style={styles.label}>Grupo</label>
+                    {c.group === '---new---' ||
+                    (c.group && !groups.includes(c.group)) ||
+                    groups.length === 0 ? (
+                      <input
+                        style={styles.input}
+                        autoFocus={c.group === '---new---'}
+                        value={c.group === '---new---' ? '' : c.group}
+                        onChange={(e) =>
+                          updateComplement(index, 'group', e.target.value)
+                        }
+                        placeholder="Nome do grupo"
+                      />
+                    ) : (
+                      <select
+                        style={styles.select}
+                        value={c.group}
+                        onChange={(e) =>
+                          updateComplement(index, 'group', e.target.value)
+                        }
+                      >
+                        <option value="">Selecione...</option>
+                        {groups.map((g) => (
+                          <option key={g} value={g}>
+                            {g}
+                          </option>
+                        ))}
+                        <option value="---new---">+ Novo grupo</option>
+                      </select>
+                    )}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={styles.label}>Título</label>
+                    <input
+                      style={styles.input}
+                      value={c.title}
+                      onChange={(e) =>
+                        updateComplement(index, 'title', e.target.value)
+                      }
+                      placeholder="Ex: Bacon extra"
+                    />
+                  </div>
+                  <div style={{ ...styles.priceFieldSmall }}>
+                    <label style={styles.label}>Valor (R$)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      style={styles.input}
+                      value={c.value}
+                      onChange={(e) =>
+                        updateComplement(index, 'value', e.target.value)
+                      }
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+                <div
+                  style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <label style={styles.label}>Descrição</label>
+                    <input
+                      style={styles.input}
+                      value={c.description}
+                      onChange={(e) =>
+                        updateComplement(index, 'description', e.target.value)
+                      }
+                      placeholder="Ex: Adicionar 2 fatias de bacon"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    style={{ ...styles.smallDangerBtn, marginTop: '16px' }}
+                    onClick={() => removeComplement(index)}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
           <div style={styles.formActions}>
             <button type="submit" style={styles.primaryBtn} disabled={saving}>
               {saving ? 'Salvando...' : 'Salvar'}
@@ -858,126 +981,6 @@ const ProductFormPage: React.FC<ProductFormPageProps> = ({
             </button>
           </div>
         </form>
-
-        {/* Complements section */}
-        <div style={{ ...styles.pricesSection, marginTop: '20px' }}>
-          <div style={{ ...styles.headingRow, marginBottom: '12px' }}>
-            <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>
-              Complementos ({complements.length})
-            </span>
-            <button
-              type="button"
-              style={styles.primaryBtn}
-              onClick={addComplement}
-            >
-              + Adicionar Complemento
-            </button>
-          </div>
-          {complements.length === 0 && (
-            <p
-              style={{
-                ...styles.empty,
-                padding: '12px 0',
-                fontSize: '0.85rem',
-              }}
-            >
-              Nenhum complemento adicionado.
-            </p>
-          )}
-          {complements.map((c, index) => (
-            <div
-              key={index}
-              style={{
-                marginBottom: '12px',
-                padding: '12px',
-                backgroundColor: 'var(--devxp-color-surface-elevated, #1E1E1E)',
-                borderRadius: '6px',
-                border: '1px solid var(--devxp-color-border, #2A2A2A)',
-              }}
-            >
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={styles.label}>Grupo</label>
-                  {c.group === '---new---' ||
-                  (c.group && !groups.includes(c.group)) ||
-                  groups.length === 0 ? (
-                    <input
-                      style={styles.input}
-                      autoFocus={c.group === '---new---'}
-                      value={c.group === '---new---' ? '' : c.group}
-                      onChange={(e) =>
-                        updateComplement(index, 'group', e.target.value)
-                      }
-                      placeholder="Nome do grupo"
-                    />
-                  ) : (
-                    <select
-                      style={styles.select}
-                      value={c.group}
-                      onChange={(e) =>
-                        updateComplement(index, 'group', e.target.value)
-                      }
-                    >
-                      <option value="">Selecione...</option>
-                      {groups.map((g) => (
-                        <option key={g} value={g}>
-                          {g}
-                        </option>
-                      ))}
-                      <option value="---new---">+ Novo grupo</option>
-                    </select>
-                  )}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={styles.label}>Título</label>
-                  <input
-                    style={styles.input}
-                    value={c.title}
-                    onChange={(e) =>
-                      updateComplement(index, 'title', e.target.value)
-                    }
-                    placeholder="Ex: Bacon extra"
-                  />
-                </div>
-                <div style={{ ...styles.priceFieldSmall }}>
-                  <label style={styles.label}>Valor (R$)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    style={styles.input}
-                    value={c.value}
-                    onChange={(e) =>
-                      updateComplement(index, 'value', e.target.value)
-                    }
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-              <div
-                style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
-              >
-                <div style={{ flex: 1 }}>
-                  <label style={styles.label}>Descrição</label>
-                  <input
-                    style={styles.input}
-                    value={c.description}
-                    onChange={(e) =>
-                      updateComplement(index, 'description', e.target.value)
-                    }
-                    placeholder="Ex: Adicionar 2 fatias de bacon"
-                  />
-                </div>
-                <button
-                  type="button"
-                  style={{ ...styles.smallDangerBtn, marginTop: '16px' }}
-                  onClick={() => removeComplement(index)}
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
       </Card>
     </div>
   );
