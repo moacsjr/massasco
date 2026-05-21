@@ -100,7 +100,11 @@ for i in {1..30}; do
   sleep 2
 done
 
-# Apply migrations against the running DB (uses prisma CLI from the shipped node_modules)
+# Regenerate Prisma Client + engines (native binaries may not survive tar extraction)
+echo "Generating Prisma Client..."
+npx prisma generate
+
+# Apply migrations against the running DB
 echo "Running Prisma migrations..."
 node_modules/.bin/prisma migrate deploy
 
