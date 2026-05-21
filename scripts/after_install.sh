@@ -100,12 +100,14 @@ for i in {1..30}; do
   sleep 2
 done
 
-# Regenerate Prisma Client + engines (native binaries may not survive tar extraction)
+# Regenerate Prisma Client + engines (native binaries may not survive tar extraction).
+# Uses local prisma from node_modules; --schema ensures correct path.
+# This downloads the RHEL schema-engine binary at runtime if not bundled.
 echo "Generating Prisma Client..."
-npx prisma generate
+node_modules/.bin/prisma generate --schema=prisma/schema.prisma
 
 # Apply migrations against the running DB
 echo "Running Prisma migrations..."
-node_modules/.bin/prisma migrate deploy
+node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma
 
 exit 0
