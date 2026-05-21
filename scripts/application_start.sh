@@ -13,10 +13,11 @@ cd "$APP_DIR"
 # Define standard home and path variables for CodeDeploy environment
 export HOME="/home/ec2-user"
 export NVM_DIR="/home/ec2-user/.nvm"
-export PATH="/usr/bin:/usr/local/bin:/usr/sbin:/usr/local/sbin:/home/ec2-user/.nvm/versions/node/v20.0.0/bin:$PATH"
+export PATH="/usr/bin:/usr/local/bin:/usr/sbin:/usr/local/sbin:$PATH"
 
-# Load Node.js and PM2 environment
+# Load Node.js (pinned to v22 in before_install.sh)
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+nvm use 22 >/dev/null
 
 # Stop any prior instance so we start clean (idempotent)
 pm2 delete devx-portal 2>/dev/null || true

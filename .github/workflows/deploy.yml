@@ -25,7 +25,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'pnpm'
 
       - name: Install Dependencies
@@ -35,12 +35,20 @@ jobs:
         run: pnpm prisma generate
 
       - name: Build Application
-        run: npx nx build app
+        run: pnpm nx build app
 
       - name: Package Artifact
+        # Ship build outputs and node_modules so the EC2 host does zero build work.
+        # -y preserves pnpm's symlink structure inside node_modules.
         run: |
           echo "Zipping application for deployment..."
-          zip -q -r deploy.zip . -x "*.git*" "*node_modules*" "*.next*" "*.nx*" "*tmp*" "*test-results*"
+          zip -q -y -r deploy.zip . \
+            -x "*.git*" \
+               ".nx/cache/*" \
+               "tmp/*" \
+               "test-results/*" \
+               "e2e/test-results/*" \
+               "playwright-report/*"
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4

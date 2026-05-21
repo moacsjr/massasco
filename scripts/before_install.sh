@@ -4,7 +4,7 @@
 # Define standard home and path variables for CodeDeploy environment
 export HOME="/home/ec2-user"
 export NVM_DIR="/home/ec2-user/.nvm"
-export PATH="/usr/bin:/usr/local/bin:/usr/sbin:/usr/local/sbin:/home/ec2-user/.nvm/versions/node/v20.0.0/bin:$PATH"
+export PATH="/usr/bin:/usr/local/bin:/usr/sbin:/usr/local/sbin:$PATH"
 
 echo "Preparing environment on Amazon Linux..."
 
@@ -55,12 +55,11 @@ fi
 # Load NVM
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-if ! command -v node &> /dev/null; then
-  echo "Installing Node.js v20..."
-  nvm install 20
-  nvm use 20
-  nvm alias default 20
-fi
+# Ensure Node 22 is installed and active (matches CI build node version)
+echo "Ensuring Node.js v22 is installed..."
+nvm install 22
+nvm use 22
+nvm alias default 22
 
 # Ensure correct path to Node binary is set
 export PATH="$NVM_DIR/versions/node/$(nvm current)/bin:$PATH"

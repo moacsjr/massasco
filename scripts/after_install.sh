@@ -1,7 +1,8 @@
 #!/bin/bash
-# Install dependencies, setup database, run migrations, and build app
+# Runtime-only setup. All build work (pnpm install, prisma generate, nx build)
+# happens in CI; the deploy artifact already contains node_modules, .next, and dist.
+set -e
 
-# Resolve the application root directory dynamically (relative to this script's location)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
@@ -12,13 +13,13 @@ sudo chown -R ec2-user:ec2-user "$APP_DIR"
 
 cd "$APP_DIR"
 
-# Define standard home and path variables for CodeDeploy environment
 export HOME="/home/ec2-user"
 export NVM_DIR="/home/ec2-user/.nvm"
-export PATH="/usr/bin:/usr/local/bin:/usr/sbin:/usr/local/sbin:/home/ec2-user/.nvm/versions/node/v20.0.0/bin:$PATH"
+export PATH="/usr/bin:/usr/local/bin:/usr/sbin:/usr/local/sbin:$PATH"
 
-# Load Node.js and PM2 environment
+# Load NVM and pin Node 22 (matches CI build version)
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+nvm use 22 >/dev/null
 
 # Fetch runtime config from SSM and write .env
 echo "Fetching runtime config from SSM..."
@@ -49,7 +50,6 @@ else
   exit 1
 fi
 
-# Wait for PostgreSQL container to start and accept connections
 echo "Waiting for database to be ready..."
 for i in {1..30}; do
   if docker exec $(docker ps -q -f name=db) pg_isready -U postgres &>/dev/null; then
@@ -60,21 +60,8 @@ for i in {1..30}; do
   sleep 2
 done
 
-# Install dependencies using pnpm
-echo "Installing project dependencies..."
-pnpm install
-
-# Generate Prisma Client
-echo "Generating Prisma Client..."
-pnpm prisma generate
-
-# Run Prisma migrations
+# Apply migrations against the running DB (uses prisma CLI from the shipped node_modules)
 echo "Running Prisma migrations..."
-pnpm prisma migrate deploy
-
-# Build Next.js at deploy time so PM2 only ever runs `next start`
-echo "Building Next.js app..."
-rm -rf apps/app/.next
-pnpm nx build app
+node_modules/.bin/prisma migrate deploy
 
 exit 0
