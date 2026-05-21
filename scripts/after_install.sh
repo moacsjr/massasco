@@ -6,6 +6,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo "Application root directory resolved to: $APP_DIR"
+
+# CodeDeploy extracts files as root — fix ownership so ec2-user can write
+sudo chown -R ec2-user:ec2-user "$APP_DIR"
+
 cd "$APP_DIR"
 
 # Define standard home and path variables for CodeDeploy environment
