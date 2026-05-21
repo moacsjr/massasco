@@ -71,6 +71,7 @@
     "@nestjs/platform-express": "^11.0.0",
     "@nx/devkit": "22.7.1",
     "@prisma/client": "^5.22.0",
+    "@prisma/engines": "^5.22.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-progress": "^1.1.8",
     "@radix-ui/react-scroll-area": "^1.2.10",
