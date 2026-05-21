@@ -65,13 +65,19 @@ if [ -z "$MEDIA_BUCKET" ] || [ "$MEDIA_BUCKET" = "None" ]; then
   exit 1
 fi
 
+# Next.js is launched with --cwd apps/app, so it reads .env from there.
+# Prisma CLI (run from $APP_DIR below) reads DATABASE_URL from the shell env,
+# which we export explicitly so we don't need a duplicate root .env.
+ENV_FILE="apps/app/.env"
 {
   echo "DATABASE_URL=\"${DATABASE_URL}\""
   echo "NEXT_PUBLIC_CDN_URL=\"${CDN_URL}\""
   echo "AWS_S3_BUCKET_NAME=\"${MEDIA_BUCKET}\""
-} > .env
-chmod 600 .env
-echo ".env created with $(wc -l < .env) entries."
+} > "$ENV_FILE"
+chmod 600 "$ENV_FILE"
+echo "$ENV_FILE created with $(wc -l < "$ENV_FILE") entries."
+
+export DATABASE_URL
 
 # Start PostgreSQL database container
 echo "Starting PostgreSQL database container..."
