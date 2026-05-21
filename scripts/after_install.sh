@@ -23,7 +23,18 @@ nvm use 22 >/dev/null
 
 # Fetch runtime config from SSM and write .env
 echo "Fetching runtime config from SSM..."
-REGION=$(curl -s http://169.254.169.254/latest/meta-data/placement/region)
+
+# IMDSv2: fetch a session token first, then use it to read metadata.
+IMDS_TOKEN=$(curl -sf -X PUT "http://169.254.169.254/latest/api/token" \
+  -H "X-aws-ec2-metadata-token-ttl-seconds: 300" || echo "")
+REGION=$(curl -sf -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" \
+  http://169.254.169.254/latest/meta-data/placement/region || echo "")
+if [ -z "$REGION" ]; then
+  echo "ERROR: could not resolve EC2 region from IMDS."
+  exit 1
+fi
+echo "Resolved region: $REGION"
+
 PROJECT_NAME="devxp-portal"
 
 # DATABASE_URL is required — fail the deploy loudly if SSM doesn't have it.
