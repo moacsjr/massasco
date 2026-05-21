@@ -39,14 +39,23 @@ fi
 CDN_URL=$(aws ssm get-parameter \
   --name "/${PROJECT_NAME}/cloudfront_url" \
   --query Parameter.Value --output text --region "$REGION" 2>/dev/null || echo "")
+if [ -z "$CDN_URL" ] || [ "$CDN_URL" = "None" ]; then
+  echo "ERROR: /${PROJECT_NAME}/cloudfront_url is missing in SSM (region $REGION)."
+  exit 1
+fi
+
 MEDIA_BUCKET=$(aws ssm get-parameter \
   --name "/${PROJECT_NAME}/media_bucket_name" \
   --query Parameter.Value --output text --region "$REGION" 2>/dev/null || echo "")
+if [ -z "$MEDIA_BUCKET" ] || [ "$MEDIA_BUCKET" = "None" ]; then
+  echo "ERROR: /${PROJECT_NAME}/media_bucket_name is missing in SSM (region $REGION)."
+  exit 1
+fi
 
 {
   echo "DATABASE_URL=\"${DATABASE_URL}\""
-  [ -n "$CDN_URL" ] && echo "NEXT_PUBLIC_CDN_URL=\"${CDN_URL}\""
-  [ -n "$MEDIA_BUCKET" ] && echo "AWS_S3_BUCKET_NAME=\"${MEDIA_BUCKET}\""
+  echo "NEXT_PUBLIC_CDN_URL=\"${CDN_URL}\""
+  echo "AWS_S3_BUCKET_NAME=\"${MEDIA_BUCKET}\""
 } > .env
 chmod 600 .env
 echo ".env created with $(wc -l < .env) entries."
