@@ -28,6 +28,11 @@ resource "aws_instance" "app" {
   iam_instance_profile        = aws_iam_instance_profile.ec2.name
   associate_public_ip_address = true
 
+  root_block_device {
+    volume_size = 100
+    volume_type = "gp3"
+  }
+
   user_data = <<-EOF
     #!/bin/bash
     dnf update -y
