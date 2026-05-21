@@ -39,27 +39,27 @@ jobs:
 
       - name: Package Artifact
         # Ship build outputs and node_modules so the EC2 host does zero build work.
-        # -y preserves pnpm's symlink structure inside node_modules.
+        # tar.gz preserves pnpm's symlinks; zip+rubyzip (CodeDeploy) does not.
         run: |
-          echo "Zipping application for deployment..."
-          zip -q -y -r deploy.zip . \
-            -x "*.git*" \
-               ".nx/cache/*" \
-               "tmp/*" \
-               "test-results/*" \
-               "e2e/test-results/*" \
-               "playwright-report/*"
+          echo "Packaging application for deployment..."
+          tar --exclude='./.git*' \
+              --exclude='./.nx/cache' \
+              --exclude='./tmp' \
+              --exclude='./test-results' \
+              --exclude='./e2e/test-results' \
+              --exclude='./playwright-report' \
+              -czf deploy.tgz .
 
       - name: Verify bundle contents
         run: |
-          echo "Top-level entries in deploy.zip:"
-          unzip -l deploy.zip | awk 'NR>3 {print $NF}' | awk -F/ '{print $1}' | sort -u | head -50
+          echo "Top-level entries in deploy.tgz:"
+          tar -tzf deploy.tgz | awk -F/ '{print $2}' | sort -u | head -50
           echo "---"
           echo "scripts/ entries in bundle:"
-          unzip -l deploy.zip | grep -E '^\s+[0-9]+\s.*scripts/' || (echo "ERROR: scripts/ not in bundle" && exit 1)
+          tar -tzf deploy.tgz | grep -E '^\./scripts/' || (echo "ERROR: scripts/ not in bundle" && exit 1)
           echo "---"
           echo "appspec.yml present:"
-          unzip -l deploy.zip | grep -E '\sappspec\.yml$' || (echo "ERROR: appspec.yml missing" && exit 1)
+          tar -tzf deploy.tgz | grep -E '^\./appspec\.yml$' || (echo "ERROR: appspec.yml missing" && exit 1)
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -69,11 +69,11 @@ jobs:
 
       - name: Upload Artifact to S3
         run: |
-          aws s3 cp deploy.zip s3://${{ vars.S3_BUCKET_NAME }}/deploy-${{ github.sha }}.zip
+          aws s3 cp deploy.tgz s3://${{ vars.S3_BUCKET_NAME }}/deploy-${{ github.sha }}.tgz
 
       - name: Trigger AWS CodeDeploy
         run: |
           aws deploy create-deployment \
             --application-name ${{  vars.CODEDEPLOY_APPLICATION_NAME }} \
             --deployment-group-name ${{ vars.CODEDEPLOY_DEPLOYMENT_GROUP_NAME }} \
-            --s3-location bucket=${{ vars.S3_BUCKET_NAME }},key=deploy-${{ github.sha }}.zip,bundleType=zip
+            --s3-location bucket=${{ vars.S3_BUCKET_NAME }},key=deploy-${{ github.sha }}.tgz,bundleType=tgz
