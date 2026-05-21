@@ -40,6 +40,8 @@ jobs:
       - name: Package Artifact
         # Ship build outputs and node_modules so the EC2 host does zero build work.
         # tar.gz preserves pnpm's symlinks; zip+rubyzip (CodeDeploy) does not.
+        # Write the tarball outside the workspace so tar doesn't see its own
+        # output as "file changed as we read it".
         run: |
           echo "Packaging application for deployment..."
           tar --exclude='./.git*' \
@@ -48,7 +50,8 @@ jobs:
               --exclude='./test-results' \
               --exclude='./e2e/test-results' \
               --exclude='./playwright-report' \
-              -czf deploy.tgz .
+              -czf "$RUNNER_TEMP/deploy.tgz" .
+          mv "$RUNNER_TEMP/deploy.tgz" deploy.tgz
 
       - name: Verify bundle contents
         run: |
