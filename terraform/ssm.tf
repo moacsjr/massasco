@@ -9,3 +9,9 @@ resource "aws_ssm_parameter" "media_bucket" {
   type  = "String"
   value = aws_s3_bucket.media.id
 }
+
+resource "aws_ssm_parameter" "database_url" {
+  name  = "/${var.project_name}/database_url"
+  type  = "SecureString"
+  value = var.database_url
+}

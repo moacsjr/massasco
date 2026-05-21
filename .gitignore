@@ -48,3 +48,8 @@ vite.config.*.timestamp*
 # Next.js
 .next
 out
+
+# Local environment files (runtime config is sourced from SSM in scripts/after_install.sh)
+.env
+.env.local
+.env.*.local

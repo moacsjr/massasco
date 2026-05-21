@@ -25,6 +25,17 @@ nvm use 22 >/dev/null
 echo "Fetching runtime config from SSM..."
 REGION=$(curl -s http://169.254.169.254/latest/meta-data/placement/region)
 PROJECT_NAME="devxp-portal"
+
+# DATABASE_URL is required — fail the deploy loudly if SSM doesn't have it.
+DATABASE_URL=$(aws ssm get-parameter \
+  --name "/${PROJECT_NAME}/database_url" \
+  --with-decryption \
+  --query Parameter.Value --output text --region "$REGION")
+if [ -z "$DATABASE_URL" ] || [ "$DATABASE_URL" = "None" ]; then
+  echo "ERROR: /${PROJECT_NAME}/database_url is missing in SSM (region $REGION)."
+  exit 1
+fi
+
 CDN_URL=$(aws ssm get-parameter \
   --name "/${PROJECT_NAME}/cloudfront_url" \
   --query Parameter.Value --output text --region "$REGION" 2>/dev/null || echo "")
@@ -33,10 +44,11 @@ MEDIA_BUCKET=$(aws ssm get-parameter \
   --query Parameter.Value --output text --region "$REGION" 2>/dev/null || echo "")
 
 {
-  echo "DATABASE_URL=\"postgresql://postgres:password@localhost:5432/devxp?schema=public\""
+  echo "DATABASE_URL=\"${DATABASE_URL}\""
   [ -n "$CDN_URL" ] && echo "NEXT_PUBLIC_CDN_URL=\"${CDN_URL}\""
   [ -n "$MEDIA_BUCKET" ] && echo "AWS_S3_BUCKET_NAME=\"${MEDIA_BUCKET}\""
 } > .env
+chmod 600 .env
 echo ".env created with $(wc -l < .env) entries."
 
 # Start PostgreSQL database container

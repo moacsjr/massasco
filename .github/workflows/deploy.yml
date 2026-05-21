@@ -50,6 +50,17 @@ jobs:
                "e2e/test-results/*" \
                "playwright-report/*"
 
+      - name: Verify bundle contents
+        run: |
+          echo "Top-level entries in deploy.zip:"
+          unzip -l deploy.zip | awk 'NR>3 {print $NF}' | awk -F/ '{print $1}' | sort -u | head -50
+          echo "---"
+          echo "scripts/ entries in bundle:"
+          unzip -l deploy.zip | grep -E '^\s+[0-9]+\s.*scripts/' || (echo "ERROR: scripts/ not in bundle" && exit 1)
+          echo "---"
+          echo "appspec.yml present:"
+          unzip -l deploy.zip | grep -E '\sappspec\.yml$' || (echo "ERROR: appspec.yml missing" && exit 1)
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:

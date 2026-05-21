@@ -21,3 +21,10 @@ variable "github_repo" {
   type        = string
   default     = "moacsjr/massasco"
 }
+
+variable "database_url" {
+  description = "Connection string used at runtime. Staging defaults to the docker-compose Postgres on the same EC2; override (via tfvars) when migrating to RDS."
+  type        = string
+  sensitive   = true
+  default     = "postgresql://postgres:password@localhost:5432/devxp?schema=public"
+}
