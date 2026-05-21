@@ -21,3 +21,4 @@ services:
 
 volumes:
   devxp_data:
+    name: docker_devxp_data
