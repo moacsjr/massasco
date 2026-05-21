@@ -23,11 +23,24 @@ nvm use 22 >/dev/null
 # Stop any prior instance so we start clean (idempotent)
 pm2 delete devx-portal 2>/dev/null || true
 
+# Load runtime env (written by after_install.sh) into the shell so PM2 passes
+# DATABASE_URL & friends directly to the Node process. Don't depend on Next.js
+# auto-loading apps/app/.env — failure mode is silent at boot.
+ENV_FILE="$APP_DIR/apps/app/.env"
+if [ ! -f "$ENV_FILE" ]; then
+  echo "ERROR: $ENV_FILE missing — after_install.sh should have created it."
+  exit 1
+fi
+set -a
+. "$ENV_FILE"
+set +a
+
 # Start Next.js directly under PM2 (no Nx in the runtime path)
 echo "Launching devx-portal using PM2..."
 pm2 start node_modules/next/dist/bin/next \
   --name "devx-portal" \
   --cwd "$APP_DIR/apps/app" \
+  --update-env \
   -- start -p 3000
 
 # Save PM2 process list to restore on reboot
