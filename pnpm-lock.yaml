@@ -10,6 +10,9 @@ importers:
       '@aws-sdk/client-s3':
         specifier: ^3.1051.0
         version: 3.1051.0
+      '@aws-sdk/core':
+        specifier: ^3.974.12
+        version: 3.974.12
       '@nestjs/common':
         specifier: ^11.0.0
         version: 11.1.19(reflect-metadata@0.1.14)(rxjs@7.8.2)

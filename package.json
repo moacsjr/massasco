@@ -66,6 +66,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1051.0",
+    "@aws-sdk/core": "^3.974.12",
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
