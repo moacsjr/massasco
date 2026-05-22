@@ -22,6 +22,24 @@ variable "github_repo" {
   default     = "moacsjr/massasco"
 }
 
+variable "github_devxp_pat_token" {
+  description = "GitHub Personal Access Token (PAT) com permissões para gerenciar Secrets e Variables"
+  type        = string
+  sensitive   = true
+}
+
+variable "github_owner" {
+  description = "Usuário ou Organização dona do repositório no GitHub"
+  type        = string
+  default     = "moacsjr"
+}
+
+variable "github_environment" {
+  description = "Nome do ambiente do GitHub para Secrets/Variables com escopo (ex: staging, production)"
+  type        = string
+  default     = "staging"
+}
+
 variable "database_url" {
   description = "Connection string used at runtime. Staging defaults to the docker-compose Postgres on the same EC2; override (via tfvars) when migrating to RDS."
   type        = string
