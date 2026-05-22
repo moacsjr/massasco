@@ -2,15 +2,17 @@ module.exports = {
   apps: [
     {
       name: 'devx-portal',
-      // Nx entry point — resolves project targets, path aliases, and plugin config
-      script: './node_modules/nx/bin/nx.js',
-      args: 'run app:start',
-      cwd: '/home/ec2-user/meu-app',
+      // Direct Next.js start — avoids Nx dependsOn:build cache issues on EC2.
+      // The .next/ output is already built in CI and shipped in the deploy artifact.
+      // Use absolute path for script since cwd is apps/app but node_modules is at the root.
+      script: '/home/ec2-user/meu-app/node_modules/next/dist/bin/next',
+      cwd: '/home/ec2-user/meu-app/apps/app',
+      args: 'start -p 3000',
       instances: 1,
       autorestart: true,
       // Merge the .env file into the process environment at startup.
-      // Path is relative to cwd (/home/ec2-user/meu-app).
-      env_file: 'apps/app/.env',
+      // Path is relative to cwd (/home/ec2-user/meu-app/apps/app), so go up one level.
+      env_file: '.env',
       env: {
         NODE_ENV: 'production',
       },

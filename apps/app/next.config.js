@@ -1,17 +1,11 @@
-//@ts-check
-
-const { composePlugins, withNx } = require('@nx/next');
+// @ts-check
 
 /**
- * @type {import('@nx/next/plugins/with-nx').WithNxOptions}
+ * @type {import('next').NextConfig}
  **/
 const nextConfig = {
-  nx: {},
+  // Nx's withNx plugin is only needed for dev/build.
+  // In production (next start), Next.js only needs the raw config.
 };
 
-const plugins = [
-  // Add more Next.js plugins to this list if needed.
-  withNx,
-];
-
-module.exports = composePlugins(...plugins)(nextConfig);
+module.exports = nextConfig;
