@@ -1,14 +1,13 @@
 # Estágio 1: Builder
 FROM node:22-alpine AS builder
 
+WORKDIR /home/node
+
 # Instala pnpm globalmente
 RUN npm install -g pnpm@10
 
 # Copia arquivos de lock e workspace para otimizar cache
 COPY pnpm-lock.yaml package.json .npmrc ./
-
-# Copia package.json dos apps (se existirem)
-COPY apps/app/package.json ./apps/app/package.json
 
 # Instala dependências
 RUN pnpm install --frozen-lockfile
