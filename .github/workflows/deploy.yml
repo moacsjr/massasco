@@ -17,26 +17,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'pnpm'
-
-      - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma Client
-        run: pnpm prisma generate
-
-      - name: Build Application
-        run: pnpm nx build app
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -64,24 +44,77 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            export AWS_ACCOUNT_ID=${{ vars.AWS_ACCOUNT_ID }}
+            export AWS_ACCOUNT_ID=${{ vars.AWS_ACCOUNT_ID || '458889634344' }}
             export AWS_REGION=${{ vars.AWS_REGION }}
 
             cd /home/ec2-user/meu-app
 
-            # Login no ECR
+            # --- Login no ECR ---
             aws ecr get-login-password --region $AWS_REGION | \
               docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 
-            # Pull nova imagem
+            # --- Fetch runtime config from SSM and write .env ---
+            PROJECT_NAME="devxp-portal"
+
+            DATABASE_URL=$(aws ssm get-parameter \
+              --name "/${PROJECT_NAME}/database_url" \
+              --with-decryption \
+              --query Parameter.Value --output text --region "$AWS_REGION")
+            if [ -z "$DATABASE_URL" ] || [ "$DATABASE_URL" = "None" ]; then
+              echo "ERROR: /${PROJECT_NAME}/database_url is missing in SSM."
+              exit 1
+            fi
+
+            CDN_URL=$(aws ssm get-parameter \
+              --name "/${PROJECT_NAME}/cloudfront_url" \
+              --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
+            if [ -z "$CDN_URL" ] || [ "$CDN_URL" = "None" ]; then
+              echo "ERROR: /${PROJECT_NAME}/cloudfront_url is missing in SSM."
+              exit 1
+            fi
+
+            MEDIA_BUCKET=$(aws ssm get-parameter \
+              --name "/${PROJECT_NAME}/media_bucket_name" \
+              --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
+            if [ -z "$MEDIA_BUCKET" ] || [ "$MEDIA_BUCKET" = "None" ]; then
+              echo "ERROR: /${PROJECT_NAME}/media_bucket_name is missing in SSM."
+              exit 1
+            fi
+
+            mkdir -p apps/app
+            {
+              echo "DATABASE_URL=\"${DATABASE_URL}\""
+              echo "NEXT_PUBLIC_CDN_URL=\"${CDN_URL}\""
+              echo "AWS_S3_BUCKET_NAME=\"${MEDIA_BUCKET}\""
+            } > apps/app/.env
+            chmod 600 apps/app/.env
+            echo "apps/app/.env created."
+
+            # --- Pull da nova imagem do app ---
             docker compose -f docker/docker-compose.yml pull app
 
-            # Atualizar containers
-            docker compose -f docker/docker-compose.yml up -d
+            # --- Iniciar o banco de dados primeiro ---
+            docker compose -f docker/docker-compose.yml up -d db
 
-            # Executar migrações Prisma dentro do container
-            sleep 5  # Aguardar app iniciar
-            docker compose -f docker/docker-compose.yml exec -T app npx prisma migrate deploy --schema=prisma/schema.prisma
+            # --- Wait for database ---
+            echo "Waiting for database to be ready..."
+            for i in $(seq 1 30); do
+              if docker exec $(docker compose -f docker/docker-compose.yml ps -q db) pg_isready -U postgres &>/dev/null; then
+                echo "Database is ready!"
+                break
+              fi
+              echo "Waiting for database... ($i/30)"
+              sleep 2
+            done
 
-            # Health check
+            # --- Prisma migrations (roda isolado dentro do container) ---
+            echo "Running Prisma migrations..."
+            docker compose -f docker/docker-compose.yml run --rm -T app \
+              npx prisma migrate deploy --schema=prisma/schema.prisma
+
+            # --- Subir a aplicação Next.js ---
+            echo "Starting application services..."
+            docker compose -f docker/docker-compose.yml up -d app
+
+            # --- Health check ---
             curl -f --retry 5 --retry-delay 5 http://localhost:3000/api/health || exit 1

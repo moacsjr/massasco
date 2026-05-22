@@ -8,7 +8,7 @@ WORKDIR /app
 RUN npm install -g pnpm@10
 
 # Copia arquivos de lock e workspace para otimizar cache
-COPY pnpm-lock.yaml package.json ./
+COPY pnpm-lock.yaml package.json .npmrc ./
 
 # Instala dependências (Gera também as engines nativas do Prisma para o Linux Alpine)
 RUN pnpm install --frozen-lockfile

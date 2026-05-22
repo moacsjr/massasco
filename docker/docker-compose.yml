@@ -22,8 +22,6 @@ services:
       - '3000:3000'
     env_file:
       - /home/ec2-user/meu-app/apps/app/.env
-    volumes:
-      - /home/ec2-user/meu-app/prisma:/app/prisma:ro
 
 volumes:
   devxp_data:
