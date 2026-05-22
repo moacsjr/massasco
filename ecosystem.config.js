@@ -2,17 +2,14 @@ module.exports = {
   apps: [
     {
       name: 'devx-portal',
-      // Use the global next binary shipped in node_modules
-      script: 'node_modules/next/dist/bin/next',
-      // Next.js needs to run from the apps/app directory (where .next/ and .env live)
-      cwd: 'apps/app',
-      args: ['start', '-p', '3000'],
+      // Nx entry point — resolves project targets, path aliases, and plugin config
+      script: './node_modules/nx/bin/nx.js',
+      args: 'run app:start',
+      cwd: '/home/ec2-user/meu-app',
       instances: 1,
       autorestart: true,
-      // Reload env from the .env file on every start/restart
-      env: {},
       // Merge the .env file into the process environment at startup.
-      // Path is relative to the deploy root (/home/ec2-user/meu-app), not cwd.
+      // Path is relative to cwd (/home/ec2-user/meu-app).
       env_file: 'apps/app/.env',
       env: {
         NODE_ENV: 'production',
