@@ -1,6 +1,8 @@
 #!/bin/bash
-# Runtime-only setup. All build work (pnpm install, prisma generate, nx build)
-# happens in CI; the deploy artifact already contains node_modules, .next, and dist.
+# Runtime-only setup. CI produces the build artifacts (.next, dist);
+# node_modules is included in the deploy tarball, but pnpm's symlinked
+# store often breaks during extraction — pnpm install --frozen-lockfile
+# reconstructs it correctly without downloading anything new.
 set -e
 
 # CodeDeploy runs hook scripts from the staging area
@@ -22,6 +24,11 @@ export PATH="/usr/bin:/usr/local/bin:/usr/sbin:/usr/local/sbin:$PATH"
 # Load NVM and pin Node 22 (matches CI build version)
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 nvm use 22 >/dev/null
+
+# Rebuild pnpm store symlinks. --frozen-lockfile ensures no new downloads —
+# it just relinks the already-extracted node_modules/.pnpm store.
+echo "Rebuilding pnpm symlinks..."
+pnpm install --frozen-lockfile --prefer-offline
 
 # Fetch runtime config from SSM and write .env
 echo "Fetching runtime config from SSM..."

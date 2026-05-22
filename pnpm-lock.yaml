@@ -13,6 +13,9 @@ importers:
       '@aws-sdk/core':
         specifier: ^3.974.12
         version: 3.974.12
+      '@aws/lambda-invoke-store':
+        specifier: ^0.2.4
+        version: 0.2.4
       '@nestjs/common':
         specifier: ^11.0.0
         version: 11.1.19(reflect-metadata@0.1.14)(rxjs@7.8.2)
