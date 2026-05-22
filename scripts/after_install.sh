@@ -25,10 +25,14 @@ export PATH="/usr/bin:/usr/local/bin:/usr/sbin:/usr/local/sbin:$PATH"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 nvm use 22 >/dev/null
 
-# Rebuild pnpm store symlinks. --frozen-lockfile ensures no new downloads —
-# it just relinks the already-extracted node_modules/.pnpm store.
+# Rebuild pnpm store symlinks.
+echo "Cleaning old modules to prevent TTY issues..."
+# Remove os links quebrados antigos para o pnpm trabalhar em um escopo limpo
+rm -rf node_modules
+
 echo "Rebuilding pnpm symlinks..."
-pnpm install --frozen-lockfile --prefer-offline
+# Força o modo CI e injeta a flag para desativar a confirmação de expurgo
+CI=true pnpm install --frozen-lockfile --prefer-offline --config.confirm-modules-purge=false
 
 # Fetch runtime config from SSM and write .env
 echo "Fetching runtime config from SSM..."
