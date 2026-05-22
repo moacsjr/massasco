@@ -20,6 +20,9 @@ for ATTEMPT in $(seq 1 $MAX_ATTEMPTS); do
 
   if [ "$STATUS_CODE" = "200" ]; then
     echo "Service healthy — HTTP 200"
+    echo "---"
+    echo "PM2 recent logs:"
+    pm2 logs devx-portal --lines=500 --nocolor 2>/dev/null || true
     exit 0
   fi
 
@@ -28,5 +31,7 @@ for ATTEMPT in $(seq 1 $MAX_ATTEMPTS); do
 done
 
 echo "Error: service did not respond with HTTP 200 within $((INITIAL_SLEEP + MAX_ATTEMPTS * WAIT_BETWEEN))s."
-pm2 logs devx-portal --lines 20 --nocolor 2>/dev/null || true
+echo "---"
+echo "PM2 recent logs:"
+pm2 logs devx-portal --lines=500 --nocolor 2>/dev/null || true
 exit 1
