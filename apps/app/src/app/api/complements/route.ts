@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
+import type { ProductComplement } from '@prisma/client';
 
 // GET /api/complements?productId=xxx
 export async function GET(req: Request) {
@@ -18,7 +19,7 @@ export async function GET(req: Request) {
     orderBy: { group: 'asc' },
   });
 
-  const serialized = complements.map((c) => ({
+  const serialized = complements.map((c: ProductComplement) => ({
     ...c,
     value: Number(c.value),
   }));

@@ -10,9 +10,7 @@ const nextConfig = {
   // Prevent Next.js from bundling AWS SDK into .next/server/chunks/.
   // The SDK does dynamic requires (e.g. @aws/lambda-invoke-store) that
   // fail when statically bundled on EC2 — let Node resolve from node_modules instead.
-  experimental: {
-    serverExternalPackages: ['@aws-sdk/client-s3', '@aws-sdk/core'],
-  },
+  serverExternalPackages: ['@aws-sdk/client-s3', '@aws-sdk/core'],
 };
 
 module.exports = nextConfig;
