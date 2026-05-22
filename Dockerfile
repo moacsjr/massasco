@@ -7,7 +7,7 @@ WORKDIR /home/node
 RUN npm install -g pnpm@10
 
 # Copia arquivos de lock e workspace para otimizar cache
-COPY pnpm-lock.yaml package.json .npmrc ./
+COPY pnpm-lock.yaml package.json ./
 
 # Instala dependências
 RUN pnpm install --frozen-lockfile
