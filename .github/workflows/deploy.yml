@@ -68,7 +68,7 @@ jobs:
 
             # Login no ECR
             aws ecr get-login-password --region ${{ vars.AWS_REGION }} | \
-              docker login --username AWS --password-stdin ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com
+              docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
 
             # Pull nova imagem
             docker compose -f docker/docker-compose.yml pull app
@@ -78,7 +78,7 @@ jobs:
 
             # Executar migrações Prisma dentro do container
             sleep 5  # Aguardar app iniciar
-            docker exec $(docker ps -q -f name=app) node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma
+            docker exec $(docker ps -q -f name=app) npx prisma migrate deploy --schema=prisma/schema.prisma
 
             # Health check
             curl -f --retry 5 --retry-delay 5 http://localhost:3000/api/health || exit 1
