@@ -16,6 +16,9 @@ RUN pnpm install --frozen-lockfile
 # Copia código fonte
 COPY . .
 
+# Gera as tipagens do Prisma Client dentro do container
+RUN npx prisma generate --schema=prisma/schema.prisma
+
 # Build da aplicação
 RUN npx nx build app
 
