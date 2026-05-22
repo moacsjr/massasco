@@ -11,6 +11,9 @@ const nextConfig = {
   // The SDK does dynamic requires (e.g. @aws/lambda-invoke-store) that
   // fail when statically bundled on EC2 — let Node resolve from node_modules instead.
   serverExternalPackages: ['@aws-sdk/client-s3', '@aws-sdk/core'],
+
+  // Generate standalone output for Docker deployment
+  output: 'standalone',
 };
 
 module.exports = nextConfig;

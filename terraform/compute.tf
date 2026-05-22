@@ -52,23 +52,19 @@ resource "aws_instance" "app" {
     curl -SL https://github.com/docker/compose/releases/download/v2.24.6/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
     chmod +x /usr/local/bin/docker-compose
 
-    # Install Ruby and CodeDeploy Agent
-    dnf install -y ruby wget
-    cd /home/ec2-user
-    wget https://aws-codedeploy-${var.aws_region}.s3.${var.aws_region}.amazonaws.com/latest/install
-    chmod +x ./install
-    ./install auto
-    systemctl enable codedeploy-agent
-    systemctl start codedeploy-agent
+    # Install AWS CLI v2
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    unzip awscliv2.zip
+    ./aws/install
+    rm -rf awscliv2.zip aws/
 
-    # Install Node.js via NVM (setup for ec2-user)
-    su - ec2-user -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash"
-    su - ec2-user -c "source ~/.nvm/nvm.sh && nvm install 20 && npm install -g pnpm pm2"
+    # Create app directory
+    mkdir -p /home/ec2-user/meu-app
+    chown -R ec2-user:ec2-user /home/ec2-user/meu-app
   EOF
 
   tags = {
     Name        = "${var.project_name}-ec2"
     Environment = var.environment
-    CodeDeploy  = "true"
   }
 }

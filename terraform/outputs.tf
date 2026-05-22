@@ -28,13 +28,3 @@ output "github_actions_role_arn" {
   description = "ARN da IAM Role para colocar no Github Actions OIDC"
   value       = aws_iam_role.github_actions.arn
 }
-
-output "codedeploy_app_name" {
-  description = "Nome da Aplicação no CodeDeploy"
-  value       = aws_codedeploy_app.app.name
-}
-
-output "codedeploy_deployment_group_name" {
-  description = "Nome do Deployment Group no CodeDeploy"
-  value       = aws_codedeploy_deployment_group.dg.deployment_group_name
-}

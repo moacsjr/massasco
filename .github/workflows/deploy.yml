@@ -1,4 +1,4 @@
-name: CI/CD Pipeline - AWS CodeDeploy
+name: CI/CD Pipeline - Docker + SSH
 
 on:
   push:
@@ -37,46 +37,48 @@ jobs:
       - name: Build Application
         run: pnpm nx build app
 
-      - name: Package Artifact
-        # Ship build outputs and node_modules so the EC2 host does zero build work.
-        # tar.gz preserves pnpm's symlinks; zip+rubyzip (CodeDeploy) does not.
-        # Write the tarball outside the workspace so tar doesn't see its own
-        # output as "file changed as we read it".
-        run: |
-          echo "Packaging application for deployment..."
-          tar --exclude='./.git*' \
-              --exclude='./.nx/cache' \
-              --exclude='./tmp' \
-              --exclude='./test-results' \
-              --exclude='./e2e/test-results' \
-              --exclude='./playwright-report' \
-              -czf "$RUNNER_TEMP/deploy.tgz" .
-          mv "$RUNNER_TEMP/deploy.tgz" deploy.tgz
-
-      - name: Verify bundle contents
-        run: |
-          echo "Top-level entries in deploy.tgz:"
-          tar -tzf deploy.tgz | awk -F/ '{print $2}' | sort -u | head -50
-          echo "---"
-          echo "scripts/ entries in bundle:"
-          tar -tzf deploy.tgz | grep -E '^\./scripts/' || (echo "ERROR: scripts/ not in bundle" && exit 1)
-          echo "---"
-          echo "appspec.yml present:"
-          tar -tzf deploy.tgz | grep -E '^\./appspec\.yml$' || (echo "ERROR: appspec.yml missing" && exit 1)
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Upload Artifact to S3
-        run: |
-          aws s3 cp deploy.tgz s3://${{ vars.S3_BUCKET_NAME }}/deploy-${{ github.sha }}.tgz
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Trigger AWS CodeDeploy
+      - name: Build and Push Docker Image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: devxp-app
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          aws deploy create-deployment \
-            --application-name ${{  vars.CODEDEPLOY_APPLICATION_NAME }} \
-            --deployment-group-name ${{ vars.CODEDEPLOY_DEPLOYMENT_GROUP_NAME }} \
-            --s3-location bucket=${{ vars.S3_BUCKET_NAME }},key=deploy-${{ github.sha }}.tgz,bundleType=tgz
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -t $REGISTRY/$REPOSITORY:latest .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          docker push $REGISTRY/$REPOSITORY:latest
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ec2-user/meu-app
+
+            # Login no ECR
+            aws ecr get-login-password --region ${{ vars.AWS_REGION }} | \
+              docker login --username AWS --password-stdin ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com
+
+            # Pull nova imagem
+            docker compose -f docker/docker-compose.yml pull app
+
+            # Atualizar containers
+            docker compose -f docker/docker-compose.yml up -d
+
+            # Executar migrações Prisma dentro do container
+            sleep 5  # Aguardar app iniciar
+            docker exec $(docker ps -q -f name=app) node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma
+
+            # Health check
+            curl -f --retry 5 --retry-delay 5 http://localhost:3000/api/health || exit 1

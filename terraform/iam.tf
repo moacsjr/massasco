@@ -71,9 +71,35 @@ resource "aws_iam_policy" "ec2_s3_access" {
   })
 }
 
+resource "aws_iam_policy" "ec2_ecr_access" {
+  name        = "${var.project_name}-ec2-ecr-access"
+  description = "Allow EC2 to pull images from ECR"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role_policy_attachment" "ec2_s3" {
   role       = aws_iam_role.ec2.name
   policy_arn = aws_iam_policy.ec2_s3_access.arn
+}
+
+resource "aws_iam_role_policy_attachment" "ec2_ecr" {
+  role       = aws_iam_role.ec2.name
+  policy_arn = aws_iam_policy.ec2_ecr_access.arn
 }
 
 resource "aws_iam_instance_profile" "ec2" {
@@ -81,28 +107,6 @@ resource "aws_iam_instance_profile" "ec2" {
   role = aws_iam_role.ec2.name
 }
 
-# --- CodeDeploy Service Role ---
-resource "aws_iam_role" "codedeploy" {
-  name = "${var.project_name}-codedeploy-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "codedeploy.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "codedeploy_service" {
-  role       = aws_iam_role.codedeploy.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
-}
 
 # --- GitHub Actions OIDC ---
 data "tls_certificate" "github" {
@@ -164,16 +168,15 @@ resource "aws_iam_policy" "github_actions_deploy" {
       {
         Effect = "Allow"
         Action = [
-          "codedeploy:CreateDeployment",
-          "codedeploy:GetDeployment",
-          "codedeploy:GetDeploymentConfig",
-          "codedeploy:RegisterApplicationRevision"
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:CompleteLayerUpload",
+          "ecr:InitiateLayerUpload",
+          "ecr:PutImage",
+          "ecr:UploadLayerPart"
         ]
-        Resource = [
-          "arn:aws:codedeploy:${var.aws_region}:*:application:${aws_codedeploy_app.app.name}",
-          "arn:aws:codedeploy:${var.aws_region}:*:deploymentgroup:${aws_codedeploy_app.app.name}/${aws_codedeploy_deployment_group.dg.deployment_group_name}",
-          "arn:aws:codedeploy:${var.aws_region}:*:deploymentconfig:*"
-        ]
+        Resource = aws_ecr_repository.app.arn
       }
     ]
   })

@@ -13,11 +13,17 @@ services:
     volumes:
       - devxp_data:/var/lib/postgresql/data
 
-  adminer:
-    image: adminer
+  app:
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION:-us-east-1}.amazonaws.com/devxp-app:latest
     restart: always
+    depends_on:
+      - db
     ports:
-      - '8080:8080'
+      - '3000:3000'
+    env_file:
+      - /home/ec2-user/meu-app/apps/app/.env
+    volumes:
+      - /home/ec2-user/meu-app/prisma:/app/prisma:ro
 
 volumes:
   devxp_data:
