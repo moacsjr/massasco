@@ -36,6 +36,7 @@ set +a
 # Without this, the daemon can keep stale env from a previous deploy and pass
 # it to children — the symptom is DATABASE_URL missing at Prisma init time
 # even though it's set in this script's shell.
+pm2 delete devx-portal 2>/dev/null || true
 pm2 kill 2>/dev/null || true
 
 # Sanity-check that the env we just loaded is actually present before launch
@@ -44,13 +45,9 @@ if [ -z "${DATABASE_URL:-}" ]; then
   exit 1
 fi
 
-# Start Next.js directly under PM2 (no Nx in the runtime path)
-echo "Launching devx-portal using PM2..."
-pm2 start node_modules/next/dist/bin/next \
-  --name "devx-portal" \
-  --cwd "$APP_DIR/apps/app" \
-  --update-env \
-  -- start -p 3000
+# Start Next.js via PM2 ecosystem config (handles .env reload, cwd, and args)
+echo "Launching devx-portal using PM2 ecosystem config..."
+pm2 start ecosystem.config.js --update-env
 
 # Save PM2 process list to restore on reboot
 pm2 save
