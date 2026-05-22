@@ -66,7 +66,7 @@ FROM node:22-alpine AS builder
 RUN npm install -g pnpm@10
 
 # Copia arquivos de lock e workspace para otimizar cache
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/app/package.json ./apps/app/package.json
 
 # Instala dependências
