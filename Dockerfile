@@ -40,6 +40,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 # Copia a CLI do Prisma e dependências necessárias para as migrações rodarem em produção
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
 
 # Copia artefatos standalone do Next.js
 COPY --from=builder --chown=nextjs:nodejs /app/apps/app/.next/standalone ./
