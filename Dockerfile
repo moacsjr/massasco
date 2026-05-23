@@ -1,30 +1,35 @@
 # Estágio 1: Builder
-FROM node:22-alpine AS builder
-WORKDIR /app
+FROM node:22-alpine AS base
 
+# Install dependencies only when needed
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
+ENV CI=true
+ENV FORCE_COLOR=0
+WORKDIR /app
 # Instala o pnpm globalmente
 RUN npm install -g pnpm@10
 
-# Copia os arquivos de configuração do workspace
-COPY pnpm-lock.yaml package.json pnpm-workspace.yaml .npmrc ./
-COPY apps/app/package.json ./apps/app/
+# Copia APENAS os arquivos que comprovadamente existem na sua raiz
+COPY pnpm-lock.yaml package.json .npmrc* ./
 
-# Instala TODAS as dependências no builder para conseguir rodar o Nx
-RUN pnpm install --frozen-lockfile
+# Instala todas as dependências para o build do Nx
+RUN corepack enable pnpm && pnpm install --frozen-lockfile  --dangerously-allow-all-builds
+
+# Rebuild the source code only when needed
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 
 # Copia o restante do código fonte
 COPY . .
 
-# Gera o Prisma Client interno
+# Gera o Prisma Client (necessário para compilar o TypeScript do Next.js)
 RUN npx prisma generate --schema=prisma/schema.prisma
 
-# Build da aplicação Next.js via Nx
-RUN npx nx build app
-
-# ==============================================================================
-# PASSO CHAVE: O pnpm isola o app e extrai uma node_modules 100% física e sem links
-# ==============================================================================
-RUN pnpm --filter app deploy --prod /app/isolated-production
+# --no-progress remove as barras de animação
+# --verbose=false garante que logs excessivos sejam evitados
+RUN corepack enable pnpm && pnpm exec nx build app --verbose=false && ls -R dist
 
 
 # Estágio 2: Runner
@@ -41,22 +46,24 @@ RUN addgroup --system --gid 1001 nodejs && \
     mkdir -p /app && \
     chown -R nextjs:nodejs /app
 
-# 1. Copia a node_modules de produção PERFEITA e ISOLADA gerada pelo pnpm deploy
-COPY --from=builder --chown=nextjs:nodejs /app/isolated-production/node_modules ./node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/isolated-production/package.json ./package.json
+# 1. Copia a pasta public (ajuste o caminho se ela estiver em apps/app/public)
+COPY --from=builder /app/apps/app/public ./public
 
-# 2. Copia os artefatos standalone compilados do Next.js
+# 2. Garante a criação do diretório .next e permissões
+RUN mkdir .next && chown nextjs:nodejs .next
+
+# 3. Copia o standalone gerado pelo Next.js dentro da pasta dist do Nx
 COPY --from=builder --chown=nextjs:nodejs /app/apps/app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/app/.next/static ./apps/app/.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/apps/app/public ./apps/app/public
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
-# 3. Copia a pasta física do pacote da CLI do Prisma do builder para garantir as migrações
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
+# 4. Copia os arquivos estáticos para otimização
+COPY --from=builder --chown=nextjs:nodejs /app/apps/app/.next/static ./dist/apps/app/.next/static
+
 
 USER nextjs
 
 EXPOSE 3000
 
+ENV PORT=3000
+
+# O ponto de entrada gerado pelo standalone do Nx fica nesta pasta interna
 CMD ["node", "apps/app/server.js"]
