@@ -35,6 +35,9 @@ RUN corepack enable pnpm && pnpm exec nx build app --verbose=false
 FROM node:22-alpine AS runner
 WORKDIR /app
 
+# 1. INSTALA AS DEPENDÊNCIAS DO PRISMA EXCLUSIVAS PARA ALPINE
+RUN apk add --no-cache libc6-compat openssl openssl-dev
+
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
