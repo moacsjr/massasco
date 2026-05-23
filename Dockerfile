@@ -58,6 +58,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/app/.next/standalone ./
 # 4. Copia os arquivos estáticos para otimização
 COPY --from=builder --chown=nextjs:nodejs /app/apps/app/.next/static ./dist/apps/app/.next/static
 
+# Copia especificamente a pasta do prisma e os binários necessários para rodar migrations
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+
+# Garante que a pasta com o schema gerado e o client também estejam lá
+COPY --from=builder /app/prisma ./prisma
 
 USER nextjs
 
