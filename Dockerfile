@@ -57,4 +57,4 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 # O Next.js Standalone expõe o servidor na raiz do build gerado
-CMD ["node", "server.js"]
+CMD ["node", "apps/app/server.js"]
