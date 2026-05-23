@@ -128,7 +128,16 @@ jobs:
             echo "Starting application services..."
             docker compose -f docker/docker-compose.yml up -d app
 
-            # --- Health check com timeout de segurança adicionado ---
+            # --- Aguardar o processo do Node iniciar de fato ---
+            echo "Aguardando inicialização do Next.js..."
+            sleep 5
+
+
+            # --- Health check com tratamento de erro e dump de logs ---
             echo "Validating application health..."
-            curl -f --retry 5 --retry-delay 5 --connect-timeout 5 http://localhost:3000/api/health || exit 1
+            if ! curl -f --retry 5 --retry-delay 5 --connect-timeout 5 http://localhost:3000/api/health; then
+              echo "❌ ERRO: Health check falhou! Mostrando logs do container:"
+              docker compose -f docker/docker-compose.yml logs --tail=50 app
+              exit 1
+            fi
             echo "Deploy concluído com sucesso!"
