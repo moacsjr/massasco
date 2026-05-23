@@ -1,8 +1,6 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(npx *)"
-    ]
+    "allow": ["Bash(npx *)", "Bash(ls *)"]
   },
   "$version": 4
 }

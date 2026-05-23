@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
 import { sseBus } from '../../../lib/sse-bus';
+import { sendOrderToQueue } from '../../../lib/sqs';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -105,6 +106,12 @@ export async function POST(req: Request) {
   };
 
   sseBus.publish('ORDER_CREATED', { orderId: serialized.id, tableNumber });
+
+  try {
+    await sendOrderToQueue(serialized as Record<string, unknown>);
+  } catch (err) {
+    console.error('Failed to send order to SQS:', err);
+  }
 
   return NextResponse.json(serialized, { status: 201 });
 }

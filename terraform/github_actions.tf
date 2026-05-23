@@ -45,3 +45,10 @@ resource "github_actions_environment_variable" "aws_role_arn" {
   variable_name = "AWS_ROLE_ARN"
   value         = aws_iam_role.github_actions.arn
 }
+
+resource "github_actions_environment_variable" "sqs_queue_url" {
+  environment   = var.github_environment
+  repository    = data.github_repository.app_repo.name
+  variable_name = "SQS_QUEUE_URL"
+  value         = aws_ssm_parameter.order_queue_url.value
+}

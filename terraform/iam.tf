@@ -66,6 +66,14 @@ resource "aws_iam_policy" "ec2_s3_access" {
             "kms:ViaService" = "ssm.${var.aws_region}.amazonaws.com"
           }
         }
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:SendMessage",
+          "sqs:GetQueueUrl"
+        ]
+        Resource = aws_sqs_queue.orders.arn
       }
     ]
   })

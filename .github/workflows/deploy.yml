@@ -94,11 +94,16 @@ jobs:
               exit 1
             fi
 
+            ORDER_QUEUE_URL=$(aws ssm get-parameter \
+              --name "/${PROJECT_NAME}/order_queue_url" \
+              --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
+
             mkdir -p apps/app
             {
               echo "DATABASE_URL=\"${DATABASE_URL}\""
               echo "NEXT_PUBLIC_CDN_URL=\"${CDN_URL}\""
               echo "AWS_S3_BUCKET_NAME=\"${MEDIA_BUCKET}\""
+              echo "SQS_QUEUE_URL=\"${ORDER_QUEUE_URL}\""
             } > apps/app/.env
             chmod 600 apps/app/.env
             echo "apps/app/.env created."
