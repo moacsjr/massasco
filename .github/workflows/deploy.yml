@@ -119,8 +119,7 @@ jobs:
 
             # --- Prisma migrations (roda isolado dentro do container) ---
             echo "Running Prisma migrations..."
-            docker compose -f docker/docker-compose.yml run --rm -T app \
-              npx prisma migrate deploy --schema=prisma/schema.prisma
+            docker compose -f docker/docker-compose.yml run --rm -T app ./node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma
 
             # --- Subir a aplicação Next.js ---
             echo "Starting application services..."
