@@ -22,6 +22,8 @@ services:
       - '3000:3000'
     env_file:
       - /home/ec2-user/meu-app/apps/app/.env
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/devxp?schema=public
 
 volumes:
   devxp_data:

@@ -122,7 +122,7 @@ jobs:
 
             # --- Prisma migrations (executado via arquivo JS nativo devido aos links simbólicos do pnpm) ---
             echo "Running Prisma migrations..."
-            docker compose -f docker/docker-compose.yml run --rm -T app node node_modules/prisma/build/index.js migrate deploy --schema=prisma/schema.prisma
+            docker compose -f docker/docker-compose.yml run --rm -T -e DATABASE_URL="postgresql://postgres:password@db:5432/devxp?schema=public" app node node_modules/prisma/build/index.js migrate deploy --schema=prisma/schema.prisma
 
             # --- Subir a aplicação Next.js ---
             echo "Starting application services..."
