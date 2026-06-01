@@ -112,6 +112,7 @@ jobs:
 
             COGNITO_REGION=$(aws ssm get-parameter \
               --name "/${PROJECT_NAME}/cognito_region" \
+              --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
             ORDER_QUEUE_URL=$(aws ssm get-parameter \
               --name "/${PROJECT_NAME}/order_queue_url" \
               --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
