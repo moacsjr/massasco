@@ -45,7 +45,7 @@ const NavBarContent: React.FC = () => {
             </div>
             {/* Routes */}
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-              {plugin.routes!.map((route) => {
+              {plugin.routes!.filter((r) => r.showInMenu !== false).map((route) => {
                 const href = `/plugins/${plugin.id}/${route.path}`;
                 return (
                   <li key={route.path} style={{ marginBottom: '2px' }}>

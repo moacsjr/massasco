@@ -7,14 +7,34 @@ export interface UserServiceAPI {
 
 const userServiceAPI: UserServiceAPI = {
   listUsers: async () => {
-    return [
-      { id: '1', name: 'Alice', email: 'alice@example.com' },
-      { id: '2', name: 'Bob', email: 'bob@example.com' },
-    ];
+    try {
+      const res = await fetch('/api/users');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Erro ao listar usuários.');
+      }
+      return await res.json();
+    } catch (e) {
+      console.error('[UserService Client Error]', e);
+      throw e;
+    }
   },
   createUser: async (user) => {
-    console.log('Creating user:', user);
-    return { id: Math.random().toString(), ...user };
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(user),
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Erro ao criar usuário.');
+      }
+      return await res.json();
+    } catch (e) {
+      console.error('[UserService Client Error]', e);
+      throw e;
+    }
   },
 };
 

@@ -17,6 +17,9 @@
       ],
       "@temp-workspace/ui-project": ["../../ui-project/src/index.tsx"],
       "@temp-workspace/plugin-auth": ["../../plugins/plugin-auth/src/index.ts"],
+      "@temp-workspace/plugin-login": [
+        "../../plugins/plugin-login/src/index.ts"
+      ],
       "@temp-workspace/plugin-menubar": [
         "../../plugins/plugin-menubar/src/index.ts"
       ],

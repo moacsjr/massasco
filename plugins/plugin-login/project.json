@@ -1,0 +1,8 @@
+{
+  "name": "plugin-login",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "plugins/plugin-login/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {}
+}

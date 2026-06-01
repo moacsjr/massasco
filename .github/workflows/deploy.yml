@@ -94,11 +94,34 @@ jobs:
               exit 1
             fi
 
+            COGNITO_USER_POOL_ID=$(aws ssm get-parameter \
+              --name "/${PROJECT_NAME}/cognito_user_pool_id" \
+              --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
+            if [ -z "$COGNITO_USER_POOL_ID" ] || [ "$COGNITO_USER_POOL_ID" = "None" ]; then
+              echo "ERROR: /${PROJECT_NAME}/cognito_user_pool_id is missing in SSM."
+              exit 1
+            fi
+
+            COGNITO_CLIENT_ID=$(aws ssm get-parameter \
+              --name "/${PROJECT_NAME}/cognito_client_id" \
+              --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
+            if [ -z "$COGNITO_CLIENT_ID" ] || [ "$COGNITO_CLIENT_ID" = "None" ]; then
+              echo "ERROR: /${PROJECT_NAME}/cognito_client_id is missing in SSM."
+              exit 1
+            fi
+
+            COGNITO_REGION=$(aws ssm get-parameter \
+              --name "/${PROJECT_NAME}/cognito_region" \
+              --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
+
             mkdir -p apps/app
             {
               echo "DATABASE_URL=\"${DATABASE_URL}\""
               echo "NEXT_PUBLIC_CDN_URL=\"${CDN_URL}\""
               echo "AWS_S3_BUCKET_NAME=\"${MEDIA_BUCKET}\""
+              echo "COGNITO_USER_POOL_ID=\"${COGNITO_USER_POOL_ID}\""
+              echo "COGNITO_CLIENT_ID=\"${COGNITO_CLIENT_ID}\""
+              echo "COGNITO_REGION=\"${COGNITO_REGION:-$AWS_REGION}\""
             } > apps/app/.env
             chmod 600 apps/app/.env
             echo "apps/app/.env created."

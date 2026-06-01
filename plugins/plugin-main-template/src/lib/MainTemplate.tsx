@@ -10,7 +10,15 @@ import { ContentSection } from './ContentSection';
 import { FooterSection } from './FooterSection';
 import { BottomNavBar } from './BottomNavBar';
 
+import { usePathname } from 'next/navigation';
+
 export const MainTemplate: React.FC<MainTemplateProps> = ({ children }) => {
+  const pathname = usePathname();
+
+  if (pathname === '/plugins/login') {
+    return <>{children}</>;
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <HeaderSection />

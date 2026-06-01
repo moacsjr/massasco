@@ -66,6 +66,19 @@ resource "aws_iam_policy" "ec2_s3_access" {
             "kms:ViaService" = "ssm.${var.aws_region}.amazonaws.com"
           }
         }
+      },
+      {
+        Effect   = "Allow"
+        Action   = [
+          "cognito-idp:AdminInitiateAuth",
+          "cognito-idp:AdminCreateUser",
+          "cognito-idp:AdminDeleteUser",
+          "cognito-idp:AdminGetUser",
+          "cognito-idp:ListUsers",
+          "cognito-idp:AdminUpdateUserAttributes",
+          "cognito-idp:AdminSetUserPassword"
+        ]
+        Resource = aws_cognito_user_pool.pool.arn
       }
     ]
   })

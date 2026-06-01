@@ -141,9 +141,18 @@ function withValidation<T extends keyof UIComponentsMap>(
 export function useUI() {
   const context = useContext(UIContext);
 
+  // Cache resolved components for the duration of this context to prevent remounting
+  const resolvedCache = useMemo(() => {
+    return {} as Record<string, any>;
+  }, [context.components]);
+
   const resolve = <T extends keyof UIComponentsMap>(
     name: T,
   ): UIComponentsMap[T] => {
+    if (resolvedCache[name]) {
+      return resolvedCache[name] as UIComponentsMap[T];
+    }
+
     // 1. Resolvemos pelo componente provido no Context (Design System específico)
     let Component = context.components[name];
 
@@ -156,7 +165,9 @@ export function useUI() {
     }
 
     // 3. Em dev, envolvemos num validador de Zod
-    return withValidation(name, Component as UIComponentsMap[T]);
+    const validated = withValidation(name, Component as UIComponentsMap[T]);
+    resolvedCache[name] = validated;
+    return validated;
   };
 
   return { resolve };

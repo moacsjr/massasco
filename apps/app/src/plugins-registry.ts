@@ -1,5 +1,6 @@
 import { pluginLoader } from '@temp-workspace/plugin-loader';
-import { authPlugin } from '@temp-workspace/plugin-auth';
+import { authPlugin, authServicePlugin } from '@temp-workspace/plugin-auth';
+import { loginPlugin } from '@temp-workspace/plugin-login';
 import { menubarPlugin } from '@temp-workspace/plugin-menubar';
 import { userServicePlugin } from '@temp-workspace/plugin-user-service';
 import { userManagementPlugin } from '@temp-workspace/plugin-user-management';
@@ -25,6 +26,7 @@ import { uiComponentsPlugin } from '@temp-workspace/plugin-ui-components';
 export function initializePlugins() {
   // Core services
   pluginLoader.register(userServicePlugin);
+  pluginLoader.register(authServicePlugin);
   pluginLoader.register(orderCorePlugin);
   pluginLoader.register(auditPlugin);
   pluginLoader.register(menuCatalogServicePlugin);
@@ -33,6 +35,7 @@ export function initializePlugins() {
 
   // Feature plugins
   pluginLoader.register(authPlugin);
+  pluginLoader.register(loginPlugin);
   pluginLoader.register(menubarPlugin);
   pluginLoader.register(userManagementPlugin);
   pluginLoader.register(mainTemplatePlugin);
