@@ -11,10 +11,10 @@ WORKDIR /app
 RUN npm install -g pnpm@10
 
 # Copia APENAS os arquivos que comprovadamente existem na sua raiz
-COPY pnpm-lock.yaml package.json .npmrc* ./
+COPY pnpm-lock.yaml package.json .npmrc* pnpm-workspace.yaml* ./
 
 # Instala todas as dependências para o build do Nx
-RUN corepack enable pnpm && pnpm install --frozen-lockfile  --dangerously-allow-all-builds
+RUN corepack enable pnpm && pnpm install --frozen-lockfile --dangerously-allow-all-builds
 
 # Rebuild the source code only when needed
 FROM base AS builder
