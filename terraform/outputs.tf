@@ -28,3 +28,13 @@ output "github_actions_role_arn" {
   description = "ARN da IAM Role para colocar no Github Actions OIDC"
   value       = aws_iam_role.github_actions.arn
 }
+
+output "order_queue_url" {
+  description = "URL da fila SQS de pedidos"
+  value       = aws_sqs_queue.orders.url
+}
+
+output "order_queue_arn" {
+  description = "ARN da fila SQS de pedidos"
+  value       = aws_sqs_queue.orders.arn
+}

@@ -112,6 +112,8 @@ jobs:
 
             COGNITO_REGION=$(aws ssm get-parameter \
               --name "/${PROJECT_NAME}/cognito_region" \
+            ORDER_QUEUE_URL=$(aws ssm get-parameter \
+              --name "/${PROJECT_NAME}/order_queue_url" \
               --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
 
             mkdir -p apps/app
@@ -122,6 +124,7 @@ jobs:
               echo "COGNITO_USER_POOL_ID=\"${COGNITO_USER_POOL_ID}\""
               echo "COGNITO_CLIENT_ID=\"${COGNITO_CLIENT_ID}\""
               echo "COGNITO_REGION=\"${COGNITO_REGION:-$AWS_REGION}\""
+              echo "SQS_QUEUE_URL=\"${ORDER_QUEUE_URL}\""
             } > apps/app/.env
             chmod 600 apps/app/.env
             echo "apps/app/.env created."
@@ -145,13 +148,22 @@ jobs:
 
             # --- Prisma migrations (executado via arquivo JS nativo devido aos links simbólicos do pnpm) ---
             echo "Running Prisma migrations..."
-            docker compose -f docker/docker-compose.yml run --rm -T app node node_modules/prisma/build/index.js migrate deploy --schema=prisma/schema.prisma
+            docker compose -f docker/docker-compose.yml run --rm -T -e DATABASE_URL="postgresql://postgres:password@db:5432/devxp?schema=public" app node node_modules/prisma/build/index.js migrate deploy --schema=prisma/schema.prisma
 
             # --- Subir a aplicação Next.js ---
             echo "Starting application services..."
             docker compose -f docker/docker-compose.yml up -d app
 
-            # --- Health check com timeout de segurança adicionado ---
+            # --- Aguardar o processo do Node iniciar de fato ---
+            echo "Aguardando inicialização do Next.js..."
+            sleep 5
+
+
+            # --- Health check com tratamento de erro e dump de logs ---
             echo "Validating application health..."
-            curl -f --retry 5 --retry-delay 5 --connect-timeout 5 http://localhost:3000/api/health || exit 1
+            if ! curl -f --retry 5 --retry-delay 5 --connect-timeout 5 http://localhost:3000/api/health; then
+              echo "❌ ERRO: Health check falhou! Mostrando logs do container:"
+              docker compose -f docker/docker-compose.yml logs --tail=50 app
+              exit 1
+            fi
             echo "Deploy concluído com sucesso!"
