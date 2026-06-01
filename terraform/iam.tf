@@ -79,6 +79,8 @@ resource "aws_iam_policy" "ec2_s3_access" {
           "cognito-idp:AdminSetUserPassword"
         ]
         Resource = aws_cognito_user_pool.pool.arn
+      },
+      {
         Effect = "Allow"
         Action = [
           "sqs:SendMessage",
