@@ -1,0 +1,8 @@
+{
+  "name": "plugin-customer-portal",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "plugins/plugin-customer-portal/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {}
+}

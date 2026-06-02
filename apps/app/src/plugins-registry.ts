@@ -19,6 +19,7 @@ import {
 } from '@temp-workspace/plugin-payments';
 import { auditPlugin } from '@temp-workspace/plugin-audit';
 import { uiComponentsPlugin } from '@temp-workspace/plugin-ui-components';
+import { customerPortalPlugin } from '@temp-workspace/plugin-customer-portal';
 
 /**
  * Registro estático de plugins para o Monorepo.
@@ -44,4 +45,5 @@ export function initializePlugins() {
   pluginLoader.register(ordersDeliveryPlugin);
   pluginLoader.register(kdsPlugin);
   pluginLoader.register(paymentsFeaturePlugin);
+  pluginLoader.register(customerPortalPlugin);
 }

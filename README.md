@@ -1,4 +1,4 @@
-# TempWorkspace
+nps# TempWorkspace
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
 
@@ -80,6 +80,23 @@ npx nx g ci-workflow
 Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
 
 [Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+
+## Database & Prisma Migrations
+
+To run Prisma migrations and keep your database in sync with the schema:
+
+```sh
+# Set up environment variables (copy from .env.example if needed)
+cp apps/app/.env.example apps/app/.env
+
+# Run migrations
+npx prisma migrate dev --name <migration-name>
+
+# Or from root directory with env loaded:
+export $(cat apps/app/.env | xargs) && npx prisma migrate dev --name <migration-name>
+```
+
+The Prisma schema is located at `prisma/schema.prisma`.
 
 ## Useful links
 

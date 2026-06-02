@@ -1,6 +1,9 @@
 import { FeaturePlugin } from '@temp-workspace/plugin-loader';
 import { OrdersDeliveryPage, NewOrderWizard } from './components';
 
+//ReExport this for direct imports by other plugins if needed
+export {NewOrderWizard} from './components';
+
 export const ordersDeliveryPlugin: FeaturePlugin = {
   id: 'orders-delivery',
   name: 'Orders & Delivery',

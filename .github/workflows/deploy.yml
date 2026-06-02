@@ -164,7 +164,7 @@ jobs:
             echo "Validating application health..."
             if ! curl -f --retry 5 --retry-delay 5 --connect-timeout 5 http://localhost:3000/api/health; then
               echo "❌ ERRO: Health check falhou! Mostrando logs do container:"
-              docker compose -f docker/docker-compose.yml logs --tail=50 app
+              docker compose -f docker/docker-compose.yml logs --tail=150 app
               exit 1
             fi
             echo "Deploy concluído com sucesso!"
