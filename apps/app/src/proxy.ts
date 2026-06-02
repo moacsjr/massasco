@@ -25,6 +25,7 @@ export function proxy(request: NextRequest) {
   // Rotas públicas que não requerem autenticação
   const isPublicPath =
     path === '/plugins/login' ||
+    path === '/api/health' ||
     path.startsWith('/api/auth/') ||
     path.startsWith('/_next/') ||
     path.includes('/favicon.ico') ||
