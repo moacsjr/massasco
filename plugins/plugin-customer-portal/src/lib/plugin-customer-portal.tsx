@@ -173,13 +173,17 @@ export const useCustomerOrders = (checkInId: string) => {
 // ============================================================================
 
 // --- CheckInStep ---
-const CheckInStep: React.FC<{ tableNumber: number }> = ({ tableNumber }) => {
+const CheckInStep: React.FC = () => {
   const { resolve } = useUI();
   const Card = resolve('Card');
   const Button = resolve('Button');
   const [customerName, setCustomerName] = React.useState('');
   const [error, setError] = React.useState('');
   const router = useRouter();
+  
+  // Extract tableNumber from URL path
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  const tableNumber = pathParts.length > 2 ? parseInt(pathParts[2], 10) : 1;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -230,12 +234,9 @@ const CheckInStep: React.FC<{ tableNumber: number }> = ({ tableNumber }) => {
             <label className="block text-sm font-medium text-foreground mb-2">
               Número da Mesa
             </label>
-            <input
-              type="number"
-              value={tableNumber}
-              readOnly
-              className="w-full px-4 py-3 border border-border rounded-lg bg-card text-foreground opacity-70"
-            />
+            <div className="w-full px-4 py-3 border border-border rounded-lg bg-card text-foreground opacity-70">
+              {tableNumber}
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
