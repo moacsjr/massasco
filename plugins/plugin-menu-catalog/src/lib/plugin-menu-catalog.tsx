@@ -1369,6 +1369,7 @@ export const menuCatalogFeaturePlugin: FeaturePlugin = {
   name: 'Menu Catalog',
   type: 'feature',
   icon: 'ShoppingCart',
+  layout: 'admin',
   routes: [
     { path: '', component: CatalogPage, label: 'Cardápio' },
     {

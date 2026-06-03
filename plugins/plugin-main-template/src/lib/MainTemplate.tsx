@@ -31,7 +31,7 @@ const AdminTemplate: React.FC<{ children?: React.ReactNode }> = ({ children }) =
 
       {/* Mobile bottom navigation — strictly hidden on md+ screens */}
       <div className="md:hidden">
-        <BottomNavBarContainer />
+        <BottomNavBarContainer layout='admin' />
       </div>
     </div>
 );

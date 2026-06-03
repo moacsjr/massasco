@@ -185,8 +185,27 @@ Modify these pages to add your own content:
 - Verify the order ID is correct and exists in the database
 
 ### "Failed to create checkout session"
-- Check the server logs for detailed error messages
-- Verify Stripe API keys are correct
+ - Check the server logs for detailed error messages
+ - Verify Stripe API keys are correct
+
+### "The payment method type provided: pix is invalid"
+This error occurs when a payment method type is not enabled in your Stripe dashboard.
+
+**To enable additional payment methods (PIX, Boleto, Cashapp):**
+
+1. Go to [Stripe Dashboard → Payments → Settings](https://dashboard.stripe.com/account/payments/settings)
+2. Scroll down to "Payment methods" section
+3. Find the payment method you want to enable (e.g., PIX, Boleto, Cashapp)
+4. Click "Enable" or toggle the switch
+5. For preview features, you may need to enable them in [Stripe Dashboard → Developers → Preview features](https://dashboard.stripe.com/account/preview/features)
+
+**Supported payment methods by country:**
+- **Brazil (BRL):** `card`, `pix`, `boleto`, `cashapp`, `debit`, `credit`
+- **United States (USD):** `card`, `cashapp`, `apple_pay`, `google_pay`
+
+**Note:** The default configuration uses only `card` which is universally available on all Stripe accounts. To use additional payment methods, ensure they are enabled in your Stripe dashboard first.
+
+For more information, see [Stripe Payment Methods Documentation](https://stripe.com/docs/payments/payment-methods/integration-options)
 
 ## References
 

@@ -180,6 +180,7 @@ export const kdsPlugin: FeaturePlugin = {
   id: 'kds',
   name: 'Kitchen Display System',
   type: 'feature',
+  layout: 'admin',
   routes: [
     {
       path: '',

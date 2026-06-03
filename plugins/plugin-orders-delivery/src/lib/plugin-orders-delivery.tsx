@@ -12,6 +12,7 @@ export const ordersDeliveryPlugin: FeaturePlugin = {
   name: 'Orders & Delivery',
   type: 'feature',
   icon: '🍽️',
+  layout: 'admin',
   routes: [
     {
       path: '',

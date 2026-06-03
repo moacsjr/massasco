@@ -79,8 +79,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Create Stripe Checkout Session
+    // Note: payment_method_types must be enabled in your Stripe dashboard
+    // 'card' is universally available on all Stripe accounts
+    // Other methods like 'pix', 'boleto', 'cashapp' require account activation
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'pix', 'boleto', 'cashapp'],
+      payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
       success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/sucesso?order_id=${orderId}`,

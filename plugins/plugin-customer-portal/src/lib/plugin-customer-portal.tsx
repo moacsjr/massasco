@@ -278,22 +278,48 @@ const CheckoutPage: React.FC = () => {
   const router = useRouter();
 
   const { orders: customerOrders, isLoading } = useCustomerOrders(tableNumber);
+  // Filter only delivered orders for checkout
+  const deliveredOrders = React.useMemo(() => {
+    return (customerOrders || []).filter((order) => order.status === 'DELIVERED');
+  }, [customerOrders]);
   const [selectedOrderIds, setSelectedOrderIds] = React.useState<string[]>([]);
   const [paymentAmount, setPaymentAmount] = React.useState('');
   const [paymentMethod, setPaymentMethod] = React.useState('pix');
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [showPixScreen, setShowPixScreen] = React.useState<boolean>(false);
   const [pixData, setPixData] = React.useState<{ chave: string; beneficiario: string; cidade: string; valor: number } | null>(null);
+  
+  // Maquininha state
+  const [showMaquininhaScreen, setShowMaquininhaScreen] = React.useState<boolean>(false);
+  const [maquininhaOrderIds, setMaquininhaOrderIds] = React.useState<string[]>([]);
+  const [maquininhaAmount, setMaquininhaAmount] = React.useState<number>(0);
+  
+  // Venda Concluída state
+  const [showVendaConcluida, setShowVendaConcluida] = React.useState<boolean>(false);
+  
+  // SSE listener for ORDER_CLOSED event
+  React.useEffect(() => {
+    const es = new EventSource('/api/events');
+    es.addEventListener('ORDER_CLOSED', (event) => {
+      const data = JSON.parse(event.data);
+      console.log('ORDER_CLOSED event received:', data);
+      setShowVendaConcluida(true);
+    });
+    
+    return () => {
+      es.close();
+    };
+  }, []);
 
   const handleToggleAllOrders = () => {
-    if (selectedOrderIds.length === customerOrders.length) {
+    if (selectedOrderIds.length === deliveredOrders.length) {
       setSelectedOrderIds([]);
     } else {
-      setSelectedOrderIds(customerOrders.map((order) => order.id));
+      setSelectedOrderIds(deliveredOrders.map((order) => order.id));
     }
   };
 
-  const totalToPay = customerOrders.reduce((sum, order) => {
+  const totalToPay = deliveredOrders.reduce((sum, order) => {
     if (selectedOrderIds.includes(order.id)) {
       return sum + order.items.reduce((orderSum, item) => {
         const price = item.selectedPrice ? item.selectedPrice.value : 0;
@@ -342,6 +368,14 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
+    // Se for Maquininha, mostra a tela de Aguardando Pagamento
+    if (paymentMethod === 'maquininha') {
+      setMaquininhaOrderIds(selectedOrderIds);
+      setMaquininhaAmount(Number(paymentAmount));
+      setShowMaquininhaScreen(true);
+      return;
+    }
+
     setIsProcessing(true);
     try {
       const payments = await Promise.all(
@@ -362,6 +396,36 @@ const CheckoutPage: React.FC = () => {
       window.location.href = '/plugins/customer-portal/thank-you';
     } catch (err) {
       console.error('Error processing payment:', err);
+      alert('Erro ao processar pagamento');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Handle maquininha payment completion
+  const handleMaquininhaPaymentCompleted = async () => {
+    if (maquininhaOrderIds.length === 0 || maquininhaAmount === 0) return;
+
+    setIsProcessing(true);
+    try {
+      const payments = await Promise.all(
+        maquininhaOrderIds.map((orderId) =>
+          fetch('/api/payments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId,
+              amount: maquininhaAmount / maquininhaOrderIds.length,
+              method: 'maquininha',
+            }),
+          }).then((r) => r.json())
+        )
+      );
+
+      // Redirecionar para página de agradecimento
+      window.location.href = '/plugins/customer-portal/thank-you';
+    } catch (err) {
+      console.error('Error processing maquininha payment:', err);
       alert('Erro ao processar pagamento');
     } finally {
       setIsProcessing(false);
@@ -400,7 +464,7 @@ const CheckoutPage: React.FC = () => {
   // Tela de PIX
   if (showPixScreen && pixData) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <button
             onClick={() => {
@@ -434,6 +498,82 @@ const CheckoutPage: React.FC = () => {
     );
   }
 
+  // Tela de Aguardando Pagamento (Maquininha)
+  if (showMaquininhaScreen) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <button
+            onClick={() => {
+              setShowMaquininhaScreen(false);
+              setMaquininhaOrderIds([]);
+              setMaquininhaAmount(0);
+            }}
+            className="mb-4 flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
+            Cancelar
+          </button>
+          <Card title="Aguardando Pagamento" padding="lg">
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="mb-6 animate-spin text-brand">
+                <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
+              <p className="text-foreground text-center mb-6">
+                Procure o atendente e realize o pagamento na maquinha de cartão.
+              </p>
+              <Button 
+                variant="primary" 
+                size="md"
+                onClick={handleMaquininhaPaymentCompleted}
+                isLoading={isProcessing}
+                className="w-full"
+              >
+                Pagamento Realizado
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Tela de Venda Concluída
+  if (showVendaConcluida) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <Card title="Venda Concluída" padding="lg">
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="mb-6 text-green-500">
+                <svg className="w-20 h-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <p className="text-foreground text-center mb-6 text-lg">
+                Obrigado! Seu pagamento foi confirmado.
+              </p>
+              <Button 
+                variant="primary" 
+                size="md"
+                onClick={() => {
+                  setShowVendaConcluida(false);
+                  window.location.href = '/plugins/customer-portal/';
+                }}
+                className="w-full"
+              >
+                Voltar para o Início
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 space-y-4">
       <h2 className="text-2xl font-bold text-foreground">Checkout</h2>
@@ -448,17 +588,17 @@ const CheckoutPage: React.FC = () => {
             size="sm"
             onClick={handleToggleAllOrders}
           >
-            {selectedOrderIds.length === customerOrders.length && customerOrders.length > 0
+            {selectedOrderIds.length === deliveredOrders.length && deliveredOrders.length > 0
               ? 'Desmarcar todos'
               : 'Pagar todos'}
           </Button>
         </div>
 
-        {customerOrders.length === 0 ? (
-          <p className="text-muted-foreground">Nenhum pedido para pagar.</p>
+        {deliveredOrders.length === 0 ? (
+          <p className="text-muted-foreground">Nenhum pedido entregue para pagar.</p>
         ) : (
           <div className="space-y-3">
-            {customerOrders.map((order) => {
+            {deliveredOrders.map((order) => {
               const orderTotal = order.items.reduce((sum, item) => {
                 const price = item.selectedPrice ? item.selectedPrice.value : 0;
                 return sum + price * item.quantity;
