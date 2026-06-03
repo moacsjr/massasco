@@ -86,7 +86,7 @@ export const useCustomerTable = () => {
 };
 
 export const useCustomerCheckIn = () => {
-  const [checkIn, setCheckIn] = React.useState<CheckInDTO | null>(() => {
+  const [checkIn, setCheckInState] = React.useState<CheckInDTO | null>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('customerCheckIn');
       return stored ? JSON.parse(stored) : null;
@@ -95,12 +95,12 @@ export const useCustomerCheckIn = () => {
   });
 
   const setCheckIn = (checkInData: CheckInDTO) => {
-    setCheckIn(checkInData);
+    setCheckInState(checkInData);
     localStorage.setItem('customerCheckIn', JSON.stringify(checkInData));
   };
 
   const clearCheckIn = () => {
-    setCheckIn(null);
+    setCheckInState(null);
     localStorage.removeItem('customerCheckIn');
   };
 
