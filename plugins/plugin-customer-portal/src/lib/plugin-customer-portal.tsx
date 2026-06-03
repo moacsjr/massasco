@@ -107,6 +107,29 @@ export const useCustomerCheckIn = () => {
   return { checkIn, setCheckIn, clearCheckIn };
 };
 
+// Hook to listen for CHECKIN_CLOSED SSE event
+export const useCheckInSSE = (onCheckInClosed?: (tableNumber: number) => void) => {
+  React.useEffect(() => {
+    const eventSource = new EventSource('/api/events');
+    
+    eventSource.addEventListener('CHECKIN_CLOSED', (event) => {
+      const data = JSON.parse(event.data);
+      console.log('CHECKIN_CLOSED event received:', data);
+      if (onCheckInClosed) {
+        onCheckInClosed(data.tableNumber);
+      }
+    });
+    
+    eventSource.onerror = () => {
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [onCheckInClosed]);
+};
+
 export const useCustomerOrders = (checkInId: string) => {
   const [orders, setOrders] = React.useState<OrderDTO[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
