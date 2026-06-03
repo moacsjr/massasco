@@ -55,14 +55,43 @@ model ProductComplement {
   createdAt   DateTime @default(now())
 }
 
+// ============================================================================
+// CheckIn Model - Represents a customer session at a table
+// ============================================================================
+
+model CheckIn {
+  id           String        @id @default(uuid())
+  tableNumber  Int
+  customerName String
+  status       CheckInStatus @default(OPEN)
+  createdAt    DateTime      @default(now())
+  closedAt     DateTime?
+  
+  orders       Order[]
+  
+  @@unique([tableNumber, status]) // Only one OPEN check-in per table
+}
+
+enum CheckInStatus {
+  OPEN
+  CLOSED
+}
+
+// ============================================================================
+// Order Model - Represents an order placed during a check-in
+// ============================================================================
+
 model Order {
-  id          String       @id @default(uuid())
-  tableNumber Int
-  status      OrderStatus  @default(OPEN)
-  items       OrderItem[]
-  payments    Payment[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id           String        @id @default(uuid())
+  checkInId    String
+  checkIn      CheckIn       @relation(fields: [checkInId], references: [id], onDelete: Cascade)
+  tableNumber  Int
+  customerName String
+  status       OrderStatus   @default(OPEN)
+  items        OrderItem[]
+  payments     Payment[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
 model OrderItem {

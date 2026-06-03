@@ -50,6 +50,15 @@ interface OrderDTO {
   createdAt: string;
 }
 
+interface CheckInDTO {
+  id: string;
+  tableNumber: number;
+  customerName: string;
+  status: 'OPEN' | 'CLOSED';
+  createdAt: string;
+  closedAt?: string;
+}
+
 // ============================================================================
 // Hooks
 // ============================================================================
@@ -76,16 +85,38 @@ export const useCustomerTable = () => {
   return { tableNumber, setTable, clearTable };
 };
 
-export const useCustomerOrders = (tableNumber: number) => {
+export const useCustomerCheckIn = () => {
+  const [checkIn, setCheckIn] = React.useState<CheckInDTO | null>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('customerCheckIn');
+      return stored ? JSON.parse(stored) : null;
+    }
+    return null;
+  });
+
+  const setCheckIn = (checkInData: CheckInDTO) => {
+    setCheckIn(checkInData);
+    localStorage.setItem('customerCheckIn', JSON.stringify(checkInData));
+  };
+
+  const clearCheckIn = () => {
+    setCheckIn(null);
+    localStorage.removeItem('customerCheckIn');
+  };
+
+  return { checkIn, setCheckIn, clearCheckIn };
+};
+
+export const useCustomerOrders = (checkInId: string) => {
   const [orders, setOrders] = React.useState<OrderDTO[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    if (!tableNumber) return;
+    if (!checkInId) return;
 
     const fetchOrders = async () => {
       try {
-        const res = await fetch(`/api/orders?tableNumber=${tableNumber}`);
+        const res = await fetch(`/api/orders?checkInId=${checkInId}`);
         const data = await res.json();
         setOrders(data || []);
       } catch (err) {
@@ -109,7 +140,7 @@ export const useCustomerOrders = (tableNumber: number) => {
     return () => {
       eventSource.close();
     };
-  }, [tableNumber]);
+  }, [checkInId]);
 
   return { orders, isLoading };
 };
@@ -117,6 +148,97 @@ export const useCustomerOrders = (tableNumber: number) => {
 // ============================================================================
 // Components
 // ============================================================================
+
+// --- CheckInStep ---
+const CheckInStep: React.FC<{ tableNumber: number }> = ({ tableNumber }) => {
+  const { resolve } = useUI();
+  const Card = resolve('Card');
+  const Button = resolve('Button');
+  const [customerName, setCustomerName] = React.useState('');
+  const [error, setError] = React.useState('');
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!customerName.trim()) {
+      setError('Por favor, informe seu nome');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/checkins', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tableNumber,
+          customerName: customerName.trim(),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (res.status === 400) {
+          setError(data.error || 'Erro ao fazer check-in');
+          return;
+        }
+        throw new Error(data.error || 'Erro ao fazer check-in');
+      }
+
+      // Save check-in to localStorage
+      localStorage.setItem('customerCheckIn', JSON.stringify(data));
+      localStorage.setItem('customerTable', tableNumber.toString());
+
+      // Redirect to menu
+      window.location.href = '/plugins/customer-portal/menu';
+    } catch (err) {
+      console.error('Error creating check-in:', err);
+      setError('Erro ao criar check-in. Tente novamente.');
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <Card title="Check-in da Mesa" padding="lg">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Número da Mesa
+            </label>
+            <input
+              type="number"
+              value={tableNumber}
+              readOnly
+              className="w-full px-4 py-3 border border-border rounded-lg bg-card text-foreground opacity-70"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Seu Nome
+            </label>
+            <input
+              type="text"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              className="w-full px-4 py-3 border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
+              placeholder="Ex: João"
+              required
+            />
+            {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+          </div>
+          <Button variant="primary" size="md" type="submit">
+            Entrar
+          </Button>
+        </form>
+        <p className="mt-4 text-center text-sm text-muted-foreground">
+          Faça check-in para acessar o cardápio digital
+        </p>
+      </Card>
+    </div>
+  );
+};
 
 // --- SelectTableStep ---
 const SelectTableStep: React.FC = () => {
@@ -128,7 +250,7 @@ const SelectTableStep: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem('customerTable', tableNumber.toString());
-    window.location.href = '/plugins/customer-portal/menu';
+    window.location.href = `/plugins/customer-portal/checkin/${tableNumber}`;
   };
 
   return (
@@ -172,12 +294,29 @@ const MenuPage: React.FC = () => {
 
 // --- OrdersPage ---
 const OrdersPage: React.FC = () => {
-  const { tableNumber } = useCustomerTable();
+  const { checkIn } = useCustomerCheckIn();
   const { resolve } = useUI();
   const Card = resolve('Card');
   const Button = resolve('Button');
 
-  const { orders: customerOrders, isLoading } = useCustomerOrders(tableNumber);
+  if (!checkIn) {
+    return (
+      <div className="p-4">
+        <Card padding="lg">
+          <p className="text-muted-foreground">Nenhum check-in ativo.</p>
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => (window.location.href = '/plugins/customer-portal/')}
+          >
+            Fazer Check-in
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+  const { orders: customerOrders, isLoading } = useCustomerOrders(checkIn.id);
 
   if (isLoading) {
     return <div className="p-4 text-foreground">Carregando pedidos...</div>;
@@ -188,7 +327,7 @@ const OrdersPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-foreground">Meus Pedidos</h2>
         <span className="text-sm text-muted-foreground">
-          Mesa {tableNumber}
+          Mesa {checkIn.tableNumber}
         </span>
       </div>
 
@@ -271,13 +410,30 @@ const OrdersPage: React.FC = () => {
 
 // --- CheckoutPage ---
 const CheckoutPage: React.FC = () => {
-  const { tableNumber } = useCustomerTable();
+  const { checkIn } = useCustomerCheckIn();
   const { resolve } = useUI();
   const Card = resolve('Card');
   const Button = resolve('Button');
   const router = useRouter();
 
-  const { orders: customerOrders, isLoading } = useCustomerOrders(tableNumber);
+  if (!checkIn) {
+    return (
+      <div className="p-4">
+        <Card padding="lg">
+          <p className="text-muted-foreground">Nenhum check-in ativo.</p>
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => (window.location.href = '/plugins/customer-portal/')}
+          >
+            Fazer Check-in
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+  const { orders: customerOrders, isLoading } = useCustomerOrders(checkIn.id);
   // Filter only delivered orders for checkout (orders where all items are delivered)
   const deliveredOrders = React.useMemo(() => {
     return (customerOrders || []).filter((order) => {
@@ -738,13 +894,30 @@ const CheckoutPage: React.FC = () => {
 
 // --- ThankYouPage ---
 const ThankYouPage: React.FC = () => {
-  const { tableNumber } = useCustomerTable();
+  const { checkIn } = useCustomerCheckIn();
   const { resolve } = useUI();
   const Card = resolve('Card');
   const Button = resolve('Button');
   const router = useRouter();
 
-  const { orders: customerOrders, isLoading } = useCustomerOrders(tableNumber);
+  if (!checkIn) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Card padding="lg">
+          <p className="text-muted-foreground">Nenhum check-in ativo.</p>
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => (window.location.href = '/plugins/customer-portal/')}
+          >
+            Fazer Check-in
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+  const { orders: customerOrders, isLoading } = useCustomerOrders(checkIn.id);
 
   const totalSpent = customerOrders.reduce((sum, order) => {
     return sum + order.items.reduce((orderSum, item) => {
@@ -761,6 +934,7 @@ const ThankYouPage: React.FC = () => {
   }, 0);
 
   const handleFinish = () => {
+    localStorage.removeItem('customerCheckIn');
     localStorage.removeItem('customerTable');
     window.location.href = '/plugins/customer-portal/';
   };
@@ -783,7 +957,7 @@ const ThankYouPage: React.FC = () => {
         <div className="space-y-3 text-left mb-6">
           <div className="flex justify-between py-2 border-b border-border">
             <span className="text-muted-foreground">Mesa:</span>
-            <span className="text-foreground font-medium">{tableNumber}</span>
+            <span className="text-foreground font-medium">{checkIn.tableNumber}</span>
           </div>
           <div className="flex justify-between py-2 border-b border-border">
             <span className="text-muted-foreground">Itens consumidos:</span>
@@ -960,6 +1134,12 @@ export const customerPortalPlugin: FeaturePlugin = {
       showInMenu: false,
     },
     {
+      path: 'checkin/:tableNumber',
+      component: CheckInStep,
+      label: 'Check-in',
+      showInMenu: false,
+    },
+    {
       path: 'menu',
       component: MenuPage,
       label: 'Cardápio',
@@ -1003,9 +1183,17 @@ export const customerPortalServicePlugin: ServicePlugin = {
       }
       return null;
     },
+    getCustomerCheckIn: () => {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('customerCheckIn');
+        return stored ? JSON.parse(stored) : null;
+      }
+      return null;
+    },
   },
 };
 export { SelectTableStep }
+export { CheckInStep }
 export { MenuPage }
 export { OrdersPage }
 export { CheckoutPage }
