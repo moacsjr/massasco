@@ -30,12 +30,16 @@ export const useOrdersDeliveryData = (): UseOrdersDeliveryDataReturn => {
         throw new Error('Failed to fetch orders');
       }
       const data = await res.json();
-      setActiveOrders(data || []);
+      // Filter out CLOSED orders for active tab
+      const activeOrdersData = (data || []).filter(
+        (order: any) => order.status !== 'CLOSED'
+      );
+      setActiveOrders(activeOrdersData);
 
       // Calcular itens prontos para entrega
       const items: OrderItemDTO[] = [];
-      if (data) {
-        for (const order of data) {
+      if (activeOrdersData) {
+        for (const order of activeOrdersData) {
           if (order.items) {
             for (const item of order.items) {
               if (item.status === 'READY') {
