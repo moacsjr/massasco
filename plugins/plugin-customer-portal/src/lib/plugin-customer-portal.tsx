@@ -9,8 +9,8 @@ import {
   LeftMenuItemProps,
 } from '@temp-workspace/plugin-loader';
 import { useUI } from '@temp-workspace/ui-registry';
-import { NewOrderWizard } from '@temp-workspace/plugin-orders-delivery';
-import { PaymentsAPI } from '@temp-workspace/plugin-payments';
+import { NewOrderContainer } from '@temp-workspace/plugin-orders-delivery';
+import { PaymentsAPI, CheckoutButton, ComponentePix } from '@temp-workspace/plugin-payments';
 import { useRouter } from 'next/navigation';
 
 // ============================================================================
@@ -165,7 +165,7 @@ const SelectTableStep: React.FC = () => {
 const MenuPage: React.FC = () => {
   return (
     <div className="p-4">
-      <NewOrderWizard />
+      <NewOrderContainer />
     </div>
   );
 };
@@ -280,8 +280,18 @@ const CheckoutPage: React.FC = () => {
   const { orders: customerOrders, isLoading } = useCustomerOrders(tableNumber);
   const [selectedOrderIds, setSelectedOrderIds] = React.useState<string[]>([]);
   const [paymentAmount, setPaymentAmount] = React.useState('');
-  const [paymentMethod, setPaymentMethod] = React.useState('cash');
+  const [paymentMethod, setPaymentMethod] = React.useState('pix');
   const [isProcessing, setIsProcessing] = React.useState(false);
+  const [showPixScreen, setShowPixScreen] = React.useState<boolean>(false);
+  const [pixData, setPixData] = React.useState<{ chave: string; beneficiario: string; cidade: string; valor: number } | null>(null);
+
+  const handleToggleAllOrders = () => {
+    if (selectedOrderIds.length === customerOrders.length) {
+      setSelectedOrderIds([]);
+    } else {
+      setSelectedOrderIds(customerOrders.map((order) => order.id));
+    }
+  };
 
   const totalToPay = customerOrders.reduce((sum, order) => {
     if (selectedOrderIds.includes(order.id)) {
@@ -293,6 +303,15 @@ const CheckoutPage: React.FC = () => {
     return sum;
   }, 0);
 
+  // Pre-fill payment amount with total to pay when orders are selected
+  React.useEffect(() => {
+    if (selectedOrderIds.length > 0) {
+      setPaymentAmount(totalToPay.toFixed(2));
+    } else {
+      setPaymentAmount('');
+    }
+  }, [selectedOrderIds, totalToPay]);
+
   const handleToggleOrder = (orderId: string) => {
     setSelectedOrderIds((prev) =>
       prev.includes(orderId)
@@ -301,8 +320,27 @@ const CheckoutPage: React.FC = () => {
     );
   };
 
+  // Dados fixos para teste do PIX - em produção, isso viria de uma configuração ou API
+  const pixConfig = {
+    chave: 'suachave@email.com', // Chave PIX do estabelecimento
+    beneficiario: 'Fulano de Tal', // Nome do beneficiário
+    cidade: 'Sao Paulo' // Cidade do beneficiário
+  };
+
   const handleCheckout = async () => {
     if (selectedOrderIds.length === 0 || !paymentAmount) return;
+
+    // Se for Pix, mostra a tela de PIX em vez de registrar imediatamente
+    if (paymentMethod === 'pix') {
+      setPixData({
+        chave: pixConfig.chave,
+        beneficiario: pixConfig.beneficiario,
+        cidade: pixConfig.cidade,
+        valor: Number(paymentAmount)
+      });
+      setShowPixScreen(true);
+      return;
+    }
 
     setIsProcessing(true);
     try {
@@ -330,14 +368,91 @@ const CheckoutPage: React.FC = () => {
     }
   };
 
+  const handlePayWithPix = async () => {
+    if (!pixData || selectedOrderIds.length === 0) return;
+
+    setIsProcessing(true);
+    try {
+      const payments = await Promise.all(
+        selectedOrderIds.map((orderId) =>
+          fetch('/api/payments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId,
+              amount: Number(pixData.valor) / selectedOrderIds.length,
+              method: 'pix',
+            }),
+          }).then((r) => r.json())
+        )
+      );
+
+      // Redirecionar para página de agradecimento
+      window.location.href = '/plugins/customer-portal/thank-you';
+    } catch (err) {
+      console.error('Error processing PIX payment:', err);
+      alert('Erro ao processar pagamento PIX');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Tela de PIX
+  if (showPixScreen && pixData) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <button
+            onClick={() => {
+              setShowPixScreen(false);
+              setPixData(null);
+            }}
+            className="mb-4 flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
+            Voltar
+          </button>
+          <ComponentePix
+            chave={pixData.chave}
+            beneficiario={pixData.beneficiario}
+            cidade={pixData.cidade}
+            valor={pixData.valor}
+          />
+          <div className="mt-6 space-y-4">
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handlePayWithPix}
+              isLoading={isProcessing}
+              className="w-full"
+            >
+              Pagar com PIX
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 space-y-4">
       <h2 className="text-2xl font-bold text-foreground">Checkout</h2>
 
       <Card padding="lg">
-        <h3 className="text-lg font-semibold text-foreground mb-4">
-          Selecione os pedidos para pagar
-        </h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold text-foreground">
+            Selecione os pedidos para pagar
+          </h3>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleToggleAllOrders}
+          >
+            {selectedOrderIds.length === customerOrders.length && customerOrders.length > 0
+              ? 'Desmarcar todos'
+              : 'Pagar todos'}
+          </Button>
+        </div>
 
         {customerOrders.length === 0 ? (
           <p className="text-muted-foreground">Nenhum pedido para pagar.</p>
@@ -425,20 +540,48 @@ const CheckoutPage: React.FC = () => {
                 onChange={(e) => setPaymentMethod(e.target.value)}
                 className="w-full px-4 py-3 border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
               >
-                <option value="cash">💵 Dinheiro</option>
-                <option value="card">💳 Cartão</option>
-                <option value="pix">📱 Pix</option>
+                <option value="pix">Pix</option>
+                <option value="maquininha">Maquininha</option>
+                <option value="celular">Pagar Pelo Celular</option>
               </select>
             </div>
 
-            <Button
-              variant="primary"
-              size="md"
-              onClick={handleCheckout}
-              isLoading={isProcessing}
-            >
-              Confirmar Pagamento
-            </Button>
+            {/* Se for Pix, mostrar botão de Pagar com PIX */}
+            {paymentMethod === 'pix' ? (
+              <Button
+                variant="primary"
+                size="md"
+                onClick={handleCheckout}
+                isLoading={isProcessing}
+                className="w-full"
+              >
+                Pagar com PIX
+              </Button>
+            ) : paymentMethod === 'celular' ? (
+              <div className="space-y-4">
+                <CheckoutButton
+                  orderId={selectedOrderIds[0]}
+                  variant="primary"
+                  size="md"
+                  className="w-full"
+                />
+                {selectedOrderIds.length > 1 && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Nota: O pagamento via Stripe será processado para o primeiro pedido selecionado.
+                    Para outros pedidos, por favor realize pagamentos separados.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <Button
+                variant="primary"
+                size="md"
+                onClick={handleCheckout}
+                isLoading={isProcessing}
+              >
+                Confirmar Pagamento
+              </Button>
+            )}
           </div>
         </Card>
       )}
@@ -661,6 +804,7 @@ export const customerPortalPlugin: FeaturePlugin = {
   id: 'customer-portal',
   name: 'Portal do Cliente',
   type: 'feature',
+  layout: 'portal',
   routes: [
     {
       path: '',
@@ -672,19 +816,22 @@ export const customerPortalPlugin: FeaturePlugin = {
       path: 'menu',
       component: MenuPage,
       label: 'Cardápio',
-      showInMenu: false,
+      showInMenu: true,
+      icon: 'ShoppingCart',
     },
     {
       path: 'orders',
       component: OrdersPage,
       label: 'Pedidos',
-      showInMenu: false,
+      showInMenu: true,
+      icon: 'List',
     },
     {
       path: 'checkout',
       component: CheckoutPage,
       label: 'Checkout',
-      showInMenu: false,
+      showInMenu: true,
+      icon: 'CreditCard',
     },
     {
       path: 'thank-you',
@@ -711,3 +858,8 @@ export const customerPortalServicePlugin: ServicePlugin = {
     },
   },
 };
+export { SelectTableStep }
+export { MenuPage }
+export { OrdersPage }
+export { CheckoutPage }
+export { ThankYouPage }

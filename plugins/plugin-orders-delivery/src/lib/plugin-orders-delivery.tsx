@@ -1,8 +1,11 @@
-import { FeaturePlugin } from '@temp-workspace/plugin-loader';
-import { OrdersDeliveryPage, NewOrderWizard } from './components';
+"use client";
 
-//ReExport this for direct imports by other plugins if needed
-export {NewOrderWizard} from './components';
+import { FeaturePlugin } from '@temp-workspace/plugin-loader';
+import { OrdersDeliveryContainer } from './containers/OrdersDeliveryContainer';
+import { NewOrderContainer } from './containers/NewOrderContainer';
+
+// Re-export containers for direct imports by other plugins if needed
+export { OrdersDeliveryContainer, NewOrderContainer } from './containers';
 
 export const ordersDeliveryPlugin: FeaturePlugin = {
   id: 'orders-delivery',
@@ -12,14 +15,14 @@ export const ordersDeliveryPlugin: FeaturePlugin = {
   routes: [
     {
       path: '',
-      component: OrdersDeliveryPage,
+      component: OrdersDeliveryContainer,
       label: 'Pedidos',
       icon: 'ShoppingCart',
       showInMenu: true,
     },
     {
       path: 'new',
-      component: NewOrderWizard,
+      component: NewOrderContainer,
       label: 'Novo Pedido',
       showInMenu: false,
     },

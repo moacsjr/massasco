@@ -5,6 +5,7 @@ import {
   pluginLoader,
   PluginRoute,
   ErrorBoundary,
+  PluginLayout,
 } from '@temp-workspace/plugin-loader';
 import { initializePlugins } from '../../../plugins-registry';
 
@@ -19,6 +20,7 @@ export default function PluginPage({ params }: PluginPageProps) {
   const { slug } = resolvedParams;
 
   const [route, setRoute] = useState<PluginRoute | undefined>(undefined);
+  const [layout, setLayout] = useState<PluginLayout>('portal');
   const [error, setError] = useState<string | undefined>(undefined);
 
   useEffect(() => {
@@ -29,9 +31,14 @@ export default function PluginPage({ params }: PluginPageProps) {
     const internalPath = pathParts.join('/');
 
     const resolved = pluginLoader.resolveRoute(pluginId, internalPath);
+    const plugin = pluginLoader.getPlugin(pluginId);
 
     if (resolved) {
       setRoute(resolved);
+      // Determine layout from plugin's layout property, default to 'portal'
+      if (plugin && plugin.type === 'feature') {
+        setLayout(plugin.layout || 'admin');
+      }
     } else {
       setError(`Rota ou Plugin não encontrado: ${slug.join('/')}`);
     }

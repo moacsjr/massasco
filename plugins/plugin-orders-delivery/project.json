@@ -1,0 +1,9 @@
+{
+  "name": "plugin-orders-delivery",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "plugins/plugin-orders-delivery/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project plugin-orders-delivery --web",
+  "targets": {}
+}

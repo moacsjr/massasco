@@ -8,6 +8,8 @@ import {
   pluginLoader,
 } from '@temp-workspace/plugin-loader';
 import { useUI } from '@temp-workspace/ui-registry';
+import { ComponentePix } from './ComponentePix';
+import { CheckoutButton } from './CheckoutButton';
 
 // ============================================================================
 // Service API
@@ -56,7 +58,16 @@ const PaymentsPage: React.FC = () => {
   const [orderDetail, setOrderDetail] = useState<any>(null);
   const [payments, setPayments] = useState<any[]>([]);
   const [paymentAmount, setPaymentAmount] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paymentMethod, setPaymentMethod] = useState('pix');
+  const [showPixScreen, setShowPixScreen] = useState<boolean>(false);
+  const [pixData, setPixData] = useState<{ chave: string; beneficiario: string; cidade: string; valor: number } | null>(null);
+
+  // Dados fixos para teste do PIX - em produção, isso viria de uma configuração ou API
+  const pixConfig = {
+    chave: 'suachave@email.com', // Chave PIX do estabelecimento
+    beneficiario: 'Fulano de Tal', // Nome do beneficiário
+    cidade: 'Sao Paulo' // Cidade do beneficiário
+  };
 
   useEffect(() => {
     fetch('/api/orders')
@@ -72,10 +83,31 @@ const PaymentsPage: React.FC = () => {
     const payRes = await fetch(`/api/payments?orderId=${orderId}`);
     const payData = await payRes.json();
     setPayments(payData || []);
+    // Calculate remaining and pre-fill payment amount
+    const orderTotal = (detail.items || []).reduce((sum: number, item: any) => {
+      const price = item.selectedPrice ? Number(item.selectedPrice.value) : 0;
+      return sum + price * item.quantity;
+    }, 0);
+    const paidAmount = payData.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+    const remainingAmount = orderTotal - paidAmount;
+    setPaymentAmount(remainingAmount.toFixed(2));
   };
 
   const submitPayment = async () => {
     if (!selectedOrder || !paymentAmount) return;
+
+    // Se for Pix, mostra a tela de PIX em vez de registrar imediatamente
+    if (paymentMethod === 'pix') {
+      setPixData({
+        chave: pixConfig.chave,
+        beneficiario: pixConfig.beneficiario,
+        cidade: pixConfig.cidade,
+        valor: Number(paymentAmount)
+      });
+      setShowPixScreen(true);
+      return;
+    }
+
     await paymentsAPI.registerPayment(
       selectedOrder,
       Number(paymentAmount),
@@ -93,6 +125,32 @@ const PaymentsPage: React.FC = () => {
     : 0;
   const paid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
   const remaining = total - paid;
+
+  // Tela de PIX
+  if (showPixScreen && pixData) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <button
+            onClick={() => {
+              setShowPixScreen(false);
+              setPixData(null);
+            }}
+            className="mb-4 flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
+            Voltar
+          </button>
+          <ComponentePix
+            chave={pixData.chave}
+            beneficiario={pixData.beneficiario}
+            cidade={pixData.cidade}
+            valor={pixData.valor}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[800px]">
@@ -204,19 +262,19 @@ const PaymentsPage: React.FC = () => {
                       focus:outline-none focus:ring-2 focus:ring-brand
                     "
                   />
-                  <select
-                    value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="
-                      px-2.5 py-1.5 border border-border rounded text-sm
-                      bg-card text-foreground
-                      focus:outline-none focus:ring-2 focus:ring-brand
-                    "
-                  >
-                    <option value="cash">💵 Dinheiro</option>
-                    <option value="card">💳 Cartão</option>
-                    <option value="pix">📱 Pix</option>
-                  </select>
+                   <select
+                     value={paymentMethod}
+                     onChange={(e) => setPaymentMethod(e.target.value)}
+                     className="
+                       px-2.5 py-1.5 border border-border rounded text-sm
+                       bg-card text-foreground
+                       focus:outline-none focus:ring-2 focus:ring-brand
+                     "
+                   >
+                     <option value="pix">📱 Pix</option>
+                     <option value="maquininha">💳 Maquininha</option>
+                     <option value="celular">📱 Pagar Pelo Celular</option>
+                   </select>
                   <Button variant="primary" size="sm" onClick={submitPayment}>
                     Registrar Pagamento
                   </Button>

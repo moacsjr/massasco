@@ -59,9 +59,24 @@ export interface BasePlugin {
   type: PluginType;
 }
 
+/**
+ * Layout type for a plugin.
+ * - 'portal': Uses the default plugin-main-template layout (default)
+ * - 'admin': Uses the admin layout with app:main-template extension point
+ */
+export type PluginLayout = 'portal' | 'admin';
+
 export interface FeaturePlugin extends BasePlugin {
   type: 'feature';
   icon?: string;
+  /**
+   * Specifies which layout the plugin should use.
+   * - 'portal': Uses the default portal layout (with header, nav rail, footer)
+   * - 'admin': Uses the admin layout (simpler, for admin-focused plugins)
+   * 
+   * Defaults to 'portal' for backward compatibility.
+   */
+  layout?: PluginLayout;
   routes?: PluginRoute[];
   extensionPoints?: ExtensionPointDefinition[];
   contributions?: ExtensionContribution[];

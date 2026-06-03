@@ -1,67 +1,37 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useUI } from '@temp-workspace/ui-registry';
-import { pluginLoader } from '@temp-workspace/plugin-loader';
 import { Fab } from '@temp-workspace/plugin-ui-components';
-import { MenuCatalogAPI } from '@temp-workspace/plugin-menu-catalog';
-import { OrderItemDTO } from '../types';
+import { OrderItemDTO, OrderDTO } from '../types';
 
-// ============================================================================
-// Orders Delivery Page — Two-tab interface (Active + Deliver) with FAB
-// ============================================================================
+export interface OrdersDeliveryViewProps {
+  activeOrders?: OrderDTO[] | null;
+  readyItems?: OrderItemDTO[] | null;
+  activeTab: 'active' | 'deliver';
+  setActiveTab: (tab: 'active' | 'deliver') => void;
+  isLoading?: boolean;
+  refetch?: () => void;
+  markDelivered?: (itemId: string) => Promise<void>;
+}
 
-const OrdersDeliveryPage: React.FC = () => {
+export const OrdersDeliveryView = ({
+  activeOrders = [],
+  readyItems = [],
+  activeTab,
+  setActiveTab,
+  isLoading = false,
+  refetch,
+  markDelivered,
+}: OrdersDeliveryViewProps) => {
   const { resolve } = useUI();
   const Card = resolve('Card');
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState<'active' | 'deliver'>('active');
-  const [activeOrders, setActiveOrders] = useState<any[]>([]);
-  const [readyItems, setReadyItems] = useState<OrderItemDTO[]>([]);
-
-  // Load active orders
-  const loadActiveOrders = useCallback(async () => {
-    const res = await fetch('/api/orders');
-    const data = await res.json();
-    setActiveOrders(data || []);
-  }, []);
-
-  React.useEffect(() => {
-    loadActiveOrders();
-  }, [loadActiveOrders]);
-
-  // SSE listener for real-time updates
-  React.useEffect(() => {
-    const es = new EventSource('/api/events');
-    es.addEventListener('ITEM_UPDATED', () => loadActiveOrders());
-    es.addEventListener('ORDER_CREATED', () => loadActiveOrders());
-    return () => es.close();
-  }, [loadActiveOrders]);
-
-  // Load ready items
-  React.useEffect(() => {
-    const ready: OrderItemDTO[] = [];
-    for (const order of activeOrders) {
-      for (const item of order.items || []) {
-        if (item.status === 'READY') {
-          ready.push(item);
-        }
-      }
-    }
-    setReadyItems(ready);
-  }, [activeOrders]);
-
-  // Delivery
-  const markDelivered = async (itemId: string) => {
-    await fetch(`/api/order-items/${itemId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'DELIVERED' }),
-    });
-    loadActiveOrders();
-  };
+  // Wrapper imutável: garante que a caixa externa nunca mude de tamanho ou estilo
+  const cardWrapperClasses =
+    'bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm';
 
   const statusBadge = (status: string) => {
     const styles: Record<string, string> = {
@@ -72,6 +42,46 @@ const OrdersDeliveryPage: React.FC = () => {
       CANCELLED: 'bg-red-900/50 text-red-400',
     };
     return styles[status] || 'bg-secondary text-muted-foreground';
+  };
+
+  // RENDER ESTADO: SKELETON (Mapeamento 1:1 com o DOM real)
+  if (isLoading) {
+    return (
+      <div className="max-w-[900px]">
+        <Card title="Pedidos & Entregas" padding="lg">
+          {/* Tabs Skeleton */}
+          <div className="flex gap-0 mb-5 border-b-2 border-border animate-pulse">
+            <div className="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded mr-2" />
+            <div className="h-8 w-28 bg-gray-200 dark:bg-gray-700 rounded" />
+          </div>
+
+          {/* Active Tab Skeleton */}
+          <div className="space-y-4">
+            <div className="h-6 w-32 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-2" />
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+
+        {/* FAB Skeleton */}
+        <div className="fixed bottom-20 md:bottom-6 right-6 w-14 h-14 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+      </div>
+    );
+  }
+
+  const handleDeliver = async (itemId: string) => {
+    if (markDelivered) {
+      await markDelivered(itemId);
+    }
   };
 
   return (
@@ -178,7 +188,7 @@ const OrdersDeliveryPage: React.FC = () => {
                         </div>
                       </div>
                       <button
-                        onClick={() => markDelivered(item.id)}
+                        onClick={() => handleDeliver(item.id)}
                         className="
                           px-3.5 py-1.5 rounded-lg border-none
                           bg-brand text-black font-semibold cursor-pointer
@@ -207,4 +217,4 @@ const OrdersDeliveryPage: React.FC = () => {
   );
 };
 
-export default OrdersDeliveryPage;
+export default OrdersDeliveryView;

@@ -1,109 +1,98 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useUI } from '@temp-workspace/ui-registry';
-import { pluginLoader } from '@temp-workspace/plugin-loader';
 import {
-  MenuCatalogAPI,
   ProductDTO,
   ProductPriceDTO,
   ProductComplementDTO,
   CategoryDTO,
 } from '@temp-workspace/plugin-menu-catalog';
 import { CartItem, WizardStep } from '../types';
-import ProductListStep from './ProductListStep';
-import ProductDetailsStep from './ProductDetailsStep';
-import OrderSummaryStep from './OrderSummaryStep';
+import ProductListStep from '../components/ProductListStep';
+import ProductDetailsStep from '../components/ProductDetailsStep';
+import OrderSummaryStep from '../components/OrderSummaryStep';
 
-// ============================================================================
-// New Order Wizard — Multi-step order creation
-// ============================================================================
+export interface NewOrderViewProps {
+  step: WizardStep;
+  setStep: (step: WizardStep) => void;
+  selectedProduct: ProductDTO | null;
+  setSelectedProduct: (product: ProductDTO | null) => void;
+  cart: CartItem[];
+  setCart: (cart: CartItem[]) => void;
+  tableNumber: number;
+  setTableNumber: (num: number) => void;
+  categories: CategoryDTO[];
+  products: ProductDTO[];
+  isLoading: boolean;
+  refetch: () => void;
+  handleSelectProduct: (product: ProductDTO) => void;
+  handleAddToCart: (
+    price: ProductPriceDTO,
+    complements: ProductComplementDTO[],
+    notes: string
+  ) => void;
+  handleSubmitOrder: () => Promise<void>;
+  handleCancel: () => void;
+  handleBackToList: () => void;
+}
 
-const NewOrderWizard: React.FC = () => {
+export const NewOrderView = ({
+  step,
+  setStep,
+  selectedProduct,
+  setSelectedProduct,
+  cart,
+  setCart,
+  tableNumber,
+  setTableNumber,
+  categories,
+  products,
+  isLoading,
+  refetch,
+  handleSelectProduct,
+  handleAddToCart,
+  handleSubmitOrder,
+  handleCancel,
+  handleBackToList,
+}: NewOrderViewProps) => {
   const { resolve } = useUI();
   const Card = resolve('Card');
   const router = useRouter();
 
-  // Wizard state
-  const [step, setStep] = useState<WizardStep>('product-list');
-  const [selectedProduct, setSelectedProduct] = useState<ProductDTO | null>(
-    null,
-  );
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [tableNumber, setTableNumber] = useState(1);
+  // Wrapper imutável: garante que a caixa externa nunca mude de tamanho ou estilo
+  const cardWrapperClasses =
+    'bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm';
 
-  // Menu data
-  const [categories, setCategories] = useState<CategoryDTO[]>([]);
-  const [products, setProducts] = useState<ProductDTO[]>([]);
+  // RENDER ESTADO: SKELETON (Mapeamento 1:1 com o DOM real)
+  if (isLoading) {
+    return (
+      <div className="max-w-[900px]">
+        <Card title="Novo Pedido" padding="lg">
+          {/* Skeleton - Table Number */}
+          <div className="mb-4 flex items-center gap-2">
+            <div className="font-semibold text-foreground">Mesa:</div>
+            <div className="w-[60px] h-9 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+          </div>
 
-  useEffect(() => {
-    const menuAPI = pluginLoader.getService<MenuCatalogAPI>('menu-catalog');
-    menuAPI.listCategories().then(setCategories);
-    menuAPI.listProducts().then(setProducts);
-  }, []);
+          {/* Skeleton - Step indicator */}
+          <div className="flex gap-2 mb-6 items-center">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
+            ))}
+          </div>
 
-  const handleSelectProduct = (product: ProductDTO) => {
-    setSelectedProduct(product);
-    setStep('product-details');
-  };
-
-  const handleAddToCart = (
-    price: ProductPriceDTO,
-    complements: ProductComplementDTO[],
-    notes: string,
-  ) => {
-    if (!selectedProduct) return;
-    setCart((prev) => [
-      ...prev,
-      {
-        product: selectedProduct,
-        selectedPrice: price,
-        selectedComplements: complements,
-        quantity: 1,
-        notes,
-      },
-    ]);
-    setSelectedProduct(null);
-    setStep('order-summary');
-  };
-
-  const handleSubmitOrder = async () => {
-    if (cart.length === 0) return;
-
-    await fetch('/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        tableNumber,
-        items: cart.map((c) => ({
-          productId: c.product.id,
-          quantity: c.quantity,
-          notes: c.notes,
-          selectedPriceId: c.selectedPrice.id,
-          selectedComplements: c.selectedComplements.map((comp) => ({
-            id: comp.id,
-            title: comp.title,
-            value: comp.value,
-          })),
-        })),
-      }),
-    });
-
-    setCart([]);
-    router.push('/plugins/orders-delivery/');
-  };
-
-  const handleCancel = () => {
-    setCart([]);
-    setSelectedProduct(null);
-    setStep('product-list');
-  };
-
-  const handleBackToList = () => {
-    setSelectedProduct(null);
-    setStep('product-list');
-  };
+          {/* Skeleton - Product list */}
+          <div className="grid grid-cols-2 gap-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-48 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+            ))}
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   const stepLabels: Record<WizardStep, string> = {
     'product-list': 'Produtos',
@@ -193,4 +182,4 @@ const NewOrderWizard: React.FC = () => {
   );
 };
 
-export default NewOrderWizard;
+export default NewOrderView;
