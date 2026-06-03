@@ -173,7 +173,11 @@ export const useCustomerOrders = (checkInId: string) => {
 // ============================================================================
 
 // --- CheckInStep ---
-const CheckInStep: React.FC = () => {
+interface CheckInStepProps {
+  params?: Promise<{ tableNumber?: string }>;
+}
+
+const CheckInStep: React.FC<CheckInStepProps> = ({ params }) => {
   const { resolve } = useUI();
   const Card = resolve('Card');
   const Button = resolve('Button');
@@ -181,9 +185,8 @@ const CheckInStep: React.FC = () => {
   const [error, setError] = React.useState('');
   const router = useRouter();
   
-  // Extract tableNumber from URL path
-  const pathParts = window.location.pathname.split('/').filter(Boolean);
-  const tableNumber = pathParts.length > 2 ? parseInt(pathParts[2], 10) : 1;
+  // Extract tableNumber from params (passed by Next.js)
+  const tableNumber = params ? (typeof params === 'object' && !Array.isArray(params) ? parseInt((params as any).tableNumber, 10) : 1) : 1;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
