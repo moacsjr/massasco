@@ -44,6 +44,28 @@ export const OrdersDeliveryView = ({
     return styles[status] || 'bg-secondary text-muted-foreground';
   };
 
+  const orderStatusBadge = (status: string) => {
+    const styles: Record<string, string> = {
+      OPEN: 'bg-blue-900/50 text-blue-400',
+      AWAITING_PAYMENT: 'bg-purple-900/50 text-purple-400',
+      PAID: 'bg-green-900/50 text-green-400',
+      CLOSED: 'bg-gray-900/50 text-gray-400',
+      DELIVERED: 'bg-green-900/50 text-green-400',
+    };
+    return styles[status] || 'bg-secondary text-muted-foreground';
+  };
+
+  const orderStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      OPEN: 'Em aberto',
+      AWAITING_PAYMENT: 'Aguardando pagamento',
+      PAID: 'Pago',
+      CLOSED: 'Fechado',
+      DELIVERED: 'Entregue',
+    };
+    return labels[status] || status;
+  };
+
   // RENDER ESTADO: SKELETON (Mapeamento 1:1 com o DOM real)
   if (isLoading) {
     return (
@@ -123,7 +145,19 @@ export const OrdersDeliveryView = ({
             ) : (
               activeOrders.map((order) => (
                 <div key={order.id} className="mb-3">
-                  <Card title={`Mesa ${order.tableNumber}`} padding="md">
+                  <Card
+                    title={
+                      <div className="flex items-center gap-2">
+                        <span>Mesa {order.tableNumber}</span>
+                        <span
+                          className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${orderStatusBadge(order.status)}`}
+                        >
+                          {orderStatusLabel(order.status)}
+                        </span>
+                      </div>
+                    }
+                    padding="md"
+                  >
                     <ul className="list-none p-0">
                       {(order.items || []).map((item: OrderItemDTO) => {
                         const priceLabel = item.selectedPrice
