@@ -45,7 +45,7 @@ interface OrderItemDTO {
 interface OrderDTO {
   id: string;
   tableNumber: number;
-  status: 'OPEN' | 'AWAITING_PAYMENT' | 'PAID' | 'CLOSED';
+  status: 'OPEN' | 'AWAITING_PAYMENT' | 'PAID' | 'CLOSED' | 'DELIVERED';
   items: OrderItemDTO[];
   createdAt: string;
 }
@@ -278,9 +278,16 @@ const CheckoutPage: React.FC = () => {
   const router = useRouter();
 
   const { orders: customerOrders, isLoading } = useCustomerOrders(tableNumber);
-  // Filter only delivered orders for checkout
+  // Filter only delivered orders for checkout (orders where all items are delivered)
   const deliveredOrders = React.useMemo(() => {
-    return (customerOrders || []).filter((order) => order.status === 'DELIVERED');
+    return (customerOrders || []).filter((order) => {
+      // Order status is DELIVERED or all items have DELIVERED status
+      if (order.status === 'DELIVERED') return true;
+      if (order.status === 'CLOSED' && order.items.length > 0) {
+        return order.items.every((item) => item.status === 'DELIVERED');
+      }
+      return false;
+    });
   }, [customerOrders]);
   const [selectedOrderIds, setSelectedOrderIds] = React.useState<string[]>([]);
   const [paymentAmount, setPaymentAmount] = React.useState('');
