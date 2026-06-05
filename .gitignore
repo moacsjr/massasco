@@ -53,3 +53,16 @@ out
 .env
 .env.local
 .env.*.local
+postgres-data/
+
+# Playwright-specific
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/.local-browsers
+
+# Authentication & Sensitive Data
+playwright/.auth/
+auth.json
+.env
