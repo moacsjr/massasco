@@ -112,6 +112,9 @@ export async function DELETE(
     // Check if session exists
     const session = await prisma.tableSession.findUnique({
       where: { id },
+      include: {
+        participants: true,
+      },
     });
 
     if (!session) {
@@ -150,10 +153,13 @@ export async function DELETE(
       });
 
       // Update all device sessions to expired
-      await tx.deviceSession.updateMany({
-        where: { participantId: { in: session.participants.map((p: any) => p.id) } },
-        data: { expiresAt: new Date() },
-      });
+      const participantIds = session.participants.map((p) => p.id);
+      if (participantIds.length > 0) {
+        await tx.deviceSession.updateMany({
+          where: { participantId: { in: participantIds } },
+          data: { expiresAt: new Date() },
+        });
+      }
 
       return updatedSession;
     });

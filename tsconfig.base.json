@@ -58,8 +58,11 @@
       "@temp-workspace/ui-validator-cli": [
         "./tools/ui-validator-cli/src/index.ts"
       ],
-
-      "@temp-workspace/skills": ["./skills/src/index.ts"]
+      "@temp-workspace/plugin-table-management": [
+        "./plugins/plugin-table-management/src/index.ts"
+      ],
+      "@temp-workspace/skills": ["./skills/src/index.ts"],
+      "@temp-workspace/plugin-test": ["./plugins/plugin-test/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

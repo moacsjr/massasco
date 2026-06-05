@@ -57,6 +57,12 @@
       "@temp-workspace/plugin-customer-portal": [
         "../../plugins/plugin-customer-portal/src/index.ts"
       ],
+      "@temp-workspace/plugin-test": [
+        "../../plugins/plugin-test/src/index.ts"
+      ],
+      "@temp-workspace/plugin-table-management": [
+        "../../plugins/plugin-table-management/src/index.ts"
+      ],
       "@temp-workspace/skills": ["../../skills/src/index.ts"]
     },
     "strict": true,

@@ -5,21 +5,13 @@ const svg = require('@svgr/rollup');
 module.exports = withNx(
   {
     main: './src/index.ts',
-    outputPath: '../../dist/plugins/plugin-orders-delivery',
+    outputPath: '../../dist/plugins/plugin-test',
     tsConfig: './tsconfig.lib.json',
-    compiler: 'swc',
-    skipTypeCheck: true,
-    useLegacyTypescriptPlugin: true,
-    external: [
-      'react',
-      'react-dom',
-      'react/jsx-runtime',
-      '@temp-workspace/ui-contracts',
-      '@temp-workspace/ui-registry',
-      '@temp-workspace/plugin-loader',
-      '@temp-workspace/token-bridge',
-    ],
+    compiler: 'babel',
+    external: ['react', 'react-dom', 'react/jsx-runtime'],
     format: ['esm'],
+    // Add this line to explicitly pass the project name:
+    projectName: 'plugin-test',
     assets: [{ input: '.', output: '.', glob: 'README.md' }],
   },
   {

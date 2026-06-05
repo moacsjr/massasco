@@ -15,6 +15,7 @@ export const ButtonContractSchema = z.object({
     (val) => val !== undefined,
     'children is required',
   ),
+  className: z.string().optional(),
 });
 
 export const CardContractSchema = z.object({
@@ -24,6 +25,7 @@ export const CardContractSchema = z.object({
     (val) => val !== undefined,
     'children is required',
   ),
+  className: z.string().optional(),
 });
 
 export const InputContractSchema = z.object({
@@ -37,11 +39,13 @@ export const InputContractSchema = z.object({
   placeholder: z.string().optional(),
   value: z.union([z.string(), z.number()]).optional(),
   onChange: z.any().optional(),
+  className: z.string().optional(),
 });
 
 export const IconContractSchema = z.object({
   name: z.string(),
   size: z.enum(['sm', 'md', 'lg']).optional().default('md'),
+  className: z.string().optional(),
 });
 
 export const DrawerContractSchema = z.object({
@@ -53,6 +57,7 @@ export const DrawerContractSchema = z.object({
   children: z
     .custom<ReactNode>((val) => val !== undefined, 'children is required')
     .optional(),
+  className: z.string().optional(),
 });
 
 export const TabsContractSchema = z.object({
@@ -67,6 +72,7 @@ export const TabsContractSchema = z.object({
   children: z
     .custom<ReactNode>((val) => val !== undefined, 'children is required')
     .optional(),
+  className: z.string().optional(),
 });
 
 // === Tipos TypeScript Derivados ===

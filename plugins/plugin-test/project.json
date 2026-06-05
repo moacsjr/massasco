@@ -1,0 +1,9 @@
+{
+  "name": "plugin-test",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "plugins/plugin-test/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project plugin-test --web",
+  "targets": {}
+}

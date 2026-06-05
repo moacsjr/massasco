@@ -1,0 +1,9 @@
+{
+  "name": "plugin-table-management",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "plugins/plugin-table-management/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project plugin-table-management --web",
+  "targets": {}
+}
