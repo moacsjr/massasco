@@ -141,9 +141,11 @@ export const useCustomerOrders = (checkInId: string) => {
       try {
         const res = await fetch(`/api/orders?checkInId=${checkInId}`);
         const data = await res.json();
-        setOrders(data || []);
+        // Ensure data is an array before setting state
+        setOrders(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error('Error fetching orders:', err);
+        setOrders([]);
       } finally {
         setIsLoading(false);
       }
@@ -348,6 +350,9 @@ const OrdersPage: React.FC = () => {
 
   const { orders: customerOrders, isLoading } = useCustomerOrders(checkIn.id);
 
+  // Ensure customerOrders is always an array to prevent .map() errors
+  const ordersArray = Array.isArray(customerOrders) ? customerOrders : [];
+
   if (isLoading) {
     return <div className="p-4 text-foreground">Carregando pedidos...</div>;
   }
@@ -361,7 +366,7 @@ const OrdersPage: React.FC = () => {
         </span>
       </div>
 
-      {customerOrders.length === 0 ? (
+      {ordersArray.length === 0 ? (
         <Card padding="lg">
           <p className="text-muted-foreground">Nenhum pedido realizado.</p>
           <Button
