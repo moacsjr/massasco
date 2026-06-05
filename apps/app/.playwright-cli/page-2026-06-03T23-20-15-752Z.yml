@@ -1,0 +1,26 @@
+- generic [active] [ref=e1]:
+  - link "🏠 Home" [ref=e2] [cursor=pointer]:
+    - /url: /
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - img [ref=e7]
+        - generic [ref=e9]: massas.co
+    - main [ref=e14]:
+      - generic [ref=e17]:
+        - heading "Check-in da Mesa" [level=3] [ref=e19]
+        - generic [ref=e20]:
+          - generic [ref=e21]:
+            - generic [ref=e22]:
+              - generic [ref=e23]: Número da Mesa
+              - generic [ref=e24]: "2"
+            - generic [ref=e25]:
+              - generic [ref=e26]: Seu Nome
+              - 'textbox "Ex: João" [ref=e27]'
+            - button "Entrar" [ref=e28]
+          - paragraph [ref=e29]: Faça check-in para acessar o cardápio digital
+    - contentinfo [ref=e32]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e38] [cursor=pointer]:
+    - img [ref=e39]
+  - alert [ref=e42]
