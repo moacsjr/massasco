@@ -5,8 +5,8 @@ import { ProductDTO, CategoryDTO } from '@temp-workspace/plugin-menu-catalog';
 import { useUI } from '@temp-workspace/ui-registry';
 
 interface ProductListStepProps {
-  products: ProductDTO[];
-  categories: CategoryDTO[];
+  products: ProductDTO[] | null | undefined;
+  categories: CategoryDTO[] | null | undefined;
   onSelectProduct: (product: ProductDTO) => void;
 }
 
@@ -22,7 +22,10 @@ const ProductListStep: React.FC<ProductListStepProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredProducts = products.filter((p) => {
+  // Ensure products and categories are always arrays to prevent .filter() and .map() errors
+  const productsArray = Array.isArray(products) ? products : [];
+  const categoriesArray = Array.isArray(categories) ? categories : [];
+  const filteredProducts = productsArray.filter((p) => {
     const matchesCategory =
       !selectedCategory || p.categoryId === selectedCategory;
     const matchesSearch =
@@ -64,7 +67,7 @@ const ProductListStep: React.FC<ProductListStepProps> = ({
         >
           Todos
         </button>
-        {categories.map((cat) => (
+        {categoriesArray.map((cat) => (
           <button
             key={cat.id}
             onClick={() => setSelectedCategory(cat.id)}
