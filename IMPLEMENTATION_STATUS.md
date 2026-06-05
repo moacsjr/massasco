@@ -12,6 +12,7 @@
 - [x] API /api/qr-codes (POST, GET)
 - [x] API /api/participants (GET, POST)
 - [x] API /api/device-sessions (POST, GET, PUT)
+- [x] Git commit: `feat(api): add table management API endpoints`
 
 ## In Progress
 - [ ] Atualizar plugin customer portal para usar novos models
@@ -23,4 +24,6 @@
 
 ## Notes
 - Branch: `feature/table-management`
-- Last commit: `449674d`
+- Commits:
+  - `449674d` - feat(db): add Table and TableAccessToken models
+  - `af3872f` - feat(api): add table management API endpoints
