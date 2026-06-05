@@ -1,0 +1,53 @@
+- generic [active] [ref=e1]:
+  - link "🏠 Home" [ref=e2] [cursor=pointer]:
+    - /url: /
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - img [ref=e7]
+        - generic [ref=e9]: massas.co
+        - link "👥 Usuários" [ref=e12] [cursor=pointer]:
+          - /url: /plugins/user-management
+    - generic [ref=e13]:
+      - navigation [ref=e15]:
+        - link "Categorias" [ref=e16] [cursor=pointer]:
+          - /url: /plugins/menu-catalog-ui/categories
+          - img [ref=e17]
+        - link "Produtos" [ref=e21] [cursor=pointer]:
+          - /url: /plugins/menu-catalog-ui/products
+          - img [ref=e22]
+        - link "Pedidos" [ref=e26] [cursor=pointer]:
+          - /url: /plugins/orders-delivery
+          - img [ref=e27]
+        - link "Cozinha" [ref=e31] [cursor=pointer]:
+          - /url: /plugins/kds
+          - img [ref=e32]
+        - link "Pagamentos" [ref=e34] [cursor=pointer]:
+          - /url: /plugins/payments-ui
+          - img [ref=e35]
+      - main [ref=e41]:
+        - generic [ref=e43]:
+          - heading "Bem-vindo ao DevXP Portal v2.2" [level=3] [ref=e45]
+          - generic [ref=e46]:
+            - paragraph [ref=e47]:
+              - text: O sistema foi atualizado para uma arquitetura puramente baseada em
+              - strong [ref=e48]: Plugins
+              - text: .
+            - generic [ref=e49]:
+              - heading "O que mudou?" [level=3] [ref=e50]
+              - list [ref=e51]:
+                - listitem [ref=e52]:
+                  - strong [ref=e53]: "Entities Removidas:"
+                  - text: O conceito de entidades foi removido para simplificar o core.
+                - listitem [ref=e54]:
+                  - strong [ref=e55]: "Features:"
+                  - text: Plugins que adicionam interface visual por meio de
+                  - emphasis [ref=e56]: Extension Points
+                  - text: .
+                - listitem [ref=e57]:
+                  - strong [ref=e58]: "Services:"
+                  - text: Plugins que fornecem APIs de backend para outros plugins.
+            - paragraph [ref=e60]: 💡 Explore o menu lateral para ver as funcionalidades instaladas via plugins.
+    - contentinfo [ref=e61]
+  - region "Notifications alt+T"
+  - alert [ref=e62]
