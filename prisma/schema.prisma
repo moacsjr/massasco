@@ -83,16 +83,18 @@ enum CheckInStatus {
 // ============================================================================
 
 model Order {
-  id           String        @id @default(uuid())
-  checkInId    String
-  checkIn      CheckIn       @relation(fields: [checkInId], references: [id], onDelete: Cascade)
-  tableNumber  Int
-  customerName String
-  status       OrderStatus   @default(OPEN)
-  items        OrderItem[]
-  payments     Payment[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id             String        @id @default(uuid())
+  checkInId      String
+  checkIn        CheckIn       @relation(fields: [checkInId], references: [id], onDelete: Cascade)
+  tableSessionId String?
+  tableSession   TableSession? @relation(fields: [tableSessionId], references: [id], onDelete: SetNull)
+  tableNumber    Int
+  customerName   String
+  status         OrderStatus   @default(OPEN)
+  items          OrderItem[]
+  payments       Payment[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 }
 
 model OrderItem {
@@ -123,12 +125,120 @@ model Payment {
   createdAt DateTime @default(now())
 }
 
+// ============================================================================
+// Table Management System Models
+// ============================================================================
+
+model Table {
+  id               String              @id @default(uuid())
+  number           Int                 @unique
+  name             String?
+  isActive         Boolean             @default(true)
+  token            String              @unique @default(uuid())
+  qrCodeUrl        String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  sessions         TableSession[]
+  tableAccessTokens TableAccessToken[]
+
+  @@map("tables")
+}
+
+model TableAccessToken {
+  id           String    @id @default(uuid())
+  tableId      String
+  table        Table     @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  token        String    @unique
+  isActive     Boolean   @default(true)
+  revoked      Boolean   @default(false)
+  revokedAt    DateTime?
+  revokedBy    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("table_access_tokens")
+}
+
+model TableSession {
+  id             String              @id @default(uuid())
+  tableId        String
+  table          Table               @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  hostName       String
+  status         TableSessionStatus  @default(OPEN)
+  capacity       Int                 @default(1)
+  createdAt      DateTime            @default(now())
+  closedAt       DateTime?
+  closedBy       String?
+
+  participants   Participant[]
+  orders         Order[]
+  joinRequests   ParticipantJoinRequest[]
+
+  @@map("table_sessions")
+}
+
+model Participant {
+  id             String        @id @default(uuid())
+  tableSessionId String
+  tableSession   TableSession  @relation(fields: [tableSessionId], references: [id], onDelete: Cascade)
+  name           String
+  email          String?
+  phone          String?
+  status         ParticipantStatus @default(PENDING)
+  joinedAt       DateTime?
+  approvedAt     DateTime?
+  approvedBy     String?
+  rejectedAt     DateTime?
+  rejectedBy     String?
+  role           ParticipantRole @default(GUEST)
+  deviceSessions DeviceSession[]
+
+  @@map("participants")
+}
+
+model DeviceSession {
+  id            String       @id @default(uuid())
+  participantId String
+  participant   Participant  @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  sessionId     String       @unique
+  deviceInfo    Json?
+  ipaddress     String?
+  location      Json?
+  expiresAt     DateTime
+  createdAt     DateTime     @default(now())
+  lastActive    DateTime     @updatedAt
+
+  @@map("device_sessions")
+}
+
+model ParticipantJoinRequest {
+  id             String        @id @default(uuid())
+  tableSessionId String
+  tableSession   TableSession  @relation(fields: [tableSessionId], references: [id], onDelete: Cascade)
+  requesterName  String
+  requesterEmail String?
+  status         JoinRequestStatus @default(PENDING)
+  ipAddress      String?
+  deviceInfo     Json?
+  requestedAt    DateTime      @default(now())
+  respondedAt    DateTime?
+  respondedBy    String?
+  responseMessage String?
+
+  @@map("participant_join_requests")
+}
+
 model AuditLog {
-  id        String   @id @default(uuid())
-  module    String
-  eventType String
-  payload   Json
-  createdAt DateTime @default(now())
+  id           String   @id @default(uuid())
+  entityType   String?
+  entityId     String?
+  action       String
+  performedBy  String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  @@map("audit_logs")
 }
 
 enum OrderStatus {
@@ -144,4 +254,30 @@ enum ItemStatus {
   READY
   DELIVERED
   CANCELLED
+}
+
+enum TableSessionStatus {
+  OPEN
+  OCCUPIED
+  CLOSING
+  CLOSED
+}
+
+enum ParticipantStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum ParticipantRole {
+  HOST
+  GUEST
+}
+
+enum JoinRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
 }
