@@ -3,7 +3,7 @@ import { pluginLoader, ExtensionContribution, RightMenuItemProps } from '@temp-w
 export interface RightMenuTab {
   label: string;
   icon?: string;
-  contribution: ExtensionContribution;
+  contribution: ExtensionContribution<'main-template:right-menu'>;
 }
 
 export const useRightMenuData = () => {

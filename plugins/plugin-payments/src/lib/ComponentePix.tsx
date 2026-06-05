@@ -31,34 +31,43 @@ export const ComponentePix: React.FC<PixProps> = ({
     const nomeTratado = limparTexto(beneficiario).substring(0, 25);
     const cidadeTratada = limparTexto(cidade).substring(0, 15);
 
+    // Função auxiliar para criar campos formatados: ID + Tamanho (2 dígitos) + Conteúdo
     const f = (id: string, conteudo: string) => 
       `${id}${conteudo.length.toString().padStart(2, '0')}${conteudo}`;
 
+    // Subpayload de conta: ID 00 (br.gov.bcb.pix) + ID 01 (chave PIX)
     const subPayloadConta = f("00", "br.gov.bcb.pix") + f("01", chave);
+    
+    // Subpayload adicional: ID 05 (txid)
     const subPayloadAdicional = f("05", txid);
 
+    // Montagem do payload principal
     let payload = 
-      f("00", "01") + 
-      f("26", subPayloadConta) + 
-      f("52", "0000") + 
-      f("53", "986");
+      f("00", "01") +           // ID 00: Versão do payload (01)
+      f("26", subPayloadConta) + // ID 26: Subpayload de conta
+      f("52", "0000") +         // ID 52: Código de finalidade (0000 = pagamento)
+      f("53", "986");           // ID 53: Código do país (986 = Brasil)
 
     if (valor > 0) {
-      payload += f("54", valor.toFixed(2));
+      payload += f("54", valor.toFixed(2)); // ID 54: Valor (opcional)
     }
 
     payload += 
-      f("58", "BR") + 
-      f("59", nomeTratado) + 
-      f("60", cidadeTratada) + 
-      f("62", subPayloadAdicional);
+      f("58", "BR") +           // ID 58: Código do país do beneficiário
+      f("59", nomeTratado) +    // ID 59: Nome do beneficiário
+      f("60", cidadeTratada) +  // ID 60: Cidade do beneficiário
+      f("62", subPayloadAdicional); // ID 62: Campo adicional (txid)
 
-    // Cálculo manual do CRC16 para rodar direto no navegador sem dependência pesada
-    const calcularCrc16Navegador = (str: string): string => {
-      const arranjo = str + "6304";
+    // Cálculo do CRC16 seguindo o padrão do PIX
+    // O CRC é calculado sobre a string completa + "6304" (ID do campo CRC)
+    // O resultado substitui o "6304" no final
+    const calcularCrc16 = (str: string): string => {
+      // Adiciona o ID do campo CRC para cálculo
+      const strParaCrc = str + "6304";
       let crc = 0xFFFF;
-      for (let i = 0; i < arranjo.length; i++) {
-        crc ^= arranjo.charCodeAt(i) << 8;
+      
+      for (let i = 0; i < strParaCrc.length; i++) {
+        crc ^= strParaCrc.charCodeAt(i) << 8;
         for (let j = 0; j < 8; j++) {
           if ((crc & 0x8000) !== 0) {
             crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
@@ -67,10 +76,13 @@ export const ComponentePix: React.FC<PixProps> = ({
           }
         }
       }
+      
+      // Retorna o ID do campo (6304) + o valor do CRC calculado
       return `6304${crc.toString(16).toUpperCase().padStart(4, '0')}`;
     };
 
-    const stringFinalPix = calcularCrc16Navegador(payload);
+    // Gera a string final do PIX com CRC
+    const stringFinalPix = payload + calcularCrc16(payload).substring(4);
     setPixString(stringFinalPix);
 
     // Gera o QR Code em Base64 para a tag <img>

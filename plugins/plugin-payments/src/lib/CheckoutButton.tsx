@@ -1,10 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
-
-// Initialize Stripe with publishable key
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
 interface CheckoutButtonProps {
   orderId: string;
@@ -13,12 +9,14 @@ interface CheckoutButtonProps {
   className?: string;
 }
 
+const CHECKOUT_ENDPOINT = '/api/stripe/create-checkout-session';
+
 /**
  * CheckoutButton
- * 
+ *
  * A button that initiates Stripe Checkout for a given order.
  * The actual payment processing happens on Stripe's secure servers.
- * 
+ *
  * @param orderId - The ID of the order to process payment for
  * @param variant - Button variant (primary, secondary, outline, ghost)
  * @param size - Button size (sm, md, lg)
@@ -33,33 +31,58 @@ export const CheckoutButton: React.FC<CheckoutButtonProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Validate orderId before processing
+  if (!orderId.trim()) {
+    setError('Pedido inválido');
+  }
+
   const handleCheckout = async () => {
+    // Guard against double clicks
+    if (isLoading) return;
+
+    // Validate orderId
+    if (!orderId.trim()) {
+      setError('Pedido inválido');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
     try {
       // 1. Call your backend to create a Stripe Checkout Session
-      const response = await fetch('/api/stripe/create-checkout-session', {
+      const response = await fetch(CHECKOUT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId }),
       });
 
-      const data = await response.json();
+      // Safer JSON parsing
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error('Resposta inválida do servidor');
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create checkout session');
+        throw new Error(data.error || 'Falha ao criar sessão de checkout');
       }
 
       if (data.url) {
         // 2. Redirect the customer to the Stripe-hosted checkout page
-        window.location.href = data.url;
+        window.location.assign(data.url);
+        return;
       } else {
-        setError('No checkout URL received');
+        setError('Nenhuma URL de checkout recebida');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Payment error:', err);
-      setError(err.message || 'An error occurred while processing your payment');
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Ocorreu um erro ao processar seu pagamento';
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -84,10 +107,12 @@ export const CheckoutButton: React.FC<CheckoutButtonProps> = ({
     <div className="flex flex-col gap-2">
       <button
         onClick={handleCheckout}
-        disabled={isLoading}
+        disabled={isLoading || !orderId.trim()}
+        aria-busy={isLoading}
+        aria-disabled={isLoading || !orderId.trim()}
         className={`
-          ${variantStyles[variant]} 
-          ${sizeStyles[size]} 
+          ${variantStyles[variant]}
+          ${sizeStyles[size]}
           ${className}
           rounded-lg font-medium transition-all duration-200
           flex items-center justify-center gap-2
@@ -114,7 +139,11 @@ export const CheckoutButton: React.FC<CheckoutButtonProps> = ({
       </button>
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-center gap-2">
+        <div
+          role="alert"
+          aria-live="polite"
+          className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-center gap-2"
+        >
           <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>

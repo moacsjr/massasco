@@ -255,9 +255,12 @@ const CheckInStep: React.FC<CheckInStepProps> = ({ params }) => {
             />
             {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
           </div>
-          <Button variant="primary" size="md" type="submit">
+          <button
+            type="submit"
+            className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+          >
             Entrar
-          </Button>
+          </button>
         </form>
         <p className="mt-4 text-center text-sm text-muted-foreground">
           Faça check-in para acessar o cardápio digital
@@ -443,6 +446,83 @@ const CheckoutPage: React.FC = () => {
   const Button = resolve('Button');
   const router = useRouter();
 
+  const [checkInData, setCheckInData] = React.useState<any>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [paymentAmount, setPaymentAmount] = React.useState('');
+  const [paymentMethod, setPaymentMethod] = React.useState('pix');
+  const [isProcessing, setIsProcessing] = React.useState(false);
+  const [showPixScreen, setShowPixScreen] = React.useState<boolean>(false);
+  const [pixData, setPixData] = React.useState<{ chave: string; beneficiario: string; cidade: string; valor: number } | null>(null);
+
+  // Maquininha state
+  const [showMaquininhaScreen, setShowMaquininhaScreen] = React.useState<boolean>(false);
+  const [maquininhaAmount, setMaquininhaAmount] = React.useState<number>(0);
+
+  // Venda Concluída state
+  const [showVendaConcluida, setShowVendaConcluida] = React.useState<boolean>(false);
+
+  // SSE listener for CHECKIN_CLOSED event
+  React.useEffect(() => {
+    const es = new EventSource('/api/events');
+
+    es.addEventListener('CHECKIN_CLOSED', (event) => {
+      const data = JSON.parse(event.data);
+      console.log('CHECKIN_CLOSED event received:', data);
+      if (checkIn && data.checkInId === checkIn.id) {
+        setShowVendaConcluida(true);
+      }
+    });
+
+    es.addEventListener('ORDER_CLOSED', (event) => {
+      const data = JSON.parse(event.data);
+      console.log('ORDER_CLOSED event received:', data);
+      setShowVendaConcluida(true);
+    });
+
+    return () => {
+      es.close();
+    };
+  }, [checkIn]);
+
+  // Fetch check-in data with full summary
+  React.useEffect(() => {
+    if (!checkIn) return;
+
+    const fetchCheckIn = async () => {
+      try {
+        const res = await fetch(`/api/checkins/${checkIn.id}`);
+        const data = await res.json();
+        setCheckInData(data);
+        // Pre-fill payment amount with total due
+        if (data.summary?.totalDue) {
+          setPaymentAmount(data.summary.totalDue.toFixed(2));
+        }
+      } catch (err) {
+        console.error('Error fetching check-in:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCheckIn();
+  }, [checkIn]);
+
+  // Calculate totals from orders (all items, not just unpaid)
+  const allItems = React.useMemo(() => {
+    const items: any[] = [];
+    if (checkInData && checkInData.orders) {
+      checkInData.orders.forEach((order: any) => {
+        order.items.forEach((item: any) => {
+          items.push({
+            ...item,
+            orderStatus: order.status,
+          });
+        });
+      });
+    }
+    return items;
+  }, [checkInData]);
+
   if (!checkIn) {
     return (
       <div className="p-4">
@@ -460,81 +540,18 @@ const CheckoutPage: React.FC = () => {
     );
   }
 
-  const { orders: customerOrders, isLoading } = useCustomerOrders(checkIn.id);
-  // Filter only delivered orders for checkout (orders where all items are delivered)
-  const deliveredOrders = React.useMemo(() => {
-    return (customerOrders || []).filter((order) => {
-      // Order status is DELIVERED or all items have DELIVERED status
-      if (order.status === 'DELIVERED') return true;
-      if (order.status === 'CLOSED' && order.items.length > 0) {
-        return order.items.every((item) => item.status === 'DELIVERED');
-      }
-      return false;
-    });
-  }, [customerOrders]);
-  const [selectedOrderIds, setSelectedOrderIds] = React.useState<string[]>([]);
-  const [paymentAmount, setPaymentAmount] = React.useState('');
-  const [paymentMethod, setPaymentMethod] = React.useState('pix');
-  const [isProcessing, setIsProcessing] = React.useState(false);
-  const [showPixScreen, setShowPixScreen] = React.useState<boolean>(false);
-  const [pixData, setPixData] = React.useState<{ chave: string; beneficiario: string; cidade: string; valor: number } | null>(null);
-  
-  // Maquininha state
-  const [showMaquininhaScreen, setShowMaquininhaScreen] = React.useState<boolean>(false);
-  const [maquininhaOrderIds, setMaquininhaOrderIds] = React.useState<string[]>([]);
-  const [maquininhaAmount, setMaquininhaAmount] = React.useState<number>(0);
-  
-  // Venda Concluída state
-  const [showVendaConcluida, setShowVendaConcluida] = React.useState<boolean>(false);
-  
-  // SSE listener for ORDER_CLOSED event
-  React.useEffect(() => {
-    const es = new EventSource('/api/events');
-    es.addEventListener('ORDER_CLOSED', (event) => {
-      const data = JSON.parse(event.data);
-      console.log('ORDER_CLOSED event received:', data);
-      setShowVendaConcluida(true);
-    });
-    
-    return () => {
-      es.close();
-    };
-  }, []);
-
-  const handleToggleAllOrders = () => {
-    if (selectedOrderIds.length === deliveredOrders.length) {
-      setSelectedOrderIds([]);
-    } else {
-      setSelectedOrderIds(deliveredOrders.map((order) => order.id));
-    }
-  };
-
-  const totalToPay = deliveredOrders.reduce((sum, order) => {
-    if (selectedOrderIds.includes(order.id)) {
-      return sum + order.items.reduce((orderSum, item) => {
-        const price = item.selectedPrice ? item.selectedPrice.value : 0;
-        return orderSum + price * item.quantity;
-      }, 0);
-    }
-    return sum;
-  }, 0);
-
-  // Pre-fill payment amount with total to pay when orders are selected
-  React.useEffect(() => {
-    if (selectedOrderIds.length > 0) {
-      setPaymentAmount(totalToPay.toFixed(2));
-    } else {
-      setPaymentAmount('');
-    }
-  }, [selectedOrderIds, totalToPay]);
-
-  const handleToggleOrder = (orderId: string) => {
-    setSelectedOrderIds((prev) =>
-      prev.includes(orderId)
-        ? prev.filter((id) => id !== orderId)
-        : [...prev, orderId]
+  if (isLoading || !checkInData) {
+    return (
+      <div className="p-4">
+        <Card padding="lg">
+          <p className="text-muted-foreground">Carregando...</p>
+        </Card>
+      </div>
     );
-  };
+  }
+
+  // Extract data from check-in with summary
+  const { summary, orders, payments } = checkInData;
 
   // Dados fixos para teste do PIX - em produção, isso viria de uma configuração ou API
   const pixConfig = {
@@ -543,8 +560,9 @@ const CheckoutPage: React.FC = () => {
     cidade: 'Sao Paulo' // Cidade do beneficiário
   };
 
+  // Handle payment submission
   const handleCheckout = async () => {
-    if (selectedOrderIds.length === 0 || !paymentAmount) return;
+    if (!paymentAmount) return;
 
     // Se for Pix, mostra a tela de PIX em vez de registrar imediatamente
     if (paymentMethod === 'pix') {
@@ -560,7 +578,6 @@ const CheckoutPage: React.FC = () => {
 
     // Se for Maquininha, mostra a tela de Aguardando Pagamento
     if (paymentMethod === 'maquininha') {
-      setMaquininhaOrderIds(selectedOrderIds);
       setMaquininhaAmount(Number(paymentAmount));
       setShowMaquininhaScreen(true);
       return;
@@ -568,22 +585,28 @@ const CheckoutPage: React.FC = () => {
 
     setIsProcessing(true);
     try {
-      const payments = await Promise.all(
-        selectedOrderIds.map((orderId) =>
-          fetch('/api/payments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              orderId,
-              amount: Number(paymentAmount) / selectedOrderIds.length,
-              method: paymentMethod,
-            }),
-          }).then((r) => r.json())
-        )
-      );
+      // Register payment against the check-in
+      await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          checkInId: checkIn.id,
+          amount: Number(paymentAmount),
+          method: paymentMethod,
+        }),
+      });
 
-      // Redirecionar para página de agradecimento
-      window.location.href = '/plugins/customer-portal/thank-you';
+      // Refresh check-in data
+      const res = await fetch(`/api/checkins/${checkIn.id}`);
+      const data = await res.json();
+      setCheckInData(data);
+
+      // If fully paid, redirect to thank you page
+      if (data.summary?.isFullyPaid) {
+        window.location.href = '/plugins/customer-portal/thank-you';
+      } else {
+        setPaymentAmount(data.summary?.totalDue?.toFixed(2) || '');
+      }
     } catch (err) {
       console.error('Error processing payment:', err);
       alert('Erro ao processar pagamento');
@@ -594,26 +617,32 @@ const CheckoutPage: React.FC = () => {
 
   // Handle maquininha payment completion
   const handleMaquininhaPaymentCompleted = async () => {
-    if (maquininhaOrderIds.length === 0 || maquininhaAmount === 0) return;
+    if (maquininhaAmount === 0) return;
 
     setIsProcessing(true);
     try {
-      const payments = await Promise.all(
-        maquininhaOrderIds.map((orderId) =>
-          fetch('/api/payments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              orderId,
-              amount: maquininhaAmount / maquininhaOrderIds.length,
-              method: 'maquininha',
-            }),
-          }).then((r) => r.json())
-        )
-      );
+      await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          checkInId: checkIn.id,
+          amount: maquininhaAmount,
+          method: 'maquininha',
+        }),
+      });
 
-      // Redirecionar para página de agradecimento
-      window.location.href = '/plugins/customer-portal/thank-you';
+      // Refresh check-in data
+      const res = await fetch(`/api/checkins/${checkIn.id}`);
+      const data = await res.json();
+      setCheckInData(data);
+
+      // If fully paid, redirect to thank you page
+      if (data.summary?.isFullyPaid) {
+        window.location.href = '/plugins/customer-portal/thank-you';
+      } else {
+        setMaquininhaAmount(0);
+        setPaymentAmount(data.summary?.totalDue?.toFixed(2) || '');
+      }
     } catch (err) {
       console.error('Error processing maquininha payment:', err);
       alert('Erro ao processar pagamento');
@@ -623,26 +652,32 @@ const CheckoutPage: React.FC = () => {
   };
 
   const handlePayWithPix = async () => {
-    if (!pixData || selectedOrderIds.length === 0) return;
+    if (!pixData) return;
 
     setIsProcessing(true);
     try {
-      const payments = await Promise.all(
-        selectedOrderIds.map((orderId) =>
-          fetch('/api/payments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              orderId,
-              amount: Number(pixData.valor) / selectedOrderIds.length,
-              method: 'pix',
-            }),
-          }).then((r) => r.json())
-        )
-      );
+      await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          checkInId: checkIn.id,
+          amount: Number(pixData.valor),
+          method: 'pix',
+        }),
+      });
 
-      // Redirecionar para página de agradecimento
-      window.location.href = '/plugins/customer-portal/thank-you';
+      // Refresh check-in data
+      const res = await fetch(`/api/checkins/${checkIn.id}`);
+      const data = await res.json();
+      setCheckInData(data);
+
+      // If fully paid, redirect to thank you page
+      if (data.summary?.isFullyPaid) {
+        window.location.href = '/plugins/customer-portal/thank-you';
+      } else {
+        setPixData(null);
+        setPaymentAmount(data.summary?.totalDue?.toFixed(2) || '');
+      }
     } catch (err) {
       console.error('Error processing PIX payment:', err);
       alert('Erro ao processar pagamento PIX');
@@ -673,15 +708,14 @@ const CheckoutPage: React.FC = () => {
             valor={pixData.valor}
           />
           <div className="mt-6 space-y-4">
-            <Button
-              variant="primary"
-              size="md"
+            <button
+              type="button"
               onClick={handlePayWithPix}
-              isLoading={isProcessing}
-              className="w-full"
+              disabled={isProcessing}
+              className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Pagar com PIX
-            </Button>
+              {isProcessing ? 'Processando...' : 'Pagar com PIX'}
+            </button>
           </div>
         </div>
       </div>
@@ -696,7 +730,6 @@ const CheckoutPage: React.FC = () => {
           <button
             onClick={() => {
               setShowMaquininhaScreen(false);
-              setMaquininhaOrderIds([]);
               setMaquininhaAmount(0);
             }}
             className="mb-4 flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -715,15 +748,14 @@ const CheckoutPage: React.FC = () => {
               <p className="text-foreground text-center mb-6">
                 Procure o atendente e realize o pagamento na maquinha de cartão.
               </p>
-              <Button 
-                variant="primary" 
-                size="md"
+              <button
+                type="button"
                 onClick={handleMaquininhaPaymentCompleted}
-                isLoading={isProcessing}
-                className="w-full"
+                disabled={isProcessing}
+                className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Pagamento Realizado
-              </Button>
+                {isProcessing ? 'Processando...' : 'Pagamento Realizado'}
+              </button>
             </div>
           </Card>
         </div>
@@ -746,17 +778,16 @@ const CheckoutPage: React.FC = () => {
               <p className="text-foreground text-center mb-6 text-lg">
                 Obrigado! Seu pagamento foi confirmado.
               </p>
-              <Button 
-                variant="primary" 
-                size="md"
+              <button
+                type="button"
                 onClick={() => {
                   setShowVendaConcluida(false);
                   window.location.href = '/plugins/customer-portal/';
                 }}
-                className="w-full"
+                className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
               >
                 Voltar para o Início
-              </Button>
+              </button>
             </div>
           </Card>
         </div>
@@ -764,88 +795,132 @@ const CheckoutPage: React.FC = () => {
     );
   }
 
+  // Main Checkout Page - Shows CheckIn summary
   return (
     <div className="p-4 space-y-4">
       <h2 className="text-2xl font-bold text-foreground">Checkout</h2>
 
+      {/* Payment Summary Card */}
       <Card padding="lg">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold text-foreground">
-            Selecione os pedidos para pagar
+            Resumo da Mesa {checkInData.tableNumber}
           </h3>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleToggleAllOrders}
-          >
-            {selectedOrderIds.length === deliveredOrders.length && deliveredOrders.length > 0
-              ? 'Desmarcar todos'
-              : 'Pagar todos'}
-          </Button>
+          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+            checkInData.status === 'CLOSED'
+              ? 'bg-gray-500/20 text-gray-400'
+              : summary?.isFullyPaid
+                ? 'bg-green-500/20 text-green-400'
+                : 'bg-yellow-500/20 text-yellow-400'
+          }`}>
+            {checkInData.status === 'CLOSED' ? 'Fechada' : summary?.isFullyPaid ? 'Paga' : 'Em andamento'}
+          </span>
         </div>
 
-        {deliveredOrders.length === 0 ? (
-          <p className="text-muted-foreground">Nenhum pedido entregue para pagar.</p>
-        ) : (
-          <div className="space-y-3">
-            {deliveredOrders.map((order) => {
-              const orderTotal = order.items.reduce((sum, item) => {
-                const price = item.selectedPrice ? item.selectedPrice.value : 0;
-                return sum + price * item.quantity;
-              }, 0);
-              const isSelected = selectedOrderIds.includes(order.id);
-
-              return (
-                <div
-                  key={order.id}
-                  className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                    isSelected
-                      ? 'border-brand bg-brand/10'
-                      : 'border-border hover:border-secondary'
-                  }`}
-                  onClick={() => handleToggleOrder(order.id)}
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <span className="text-sm font-semibold text-foreground">
-                        Pedido #{order.id.slice(0, 8)}
-                      </span>
-                      <p className="text-xs text-muted-foreground">
-                        {order.items.length} itens — {order.items.reduce((sum, item) => sum + item.quantity, 0)} total
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-semibold text-foreground">
-                        R$ {orderTotal.toFixed(2)}
-                      </span>
-                      <div className="text-xs text-muted-foreground">
-                        {isSelected ? 'Selecionado' : 'Clique para selecionar'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+        {summary?.isFullyPaid ? (
+          <div className="text-center py-8">
+            <div className="mx-auto w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4">
+              <span className="text-3xl">✅</span>
+            </div>
+            <p className="text-foreground text-lg mb-2">
+              A conta da mesa já foi paga.
+            </p>
+            <p className="text-green-400 text-sm">
+              Obrigado pelo consumo!
+            </p>
           </div>
+        ) : (
+          <>
+            {/* All Items from all orders */}
+            <div className="mb-6">
+              <h4 className="text-sm font-semibold text-muted-foreground mb-3 uppercase">
+                Itens do Pedido
+              </h4>
+              <ul className="space-y-2">
+                {allItems.length === 0 ? (
+                  <li className="text-muted-foreground text-sm">Nenhum item solicitado.</li>
+                ) : (
+                  allItems.map((item: any) => (
+                    <li key={item.id} className="flex justify-between text-sm py-2 border-b border-border last:border-0">
+                      <div>
+                        <span className="font-medium text-foreground">{item.product.name}</span>
+                        {item.quantity > 1 && (
+                          <span className="text-muted-foreground text-xs"> × {item.quantity}</span>
+                        )}
+                      </div>
+                      <span className="font-medium text-foreground">
+                        R$ {((item.selectedPrice?.value || 0) * item.quantity).toFixed(2)}
+                      </span>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </div>
+
+            {/* Payment History */}
+            {payments && payments.length > 0 && (
+              <div className="mb-6">
+                <h4 className="text-sm font-semibold text-muted-foreground mb-3 uppercase">
+                  Pagamentos Realizados
+                </h4>
+                <ul className="space-y-2">
+                  {payments.map((payment: any) => (
+                    <li key={payment.id} className="flex justify-between text-sm py-2 border-b border-border last:border-0">
+                      <div>
+                        <span className="font-medium text-green-400">
+                          {payment.method === 'pix' && '📱 Pix'}
+                          {payment.method === 'maquininha' && '💳 Maquininha'}
+                          {payment.method === 'celular' && '📱 Celular'}
+                          {!['pix', 'maquininha', 'celular'].includes(payment.method) && payment.method}
+                        </span>
+                        <span className="text-muted-foreground text-xs ml-2">
+                          {new Date(payment.createdAt).toLocaleDateString('pt-BR')}
+                        </span>
+                      </div>
+                      <span className="font-medium text-green-400">
+                        - R$ {Number(payment.amount).toFixed(2)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Summary */}
+            <div className="space-y-3 pt-4 border-t-2 border-border">
+              <div className="flex justify-between text-muted-foreground">
+                <span>SubTotal:</span>
+                <span>R$ {summary?.subTotal?.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-green-400">
+                <span>Pagamentos:</span>
+                <span>R$ {summary?.totalPayments?.toFixed(2)}</span>
+              </div>
+              {summary?.totalDue > 0 && (
+                <div className="flex justify-between text-destructive font-semibold text-lg">
+                  <span>Total a pagar:</span>
+                  <span>R$ {summary?.totalDue?.toFixed(2)}</span>
+                </div>
+              )}
+              {summary?.totalDue <= 0 && (
+                <div className="flex justify-between text-green-400 font-semibold text-lg">
+                  <span>Valor pago:</span>
+                  <span>R$ {summary?.subTotal?.toFixed(2)}</span>
+                </div>
+              )}
+            </div>
+          </>
         )}
       </Card>
 
-      {selectedOrderIds.length > 0 && (
+      {/* Payment Form (if not fully paid) */}
+      {!summary?.isFullyPaid && (
         <Card padding="lg">
           <h3 className="text-lg font-semibold text-foreground mb-4">
-            Pagamento
+            Realizar Pagamento
           </h3>
 
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Valor total a pagar
-              </label>
-              <div className="text-2xl font-bold text-foreground">
-                R$ {totalToPay.toFixed(2)}
-              </div>
-            </div>
-
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Valor a pagar
@@ -878,27 +953,25 @@ const CheckoutPage: React.FC = () => {
 
             {/* Se for Pix, mostrar botão de Pagar com PIX */}
             {paymentMethod === 'pix' ? (
-              <Button
-                variant="primary"
-                size="md"
+              <button
+                type="button"
                 onClick={handleCheckout}
-                isLoading={isProcessing}
-                className="w-full"
+                disabled={isProcessing}
+                className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Pagar com PIX
-              </Button>
+                {isProcessing ? 'Processando...' : 'Pagar com PIX'}
+              </button>
             ) : paymentMethod === 'celular' ? (
               <div className="space-y-4">
                 <CheckoutButton
-                  orderId={selectedOrderIds[0]}
+                  orderId={orders[0]?.id}
                   variant="primary"
                   size="md"
                   className="w-full"
                 />
-                {selectedOrderIds.length > 1 && (
+                {orders.length > 1 && (
                   <p className="text-xs text-muted-foreground text-center">
-                    Nota: O pagamento via Stripe será processado para o primeiro pedido selecionado.
-                    Para outros pedidos, por favor realize pagamentos separados.
+                    Nota: O pagamento via Stripe será processado para o primeiro pedido.
                   </p>
                 )}
               </div>
@@ -1022,12 +1095,9 @@ const ThankYouPage: React.FC = () => {
 // Plugin Registration
 // ============================================================================
 
-const contributions: ExtensionContribution[] = [
-  {
-    point: 'main-template:left-menu' as const,
-    component: () => {
-      return (
-        <div style={{ padding: '12px' }}>
+const PortalMenu: React.FC<LeftMenuItemProps> = () => {
+  return (
+    <div style={{ padding: '12px' }}>
           <div
             style={{
               fontSize: '0.75rem',
@@ -1140,13 +1210,18 @@ const contributions: ExtensionContribution[] = [
           </ul>
         </div>
       );
-    },
+    };
+
+const contributions = [
+  {
+    point: 'main-template:left-menu' as const,
+    component: PortalMenu,
     metadata: {
       name: 'Portal do Cliente',
       icon: '👤',
     },
   },
-];
+] as ExtensionContribution[];
 
 export const customerPortalPlugin: FeaturePlugin = {
   id: 'customer-portal',

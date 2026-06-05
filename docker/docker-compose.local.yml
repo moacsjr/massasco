@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15-alpine
@@ -11,7 +9,7 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      - devxp_local_data:/var/lib/postgresql/data
+      - ./postgres-data:/var/lib/postgresql/data
 
   app:
     build:
@@ -28,5 +26,4 @@ services:
       AWS_S3_BUCKET_NAME: devxp-media-local
     # Dummy values so the app starts; S3 is not available locally
 
-volumes:
-  devxp_local_data:
+# Volume removed - using bind mount instead (./postgres-data)

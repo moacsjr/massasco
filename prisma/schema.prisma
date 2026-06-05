@@ -66,9 +66,10 @@ model CheckIn {
   status       CheckInStatus @default(OPEN)
   createdAt    DateTime      @default(now())
   closedAt     DateTime?
-  
+
   orders       Order[]
-  
+  payments     Payment[]
+
   @@unique([tableNumber, status]) // Only one OPEN check-in per table
 }
 
@@ -113,8 +114,10 @@ model OrderItem {
 
 model Payment {
   id        String   @id @default(uuid())
-  orderId   String
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String?  // Nullable - payments can be against CheckIn directly
+  checkInId String   // Required - payments are now against CheckIn
+  order     Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  checkIn   CheckIn  @relation(fields: [checkInId], references: [id], onDelete: Cascade)
   amount    Decimal  @db.Decimal(10, 2)
   method    String   // cash, card, pix
   createdAt DateTime @default(now())

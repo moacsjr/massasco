@@ -18,8 +18,14 @@ import { CheckoutButton } from './CheckoutButton';
 
 export interface PaymentsAPI {
   calculateTotal(orderId: string): Promise<{ total: number; items: unknown[] }>;
+  calculateCheckInTotal(checkInId: string): Promise<{ subTotal: number; totalPayments: number; totalDue: number }>;
   registerPayment(
     orderId: string,
+    amount: number,
+    method: string,
+  ): Promise<unknown>;
+  registerCheckInPayment(
+    checkInId: string,
     amount: number,
     method: string,
   ): Promise<unknown>;
@@ -35,11 +41,24 @@ const paymentsAPI: PaymentsAPI = {
     }, 0);
     return { total, items: order.items || [] };
   },
+  async calculateCheckInTotal(checkInId: string) {
+    const res = await fetch(`/api/checkins/${checkInId}`);
+    const checkIn = await res.json();
+    return checkIn.summary || { subTotal: 0, totalPayments: 0, totalDue: 0 };
+  },
   async registerPayment(orderId: string, amount: number, method: string) {
     const res = await fetch('/api/payments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orderId, amount, method }),
+    });
+    return res.json();
+  },
+  async registerCheckInPayment(checkInId: string, amount: number, method: string) {
+    const res = await fetch('/api/payments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ checkInId, amount, method }),
     });
     return res.json();
   },
@@ -73,9 +92,9 @@ const PaymentsPage: React.FC = () => {
   
   // Dados fixos para teste do PIX - em produção, isso viria de uma configuração ou API
   const pixConfig = {
-    chave: 'suachave@email.com', // Chave PIX do estabelecimento
-    beneficiario: 'Fulano de Tal', // Nome do beneficiário
-    cidade: 'Sao Paulo' // Cidade do beneficiário
+    chave: '31991111108', // Chave PIX do estabelecimento
+    beneficiario: 'Massas.CO', // Nome do beneficiário
+    cidade: 'Belo Horizonte' // Cidade do beneficiário
   };
   
   // SSE listener for ORDER_CLOSED event
@@ -92,10 +111,53 @@ const PaymentsPage: React.FC = () => {
     };
   }, []);
 
+  // New state for CheckIn view
+  const [checkIns, setCheckIns] = useState<any[]>([]);
+  const [selectedCheckInId, setSelectedCheckInId] = useState<string | null>(null);
+
   useEffect(() => {
     fetch('/api/orders')
       .then((r) => r.json())
       .then((data) => setOrders(data || []));
+  }, []);
+
+  // Fetch open check-ins periodically
+  useEffect(() => {
+    const fetchCheckIns = async () => {
+      try {
+        // Get all open check-ins by fetching orders with check-in details
+        const res = await fetch('/api/orders?status=OPEN');
+        const data = await res.json();
+
+        // Group orders by checkInId to simulate check-ins
+        const checkInMap: any = {};
+        data.forEach((order: any) => {
+          if (order.checkIn && !checkInMap[order.checkIn.id]) {
+            checkInMap[order.checkIn.id] = {
+              checkIn: order.checkIn,
+              orders: [],
+              payments: [],
+            };
+          }
+          if (order.checkIn && checkInMap[order.checkIn.id]) {
+            checkInMap[order.checkIn.id].orders.push(order);
+            checkInMap[order.checkIn.id].payments.push(...order.payments);
+          }
+        });
+
+        const checkInList = Object.entries(checkInMap).map(([id, data]: any) => ({
+          id,
+          ...data,
+          tableNumber: data.checkIn.tableNumber,
+        }));
+
+        setCheckIns(checkInList);
+      } catch (err) {
+        console.error('Error fetching check-ins:', err);
+      }
+    };
+
+    fetchCheckIns();
   }, []);
 
   const selectOrder = async (orderId: string) => {
@@ -116,8 +178,31 @@ const PaymentsPage: React.FC = () => {
     setPaymentAmount(remainingAmount.toFixed(2));
   };
 
+  const selectCheckIn = async (checkInId: string) => {
+    setSelectedCheckInId(checkInId);
+    setSelectedOrder(null);
+
+    // Fetch full check-in with payment summary
+    const res = await fetch(`/api/checkins/${checkInId}`);
+    const data = await res.json();
+
+    if (data) {
+      setOrderDetail({ ...data, orders: data.orders || [] });
+
+      // Get all payments for this check-in
+      const payRes = await fetch(`/api/payments?checkInId=${checkInId}`);
+      const payData = await payRes.json();
+      setPayments(payData || []);
+
+      // Pre-fill payment amount with total due
+      if (data.summary?.totalDue) {
+        setPaymentAmount(data.summary.totalDue.toFixed(2));
+      }
+    }
+  };
+
   const submitPayment = async () => {
-    if (!selectedOrder || !paymentAmount) return;
+    if (!paymentAmount) return;
 
     // Se for Pix, mostra a tela de PIX em vez de registrar imediatamente
     if (paymentMethod === 'pix') {
@@ -139,38 +224,67 @@ const PaymentsPage: React.FC = () => {
       return;
     }
 
-    await paymentsAPI.registerPayment(
-      selectedOrder,
-      Number(paymentAmount),
-      paymentMethod,
-    );
+    // Determine if we're paying for an order or check-in
+    let res;
+    if (selectedCheckInId) {
+      res = await paymentsAPI.registerCheckInPayment(
+        selectedCheckInId,
+        Number(paymentAmount),
+        paymentMethod,
+      );
+    } else if (selectedOrder) {
+      res = await paymentsAPI.registerPayment(
+        selectedOrder,
+        Number(paymentAmount),
+        paymentMethod,
+      );
+    }
+
     setPaymentAmount('');
-    selectOrder(selectedOrder);
+    if (selectedCheckInId) {
+      selectCheckIn(selectedCheckInId);
+    } else if (selectedOrder) {
+      selectOrder(selectedOrder);
+    }
   };
 
   // Handle maquininha payment completion
   const handleMaquininhaPaymentCompleted = async () => {
-    if (!maquininhaOrderId) return;
+    if (maquininhaAmount === 0) return;
 
-    await paymentsAPI.registerPayment(
-      maquininhaOrderId,
-      maquininhaAmount,
-      'maquininha',
-    );
-    setMaquininhaOrderId(null);
-    setMaquininhaAmount(0);
-    setShowMaquininhaScreen(false);
-    selectOrder(maquininhaOrderId);
+    // Determine if we're paying for an order or check-in
+    if (selectedCheckInId) {
+      await paymentsAPI.registerCheckInPayment(
+        selectedCheckInId,
+        maquininhaAmount,
+        'maquininha',
+      );
+      setMaquininhaOrderId(null);
+      setMaquininhaAmount(0);
+      setShowMaquininhaScreen(false);
+      selectCheckIn(selectedCheckInId);
+    } else if (maquininhaOrderId) {
+      await paymentsAPI.registerPayment(
+        maquininhaOrderId,
+        maquininhaAmount,
+        'maquininha',
+      );
+      setMaquininhaOrderId(null);
+      setMaquininhaAmount(0);
+      setShowMaquininhaScreen(false);
+      selectOrder(maquininhaOrderId);
+    }
   };
 
-  const total = orderDetail
-    ? (orderDetail.items || []).reduce((sum: number, item: any) => {
-        const price = item.selectedPrice ? Number(item.selectedPrice.value) : 0;
-        return sum + price * item.quantity;
-      }, 0)
-    : 0;
-  const paid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
-  const remaining = total - paid;
+  // Calculate totals based on current selection (order or check-in)
+  const summary = orderDetail?.summary;
+  const orderItems = orderDetail?.orders ? orderDetail.orders.flatMap((o: any) => o.items) : (orderDetail?.items || []);
+  const total = summary?.subTotal ?? (orderItems.reduce((sum: number, item: any) => {
+    const price = item.selectedPrice ? Number(item.selectedPrice.value) : 0;
+    return sum + price * item.quantity;
+  }, 0));
+  const paid = summary?.totalPayments ?? payments.reduce((sum, p) => sum + Number(p.amount), 0);
+  const remaining = summary?.totalDue ?? (total - paid);
 
   // Tela de PIX
   if (showPixScreen && pixData) {
@@ -225,8 +339,9 @@ const PaymentsPage: React.FC = () => {
               <p className="text-foreground text-center mb-6">
                 Procure o atendente e realize o pagamento na maquinha de cartão.
               </p>
-              <Button 
-                variant="primary" 
+              <Button
+                variant="primary"
+                size="md"
                 onClick={handleMaquininhaPaymentCompleted}
               >
                 Pagamento Realizado
@@ -253,8 +368,9 @@ const PaymentsPage: React.FC = () => {
               <p className="text-foreground text-center mb-6 text-lg">
                 Obrigado! Seu pagamento foi confirmado.
               </p>
-              <Button 
-                variant="primary" 
+              <Button
+                variant="primary"
+                size="md"
                 onClick={() => {
                   setShowVendaConcluida(false);
                   setSelectedOrder(null);
@@ -274,15 +390,68 @@ const PaymentsPage: React.FC = () => {
   return (
     <div className="max-w-[800px]">
       <Card title="Pagamentos" padding="lg">
-        {!selectedOrder ? (
+        {!selectedOrder && !selectedCheckInId ? (
           <>
+            <h4 className="text-foreground mb-4">Check-ins Ativos</h4>
+            {checkIns.length === 0 ? (
+              <p className="text-muted-foreground">Nenhum check-in ativo.</p>
+            ) : (
+              <ul className="list-none p-0 space-y-2">
+                {checkIns.map((checkIn: any) => {
+                  // Calculate total from all orders in check-in
+                  const checkInTotal = checkIn.orders.reduce((sum: number, order: any) => {
+                    return sum + order.items.reduce((orderSum: number, item: any) => {
+                      const price = item.selectedPrice ? Number(item.selectedPrice.value) : 0;
+                      return orderSum + price * item.quantity;
+                    }, 0);
+                  }, 0);
+
+                  // Calculate total payments
+                  const checkInPaid = checkIn.payments.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+                  const checkInRemaining = checkInTotal - checkInPaid;
+
+                  return (
+                    <li
+                      key={checkIn.id}
+                      className="
+                        py-3 border border-border rounded cursor-pointer
+                        hover:bg-secondary transition-colors
+                      "
+                      onClick={() => selectCheckIn(checkIn.id)}
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="text-foreground">
+                          <strong>Mesa {checkIn.tableNumber}</strong>
+                          <span className="text-xs text-muted-foreground ml-2">
+                            ({checkIn.orders.length} pedidos)
+                          </span>
+                        </span>
+                        <div className="text-right">
+                          <span className="font-semibold text-brand">
+                            R$ {checkInRemaining.toFixed(2)}
+                            <span className="text-xs text-muted-foreground ml-1">a pagar</span>
+                          </span>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            {checkIns.length > 0 && (
+              <div className="my-6 border-t border-border pt-6">
+                <h4 className="text-foreground mb-4">ou Pedidos Individuais</h4>
+              </div>
+            )}
+
             <h4 className="text-foreground">Pedidos Abertos</h4>
             {orders.filter(
               (o) => o.status === 'OPEN' || o.status === 'AWAITING_PAYMENT',
             ).length === 0 ? (
               <p className="text-muted-foreground">Nenhum pedido aberto.</p>
             ) : (
-              <ul className="list-none p-0">
+              <ul className="list-none p-0 space-y-2">
                 {orders
                   .filter(
                     (o) =>
@@ -302,18 +471,19 @@ const PaymentsPage: React.FC = () => {
                       <li
                         key={o.id}
                         className="
-                          py-3 border-b border-border cursor-pointer
-                          flex justify-between items-center
-                          hover:bg-secondary transition-colors rounded px-2 -mx-2
+                          py-3 border border-border rounded cursor-pointer
+                          hover:bg-secondary transition-colors
                         "
                         onClick={() => selectOrder(o.id)}
                       >
-                        <span className="text-foreground">
-                          <strong>Mesa {o.tableNumber}</strong> — {o.status}
-                        </span>
-                        <span className="font-semibold text-brand">
-                          R$ {orderTotal.toFixed(2)}
-                        </span>
+                        <div className="flex justify-between items-center">
+                          <span className="text-foreground">
+                            <strong>Mesa {o.tableNumber}</strong> — {o.status}
+                          </span>
+                          <span className="font-semibold text-brand">
+                            R$ {orderTotal.toFixed(2)}
+                          </span>
+                        </div>
                       </li>
                     );
                   })}
@@ -323,32 +493,108 @@ const PaymentsPage: React.FC = () => {
         ) : (
           <>
             <button
-              onClick={() => setSelectedOrder(null)}
+              onClick={() => {
+                setSelectedOrder(null);
+                setSelectedCheckInId(null);
+              }}
               className="mb-4 border-none bg-transparent cursor-pointer text-muted-foreground text-sm hover:text-foreground transition-colors"
             >
               ← Voltar
             </button>
 
-            <Card title={`Mesa ${orderDetail?.tableNumber}`} padding="md">
-              {/* Items */}
-              <ul className="list-none p-0">
-                {(orderDetail?.items || []).map((item: any) => {
-                  const price = item.selectedPrice
-                    ? Number(item.selectedPrice.value)
-                    : 0;
-                  return (
-                    <li
-                      key={item.id}
-                      className="py-1.5 flex justify-between text-foreground"
-                    >
-                      <span>
-                        {item.product.name} × {item.quantity}
-                      </span>
-                      <span>R$ {(price * item.quantity).toFixed(2)}</span>
-                    </li>
-                  );
-                })}
-              </ul>
+            <Card title={`Mesa ${orderDetail?.tableNumber || orderDetail?.checkIn?.tableNumber}`} padding="md">
+              {/* Show summary if available (check-in view) */}
+              {summary ? (
+                <div className="space-y-4">
+                  <div className="p-4 bg-muted rounded-lg">
+                    <h4 className="text-sm font-semibold text-muted-foreground uppercase mb-3">
+                      Resumo do Check-in
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">SubTotal:</span>
+                        <span className="font-medium">R$ {summary.subTotal.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-green-400">
+                        <span>Pagamentos:</span>
+                        <span>R$ {summary.totalPayments.toFixed(2)}</span>
+                      </div>
+                      {summary.totalDue > 0 && (
+                        <div className="flex justify-between text-destructive font-bold">
+                          <span>Total a pagar:</span>
+                          <span>R$ {summary.totalDue.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {summary.totalDue <= 0 && (
+                        <div className="flex justify-between text-green-400 font-bold">
+                          <span>Pago:</span>
+                          <span>R$ {summary.subTotal.toFixed(2)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* All items from all orders */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-muted-foreground uppercase mb-3">
+                      Itens do Pedido
+                    </h4>
+                    <ul className="space-y-2">
+                      {(orderDetail.orders?.flatMap((order: any) => order.items) || []).map((item: any) => (
+                        <li key={item.id} className="flex justify-between text-sm py-2 border-b border-border last:border-0">
+                          <span className="text-foreground">{item.product.name} × {item.quantity}</span>
+                          <span className="text-foreground">
+                            R$ {((item.selectedPrice?.value || 0) * item.quantity).toFixed(2)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Payment history */}
+                  {payments.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-muted-foreground uppercase mb-3">
+                        Pagamentos
+                      </h4>
+                      <ul className="space-y-2">
+                        {payments.map((payment: any) => (
+                          <li key={payment.id} className="flex justify-between text-sm py-2 border-b border-border last:border-0">
+                            <span className="text-green-400">
+                              {payment.method === 'pix' && '📱 Pix'}
+                              {payment.method === 'maquininha' && '💳 Maquininha'}
+                              {payment.method === 'celular' && '📱 Celular'}
+                            </span>
+                            <span className="text-green-400">- R$ {Number(payment.amount).toFixed(2)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  {/* Items for order-only view */}
+                  <ul className="list-none p-0">
+                    {(orderDetail?.items || []).map((item: any) => {
+                      const price = item.selectedPrice
+                        ? Number(item.selectedPrice.value)
+                        : 0;
+                      return (
+                        <li
+                          key={item.id}
+                          className="py-1.5 flex justify-between text-foreground"
+                        >
+                          <span>
+                            {item.product.name} × {item.quantity}
+                          </span>
+                          <span>R$ {(price * item.quantity).toFixed(2)}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </>
+              )}
 
               <div className="flex justify-between font-bold mt-3 pt-3 border-t-2 border-border text-foreground">
                 <span>Total:</span>

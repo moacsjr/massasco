@@ -1,11 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
 import { sseBus } from '../../../lib/sse-bus';
 
 // Get check-in by table number (returns active check-in if exists)
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const tableNumber = searchParams.get('tableNumber');
+export async function GET(req: NextRequest) {
+  const tableNumber = req.nextUrl.searchParams.get('tableNumber');
 
   if (!tableNumber) {
     return NextResponse.json(
@@ -59,7 +58,7 @@ export async function GET(req: Request) {
 }
 
 // Create a new check-in or return existing active one
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const body = await req.json();
   const { tableNumber, customerName } = body as {
     tableNumber: number;

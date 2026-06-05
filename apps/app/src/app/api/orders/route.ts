@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
 import { sseBus } from '../../../lib/sse-bus';
 import { sendOrderToQueue } from '../../../lib/sqs';
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get('status');
   const checkInId = searchParams.get('checkInId');
@@ -23,6 +23,7 @@ export async function GET(req: Request) {
   const orders = await prisma.order.findMany({
     where,
     include: {
+      checkIn: true,
       items: {
         include: {
           product: { include: { prices: true, complements: true } },
@@ -48,7 +49,8 @@ export async function GET(req: Request) {
   return NextResponse.json(serialized);
 }
 
-export async function POST(req: Request) {
+// Update request type for Next.js 15
+export async function POST(req: NextRequest) {
   const body = await req.json();
   const { checkInId, tableNumber, customerName, items } = body as {
     checkInId?: string;
@@ -95,8 +97,8 @@ export async function POST(req: Request) {
   }
 
   // If checkInId is provided, verify it exists and is open
-  const finalCheckInId = checkInId;
-  let finalTableNumber = tableNumber;
+  let finalCheckInId: string;
+  let finalTableNumber: number;
 
   if (checkInId) {
     const checkIn = await prisma.checkIn.findUnique({
@@ -117,13 +119,30 @@ export async function POST(req: Request) {
       );
     }
 
+    finalCheckInId = checkInId;
     finalTableNumber = checkIn.tableNumber;
+  } else if (tableNumber) {
+    // If no checkInId, create a new check-in for the table
+    const checkIn = await prisma.checkIn.create({
+      data: {
+        tableNumber,
+        customerName: customerName,
+        status: 'OPEN',
+      },
+    });
+    finalCheckInId = checkIn.id;
+    finalTableNumber = checkIn.tableNumber;
+  } else {
+    return NextResponse.json(
+      { error: 'checkInId or tableNumber is required' },
+      { status: 400 },
+    );
   }
 
   const order = await prisma.order.create({
     data: {
       checkInId: finalCheckInId,
-      tableNumber: finalTableNumber as number,
+      tableNumber: finalTableNumber,
       customerName,
       items: {
         create: items.map((item) => ({
