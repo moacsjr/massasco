@@ -12,6 +12,7 @@ import { useUI } from '@temp-workspace/ui-registry';
 import { NewOrderContainer } from '@temp-workspace/plugin-orders-delivery';
 import { PaymentsAPI, CheckoutButton, ComponentePix } from '@temp-workspace/plugin-payments';
 import { useRouter } from 'next/navigation';
+import { CheckInViewWrapper } from './CheckInViewWrapper';
 
 // ============================================================================
 // Types
@@ -282,7 +283,9 @@ const SelectTableStep: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem('customerTable', tableNumber.toString());
-    window.location.href = `/plugins/customer-portal/checkin/${tableNumber}`;
+    // Note: This should be updated to use tableToken when available
+    // For now, we'll use a placeholder or redirect to a table selection page
+    window.location.href = `/plugins/customer-portal/`;
   };
 
   return (
@@ -1241,8 +1244,8 @@ export const customerPortalPlugin: FeaturePlugin = {
       showInMenu: false,
     },
     {
-      path: 'checkin/:tableNumber',
-      component: CheckInStep,
+      path: 'checkin/:tableToken',
+      component: CheckInViewWrapper,
       label: 'Check-in',
       showInMenu: false,
     },
@@ -1301,6 +1304,7 @@ export const customerPortalServicePlugin: ServicePlugin = {
 };
 export { SelectTableStep }
 export { CheckInStep }
+export { CheckInViewWrapper }
 export { MenuPage }
 export { OrdersPage }
 export { CheckoutPage }

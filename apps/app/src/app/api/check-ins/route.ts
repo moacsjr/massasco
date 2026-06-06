@@ -36,27 +36,58 @@ interface CheckInRequestBody {
   deviceInfo?: any;
 }
 
-// Validate location (must be within 100m of restaurant location)
-function validateLocation(location: { latitude: number; longitude: number } | undefined): boolean {
+// Get geolocation settings from database
+async function getGeolocationSettings(): Promise<{
+  enabled: boolean;
+  restaurantLatitude: number;
+  restaurantLongitude: number;
+  maxDistanceMeters: number;
+}> {
+  const settings = await prisma.systemSetting.findMany({
+    where: {
+      key: {
+        in: [
+          'geolocation.enabled',
+          'geolocation.restaurantLatitude',
+          'geolocation.restaurantLongitude',
+          'geolocation.maxDistanceMeters',
+        ],
+      },
+    },
+  });
+
+  const settingsMap = new Map(settings.map((s) => [s.key, s.value]));
+
+  return {
+    enabled: settingsMap.get('geolocation.enabled') === 'true',
+    restaurantLatitude: parseFloat(settingsMap.get('geolocation.restaurantLatitude') || '-23.550520'),
+    restaurantLongitude: parseFloat(settingsMap.get('geolocation.restaurantLongitude') || '-46.633308'),
+    maxDistanceMeters: parseInt(settingsMap.get('geolocation.maxDistanceMeters') || '100', 10),
+  };
+}
+
+// Validate location (must be within configured distance of restaurant location)
+async function validateLocation(location: { latitude: number; longitude: number } | undefined): Promise<boolean> {
   if (!location) {
     return false;
   }
-  
-  // Restaurant location (example: -23.550520, -46.633308 for São Paulo)
-  // In production, this should be configurable
-  const RESTAURANT_LAT = -23.550520;
-  const RESTAURANT_LON = -46.633308;
-  const MAX_DISTANCE_METERS = 100; // 100 meters
-  
+
+  const settings = await getGeolocationSettings();
+
+  // If geolocation is disabled, always return true
+  if (!settings.enabled) {
+    return true;
+  }
+
   const distanceKm = calculateDistance(
     location.latitude,
     location.longitude,
-    RESTAURANT_LAT,
-    RESTAURANT_LON
+    settings.restaurantLatitude,
+    settings.restaurantLongitude
   );
-  
+
   const distanceMeters = distanceKm * 1000;
-  return distanceMeters <= MAX_DISTANCE_METERS;
+  return distanceMeters <= settings.maxDistanceMeters;
 }
 
 // Create a new check-in (host-based, no table number required)

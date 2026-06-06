@@ -10,6 +10,10 @@ import { useUI } from '@temp-workspace/ui-registry';
 // Types
 // ============================================================================
 
+interface CheckInViewProps {
+  tableToken?: string;
+}
+
 interface CheckInResponse {
   id: string;
   tableId: string;
@@ -37,7 +41,7 @@ interface CheckInResponse {
 // CheckInView Component
 // ============================================================================
 
-const CheckInView: React.FC = () => {
+const CheckInView: React.FC<CheckInViewProps> = ({ tableToken }) => {
   const { resolve } = useUI();
   const Card = resolve('Card');
   const Button = resolve('Button');
@@ -47,6 +51,7 @@ const CheckInView: React.FC = () => {
   const [email, setEmail] = React.useState('');
   const [phone, setPhone] = React.useState('');
   const [locationEnabled, setLocationEnabled] = React.useState(false);
+  const [geolocationEnabled, setGeolocationEnabled] = React.useState(true);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState<CheckInResponse | null>(null);
@@ -54,6 +59,22 @@ const CheckInView: React.FC = () => {
   const [joinRequestName, setJoinRequestName] = React.useState('');
   const [joinRequestEmail, setJoinRequestEmail] = React.useState('');
   const [tableSessionId, setTableSessionId] = React.useState<string | null>(null);
+
+  // Load geolocation settings on mount
+  React.useEffect(() => {
+    const loadGeolocationSettings = async () => {
+      try {
+        const res = await fetch('/api/system-settings/geolocation');
+        if (res.ok) {
+          const data = await res.json();
+          setGeolocationEnabled(data.enabled);
+        }
+      } catch (err) {
+        console.error('Error loading geolocation settings:', err);
+      }
+    };
+    loadGeolocationSettings();
+  }, []);
 
   // Request location permission
   const requestLocation = () => {
@@ -346,125 +367,112 @@ const CheckInView: React.FC = () => {
         <div className="max-w-md mx-auto">
           <div className="space-y-6">
             {/* Name Input */}
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Your Name <span className="text-red-500">*</span>
-              </label>
-              <Input
-                name="name"
-                label="Your Name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your name"
-              />
-            </div>
+            <Input
+              name="name"
+              label="Your Name *"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter your name"
+            />
 
             {/* Email Input (optional) */}
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Email (optional)
-              </label>
-              <Input
-                name="email"
-                label="Email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
-              />
-            </div>
+            <Input
+              name="email"
+              label="Email (optional)"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your@email.com"
+            />
 
             {/* Phone Input (optional) */}
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Phone (optional)
-              </label>
-              <Input
-                name="phone"
-                label="Phone"
-                type="text"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+1234567890"
-              />
-            </div>
+            <Input
+              name="phone"
+              label="Phone (optional)"
+              type="text"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+1234567890"
+            />
 
-            {/* Location Permission */}
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <div className="flex items-start gap-3">
-                <div className="mt-1">
-                  <svg
-                    className="w-5 h-5 text-blue-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-foreground mb-1">
-                    Location Validation
-                  </h4>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    For security, we require location validation within 100m of the restaurant.
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={requestLocation}
-                  >
-                    {locationEnabled ? (
-                      <span className="flex items-center gap-2">
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                        Location Enabled
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-2">
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                          />
-                        </svg>
-                        Enable Location
-                      </span>
-                    )}
-                  </Button>
+            {/* Location Permission - Only show if geolocation is enabled in settings */}
+            {geolocationEnabled && (
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-start gap-3">
+                  <div className="mt-1">
+                    <svg
+                      className="w-5 h-5 text-blue-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground mb-1">
+                      Location Validation
+                    </h4>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      For security, we require location validation within 100m of the restaurant.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={requestLocation}
+                    >
+                      {locationEnabled ? (
+                        <span className="flex items-center gap-2">
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          Location Enabled
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-2">
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                            />
+                          </svg>
+                          Enable Location
+                        </span>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Submit Button */}
             <Button

@@ -241,6 +241,21 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+// ============================================================================
+// System Settings Model
+// ============================================================================
+
+model SystemSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
 enum OrderStatus {
   OPEN
   AWAITING_PAYMENT
