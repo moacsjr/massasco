@@ -20,8 +20,8 @@ export interface UseNewOrderDataReturn {
   setCart: (cart: CartItem[]) => void;
   tableNumber: number;
   setTableNumber: (num: number) => void;
-  checkInId: string | null;
-  setCheckInId: (id: string | null) => void;
+  tableSessionId: string | null;
+  setTableSessionId: (id: string | null) => void;
   customerName: string;
   setCustomerName: (name: string) => void;
   categories: CategoryDTO[];
@@ -47,24 +47,24 @@ export const useNewOrderData = (): UseNewOrderDataReturn => {
   );
   const [cart, setCart] = useState<CartItem[]>([]);
   const [tableNumber, setTableNumber] = useState(1);
-  const [checkInId, setCheckInId] = useState<string | null>(() => {
+  const [tableSessionId, setTableSessionId] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('customerCheckIn');
+      const stored = localStorage.getItem('customerTableSession');
       if (stored) {
-        const checkIn = JSON.parse(stored);
-        return checkIn.id;
+        const tableSession = JSON.parse(stored);
+        return tableSession.id;
       }
     }
     return null;
   });
   const [customerName, setCustomerName] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('customerCheckIn');
+      const stored = localStorage.getItem('customerTableSession');
       if (stored) {
-        const checkIn = JSON.parse(stored);
-        return checkIn.customerName;
+        const tableSession = JSON.parse(stored);
+        return tableSession.customerName || '';
       }
-      // Fallback to customerTable if checkIn not found
+      // Fallback to customerTable if tableSession not found
       const table = localStorage.getItem('customerTable');
       if (table) {
         return `Cliente Mesa ${table}`;
@@ -130,7 +130,7 @@ export const useNewOrderData = (): UseNewOrderDataReturn => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          checkInId,
+          tableSessionId,
           tableNumber,
           customerName,
           items: cart.map((c) => ({
@@ -178,8 +178,8 @@ export const useNewOrderData = (): UseNewOrderDataReturn => {
     setCart,
     tableNumber,
     setTableNumber,
-    checkInId,
-    setCheckInId,
+    tableSessionId,
+    setTableSessionId,
     customerName,
     setCustomerName,
     categories,

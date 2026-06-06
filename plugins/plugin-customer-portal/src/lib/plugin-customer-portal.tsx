@@ -107,7 +107,7 @@ export const useCustomerTableSession = () => {
   return { tableSession, setTableSession, clearTableSession };
 };
 
-// Hook to listen for CHECKIN_CLOSED SSE event
+// Hook to listen for CHECKIN_CLOSED SSE event (legacy - for backward compatibility)
 export const useCheckInSSE = (onCheckInClosed?: (tableNumber: number) => void) => {
   React.useEffect(() => {
     const eventSource = new EventSource('/api/events');
@@ -141,7 +141,6 @@ export const useCustomerOrders = (tableSessionId: string) => {
       try {
         const res = await fetch(`/api/orders?tableSessionId=${tableSessionId}`);
         const data = await res.json();
-        // Ensure data is an array before setting state
         setOrders(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error('Error fetching orders:', err);
@@ -153,7 +152,6 @@ export const useCustomerOrders = (tableSessionId: string) => {
 
     fetchOrders();
 
-    // SSE subscription for real-time updates
     const eventSource = new EventSource('/api/events');
     eventSource.onmessage = () => {
       fetchOrders();
@@ -187,7 +185,6 @@ const CheckInStep: React.FC<CheckInStepProps> = ({ params }) => {
   const [error, setError] = React.useState('');
   const router = useRouter();
   
-  // Extract tableNumber from params (passed by Next.js)
   const tableNumber = params ? (typeof params === 'object' && !Array.isArray(params) ? parseInt((params as any).tableNumber, 10) : 1) : 1;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -200,7 +197,7 @@ const CheckInStep: React.FC<CheckInStepProps> = ({ params }) => {
     }
 
     try {
-      const res = await fetch('/api/checkins', {
+      const res = await fetch('/api/table-sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -219,15 +216,15 @@ const CheckInStep: React.FC<CheckInStepProps> = ({ params }) => {
         throw new Error(data.error || 'Erro ao fazer check-in');
       }
 
-      // Save check-in to localStorage
-      localStorage.setItem('customerCheckIn', JSON.stringify(data));
+      // Save table session to localStorage
+      localStorage.setItem('customerTableSession', JSON.stringify(data));
       localStorage.setItem('customerTable', tableNumber.toString());
 
       // Redirect to menu
       window.location.href = '/plugins/customer-portal/menu';
     } catch (err) {
-      console.error('Error creating check-in:', err);
-      setError('Erro ao criar check-in. Tente novamente.');
+      console.error('Error creating table session:', err);
+      setError('Erro ao criar sessão. Tente novamente.');
     }
   };
 
@@ -282,8 +279,6 @@ const SelectTableStep: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem('customerTable', tableNumber.toString());
-    // Note: This should be updated to use tableToken when available
-    // For now, we'll use a placeholder or redirect to a table selection page
     window.location.href = `/plugins/customer-portal/`;
   };
 
@@ -352,7 +347,6 @@ const OrdersPage: React.FC = () => {
 
   const { orders: customerOrders, isLoading } = useCustomerOrders(tableSession.id);
 
-  // Ensure customerOrders is always an array to prevent .map() errors
   const ordersArray = Array.isArray(customerOrders) ? customerOrders : [];
 
   if (isLoading) {
@@ -447,13 +441,13 @@ const OrdersPage: React.FC = () => {
 
 // --- CheckoutPage ---
 const CheckoutPage: React.FC = () => {
-  const { checkIn } = useCustomerCheckIn();
+  const { tableSession } = useCustomerTableSession();
   const { resolve } = useUI();
   const Card = resolve('Card');
   const Button = resolve('Button');
   const router = useRouter();
 
-  const [checkInData, setCheckInData] = React.useState<any>(null);
+  const [tableSessionData, setTableSessionData] = React.useState<any>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [paymentAmount, setPaymentAmount] = React.useState('');
   const [paymentMethod, setPaymentMethod] = React.useState('pix');
@@ -468,14 +462,14 @@ const CheckoutPage: React.FC = () => {
   // Venda Concluída state
   const [showVendaConcluida, setShowVendaConcluida] = React.useState<boolean>(false);
 
-  // SSE listener for CHECKIN_CLOSED event
+  // SSE listener for TABLE_SESSION_CLOSED event
   React.useEffect(() => {
     const es = new EventSource('/api/events');
 
-    es.addEventListener('CHECKIN_CLOSED', (event) => {
+    es.addEventListener('TABLE_SESSION_CLOSED', (event) => {
       const data = JSON.parse(event.data);
-      console.log('CHECKIN_CLOSED event received:', data);
-      if (checkIn && data.checkInId === checkIn.id) {
+      console.log('TABLE_SESSION_CLOSED event received:', data);
+      if (tableSession && data.tableSessionId === tableSession.id) {
         setShowVendaConcluida(true);
       }
     });
@@ -489,36 +483,36 @@ const CheckoutPage: React.FC = () => {
     return () => {
       es.close();
     };
-  }, [checkIn]);
+  }, [tableSession]);
 
-  // Fetch check-in data with full summary
+  // Fetch table session data with full summary
   React.useEffect(() => {
-    if (!checkIn) return;
+    if (!tableSession) return;
 
-    const fetchCheckIn = async () => {
+    const fetchTableSession = async () => {
       try {
-        const res = await fetch(`/api/checkins/${checkIn.id}`);
+        const res = await fetch(`/api/table-sessions/${tableSession.id}`);
         const data = await res.json();
-        setCheckInData(data);
+        setTableSessionData(data);
         // Pre-fill payment amount with total due
         if (data.summary?.totalDue) {
           setPaymentAmount(data.summary.totalDue.toFixed(2));
         }
       } catch (err) {
-        console.error('Error fetching check-in:', err);
+        console.error('Error fetching table session:', err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchCheckIn();
-  }, [checkIn]);
+    fetchTableSession();
+  }, [tableSession]);
 
   // Calculate totals from orders (all items, not just unpaid)
   const allItems = React.useMemo(() => {
     const items: any[] = [];
-    if (checkInData && checkInData.orders) {
-      checkInData.orders.forEach((order: any) => {
+    if (tableSessionData && tableSessionData.orders) {
+      tableSessionData.orders.forEach((order: any) => {
         order.items.forEach((item: any) => {
           items.push({
             ...item,
@@ -528,13 +522,13 @@ const CheckoutPage: React.FC = () => {
       });
     }
     return items;
-  }, [checkInData]);
+  }, [tableSessionData]);
 
-  if (!checkIn) {
+  if (!tableSession) {
     return (
       <div className="p-4">
         <Card padding="lg">
-          <p className="text-muted-foreground">Nenhum check-in ativo.</p>
+          <p className="text-muted-foreground">Nenhuma sessão ativa.</p>
           <Button
             variant="primary"
             size="md"
@@ -547,7 +541,7 @@ const CheckoutPage: React.FC = () => {
     );
   }
 
-  if (isLoading || !checkInData) {
+  if (isLoading || !tableSessionData) {
     return (
       <div className="p-4">
         <Card padding="lg">
@@ -557,21 +551,20 @@ const CheckoutPage: React.FC = () => {
     );
   }
 
-  // Extract data from check-in with summary
-  const { summary, orders, payments } = checkInData;
+  // Extract data from table session with summary
+  const { summary, orders, payments } = tableSessionData;
 
   // Dados fixos para teste do PIX - em produção, isso viria de uma configuração ou API
   const pixConfig = {
-    chave: 'suachave@email.com', // Chave PIX do estabelecimento
-    beneficiario: 'Fulano de Tal', // Nome do beneficiário
-    cidade: 'Sao Paulo' // Cidade do beneficiário
+    chave: 'suachave@email.com',
+    beneficiario: 'Fulano de Tal',
+    cidade: 'Sao Paulo'
   };
 
   // Handle payment submission
   const handleCheckout = async () => {
     if (!paymentAmount) return;
 
-    // Se for Pix, mostra a tela de PIX em vez de registrar imediatamente
     if (paymentMethod === 'pix') {
       setPixData({
         chave: pixConfig.chave,
@@ -583,7 +576,6 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
-    // Se for Maquininha, mostra a tela de Aguardando Pagamento
     if (paymentMethod === 'maquininha') {
       setMaquininhaAmount(Number(paymentAmount));
       setShowMaquininhaScreen(true);
@@ -592,23 +584,20 @@ const CheckoutPage: React.FC = () => {
 
     setIsProcessing(true);
     try {
-      // Register payment against the check-in
       await fetch('/api/payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          checkInId: checkIn.id,
+          tableSessionId: tableSession.id,
           amount: Number(paymentAmount),
           method: paymentMethod,
         }),
       });
 
-      // Refresh check-in data
-      const res = await fetch(`/api/checkins/${checkIn.id}`);
+      const res = await fetch(`/api/table-sessions/${tableSession.id}`);
       const data = await res.json();
-      setCheckInData(data);
+      setTableSessionData(data);
 
-      // If fully paid, redirect to thank you page
       if (data.summary?.isFullyPaid) {
         window.location.href = '/plugins/customer-portal/thank-you';
       } else {
@@ -632,18 +621,16 @@ const CheckoutPage: React.FC = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          checkInId: checkIn.id,
+          tableSessionId: tableSession.id,
           amount: maquininhaAmount,
           method: 'maquininha',
         }),
       });
 
-      // Refresh check-in data
-      const res = await fetch(`/api/checkins/${checkIn.id}`);
+      const res = await fetch(`/api/table-sessions/${tableSession.id}`);
       const data = await res.json();
-      setCheckInData(data);
+      setTableSessionData(data);
 
-      // If fully paid, redirect to thank you page
       if (data.summary?.isFullyPaid) {
         window.location.href = '/plugins/customer-portal/thank-you';
       } else {
@@ -667,18 +654,16 @@ const CheckoutPage: React.FC = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          checkInId: checkIn.id,
+          tableSessionId: tableSession.id,
           amount: Number(pixData.valor),
           method: 'pix',
         }),
       });
 
-      // Refresh check-in data
-      const res = await fetch(`/api/checkins/${checkIn.id}`);
+      const res = await fetch(`/api/table-sessions/${tableSession.id}`);
       const data = await res.json();
-      setCheckInData(data);
+      setTableSessionData(data);
 
-      // If fully paid, redirect to thank you page
       if (data.summary?.isFullyPaid) {
         window.location.href = '/plugins/customer-portal/thank-you';
       } else {
@@ -802,25 +787,24 @@ const CheckoutPage: React.FC = () => {
     );
   }
 
-  // Main Checkout Page - Shows CheckIn summary
+  // Main Checkout Page - Shows TableSession summary
   return (
     <div className="p-4 space-y-4">
       <h2 className="text-2xl font-bold text-foreground">Checkout</h2>
 
-      {/* Payment Summary Card */}
       <Card padding="lg">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold text-foreground">
-            Resumo da Mesa {checkInData.tableNumber}
+            Resumo da Mesa {tableSessionData.tableNumber}
           </h3>
           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-            checkInData.status === 'CLOSED'
+            tableSessionData.status === 'CLOSED'
               ? 'bg-gray-500/20 text-gray-400'
               : summary?.isFullyPaid
                 ? 'bg-green-500/20 text-green-400'
                 : 'bg-yellow-500/20 text-yellow-400'
           }`}>
-            {checkInData.status === 'CLOSED' ? 'Fechada' : summary?.isFullyPaid ? 'Paga' : 'Em andamento'}
+            {tableSessionData.status === 'CLOSED' ? 'Fechada' : summary?.isFullyPaid ? 'Paga' : 'Em andamento'}
           </span>
         </div>
 
@@ -838,7 +822,6 @@ const CheckoutPage: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* All Items from all orders */}
             <div className="mb-6">
               <h4 className="text-sm font-semibold text-muted-foreground mb-3 uppercase">
                 Itens do Pedido
@@ -864,7 +847,6 @@ const CheckoutPage: React.FC = () => {
               </ul>
             </div>
 
-            {/* Payment History */}
             {payments && payments.length > 0 && (
               <div className="mb-6">
                 <h4 className="text-sm font-semibold text-muted-foreground mb-3 uppercase">
@@ -893,7 +875,6 @@ const CheckoutPage: React.FC = () => {
               </div>
             )}
 
-            {/* Summary */}
             <div className="space-y-3 pt-4 border-t-2 border-border">
               <div className="flex justify-between text-muted-foreground">
                 <span>SubTotal:</span>
@@ -920,7 +901,6 @@ const CheckoutPage: React.FC = () => {
         )}
       </Card>
 
-      {/* Payment Form (if not fully paid) */}
       {!summary?.isFullyPaid && (
         <Card padding="lg">
           <h3 className="text-lg font-semibold text-foreground mb-4">
@@ -958,7 +938,6 @@ const CheckoutPage: React.FC = () => {
               </select>
             </div>
 
-            {/* Se for Pix, mostrar botão de Pagar com PIX */}
             {paymentMethod === 'pix' ? (
               <button
                 type="button"
@@ -1001,17 +980,17 @@ const CheckoutPage: React.FC = () => {
 
 // --- ThankYouPage ---
 const ThankYouPage: React.FC = () => {
-  const { checkIn } = useCustomerCheckIn();
+  const { tableSession } = useCustomerTableSession();
   const { resolve } = useUI();
   const Card = resolve('Card');
   const Button = resolve('Button');
   const router = useRouter();
 
-  if (!checkIn) {
+  if (!tableSession) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Card padding="lg">
-          <p className="text-muted-foreground">Nenhum check-in ativo.</p>
+          <p className="text-muted-foreground">Nenhuma sessão ativa.</p>
           <Button
             variant="primary"
             size="md"
@@ -1024,7 +1003,7 @@ const ThankYouPage: React.FC = () => {
     );
   }
 
-  const { orders: customerOrders, isLoading } = useCustomerOrders(checkIn.id);
+  const { orders: customerOrders, isLoading } = useCustomerOrders(tableSession.id);
 
   const totalSpent = customerOrders.reduce((sum, order) => {
     return sum + order.items.reduce((orderSum, item) => {
@@ -1041,7 +1020,7 @@ const ThankYouPage: React.FC = () => {
   }, 0);
 
   const handleFinish = () => {
-    localStorage.removeItem('customerCheckIn');
+    localStorage.removeItem('customerTableSession');
     localStorage.removeItem('customerTable');
     window.location.href = '/plugins/customer-portal/';
   };
@@ -1064,7 +1043,7 @@ const ThankYouPage: React.FC = () => {
         <div className="space-y-3 text-left mb-6">
           <div className="flex justify-between py-2 border-b border-border">
             <span className="text-muted-foreground">Mesa:</span>
-            <span className="text-foreground font-medium">{checkIn.tableNumber}</span>
+            <span className="text-foreground font-medium">{tableSession.tableNumber}</span>
           </div>
           <div className="flex justify-between py-2 border-b border-border">
             <span className="text-muted-foreground">Itens consumidos:</span>
@@ -1105,119 +1084,119 @@ const ThankYouPage: React.FC = () => {
 const PortalMenu: React.FC<LeftMenuItemProps> = () => {
   return (
     <div style={{ padding: '12px' }}>
-          <div
+      <div
+        style={{
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          color: '#6b7280',
+          marginBottom: '6px',
+          letterSpacing: '0.05em',
+        }}
+      >
+        Portal do Cliente
+      </div>
+      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+        <li style={{ marginBottom: '2px' }}>
+          <a
+            href="/plugins/customer-portal/menu"
             style={{
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              textTransform: 'uppercase',
-              color: '#6b7280',
-              marginBottom: '6px',
-              letterSpacing: '0.05em',
+              display: 'block',
+              padding: '6px 10px',
+              borderRadius: '6px',
+              textDecoration: 'none',
+              color: '#374151',
+              fontSize: '0.9rem',
+              transition: 'background-color 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.backgroundColor =
+                '#f3f4f6';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.backgroundColor =
+                'transparent';
             }}
           >
-            Portal do Cliente
-          </div>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            <li style={{ marginBottom: '2px' }}>
-              <a
-                href="/plugins/customer-portal/menu"
-                style={{
-                  display: 'block',
-                  padding: '6px 10px',
-                  borderRadius: '6px',
-                  textDecoration: 'none',
-                  color: '#374151',
-                  fontSize: '0.9rem',
-                  transition: 'background-color 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.backgroundColor =
-                    '#f3f4f6';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.backgroundColor =
-                    'transparent';
-                }}
-              >
-                🍽️ Cardápio
-              </a>
-            </li>
-            <li style={{ marginBottom: '2px' }}>
-              <a
-                href="/plugins/customer-portal/orders"
-                style={{
-                  display: 'block',
-                  padding: '6px 10px',
-                  borderRadius: '6px',
-                  textDecoration: 'none',
-                  color: '#374151',
-                  fontSize: '0.9rem',
-                  transition: 'background-color 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.backgroundColor =
-                    '#f3f4f6';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.backgroundColor =
-                    'transparent';
-                }}
-              >
-                🛒 Pedidos
-              </a>
-            </li>
-            <li style={{ marginBottom: '2px' }}>
-              <a
-                href="/plugins/customer-portal/checkout"
-                style={{
-                  display: 'block',
-                  padding: '6px 10px',
-                  borderRadius: '6px',
-                  textDecoration: 'none',
-                  color: '#374151',
-                  fontSize: '0.9rem',
-                  transition: 'background-color 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.backgroundColor =
-                    '#f3f4f6';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.backgroundColor =
-                    'transparent';
-                }}
-              >
-                💳 Checkout
-              </a>
-            </li>
-            <li style={{ marginBottom: '2px' }}>
-              <a
-                href="/plugins/auth/profile"
-                style={{
-                  display: 'block',
-                  padding: '6px 10px',
-                  borderRadius: '6px',
-                  textDecoration: 'none',
-                  color: '#374151',
-                  fontSize: '0.9rem',
-                  transition: 'background-color 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.backgroundColor =
-                    '#f3f4f6';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.backgroundColor =
-                    'transparent';
-                }}
-              >
-                👤 Profile
-              </a>
-            </li>
-          </ul>
-        </div>
-      );
-    };
+            🍽️ Cardápio
+          </a>
+        </li>
+        <li style={{ marginBottom: '2px' }}>
+          <a
+            href="/plugins/customer-portal/orders"
+            style={{
+              display: 'block',
+              padding: '6px 10px',
+              borderRadius: '6px',
+              textDecoration: 'none',
+              color: '#374151',
+              fontSize: '0.9rem',
+              transition: 'background-color 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.backgroundColor =
+                '#f3f4f6';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.backgroundColor =
+                'transparent';
+            }}
+          >
+            🛒 Pedidos
+          </a>
+        </li>
+        <li style={{ marginBottom: '2px' }}>
+          <a
+            href="/plugins/customer-portal/checkout"
+            style={{
+              display: 'block',
+              padding: '6px 10px',
+              borderRadius: '6px',
+              textDecoration: 'none',
+              color: '#374151',
+              fontSize: '0.9rem',
+              transition: 'background-color 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.backgroundColor =
+                '#f3f4f6';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.backgroundColor =
+                'transparent';
+            }}
+          >
+            💳 Checkout
+          </a>
+        </li>
+        <li style={{ marginBottom: '2px' }}>
+          <a
+            href="/plugins/auth/profile"
+            style={{
+              display: 'block',
+              padding: '6px 10px',
+              borderRadius: '6px',
+              textDecoration: 'none',
+              color: '#374151',
+              fontSize: '0.9rem',
+              transition: 'background-color 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.backgroundColor =
+                '#f3f4f6';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.backgroundColor =
+                'transparent';
+            }}
+          >
+            👤 Profile
+          </a>
+        </li>
+      </ul>
+    </div>
+  );
+};
 
 const contributions = [
   {
@@ -1292,9 +1271,9 @@ export const customerPortalServicePlugin: ServicePlugin = {
       }
       return null;
     },
-    getCustomerCheckIn: () => {
+    getCustomerTableSession: () => {
       if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem('customerCheckIn');
+        const stored = localStorage.getItem('customerTableSession');
         return stored ? JSON.parse(stored) : null;
       }
       return null;

@@ -1,8 +1,8 @@
 import { test, expect, request as playwrightRequest } from '@playwright/test';
 
 // ============================================================================
-// Check-In and Payment System — E2E Tests
-// Validates: Customer Portal, Check-In Flow, Checkout, Payment Registration
+// Table Session and Payment System — E2E Tests
+// Validates: Customer Portal, Table Session Flow, Checkout, Payment Registration
 // ============================================================================
 
 // Login credentials for testing

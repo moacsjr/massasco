@@ -18,14 +18,14 @@ import { CheckoutButton } from './CheckoutButton';
 
 export interface PaymentsAPI {
   calculateTotal(orderId: string): Promise<{ total: number; items: unknown[] }>;
-  calculateCheckInTotal(checkInId: string): Promise<{ subTotal: number; totalPayments: number; totalDue: number }>;
+  calculateTableSessionTotal(tableSessionId: string): Promise<{ subTotal: number; totalPayments: number; totalDue: number }>;
   registerPayment(
     orderId: string,
     amount: number,
     method: string,
   ): Promise<unknown>;
-  registerCheckInPayment(
-    checkInId: string,
+  registerTableSessionPayment(
+    tableSessionId: string,
     amount: number,
     method: string,
   ): Promise<unknown>;
@@ -41,10 +41,10 @@ const paymentsAPI: PaymentsAPI = {
     }, 0);
     return { total, items: order.items || [] };
   },
-  async calculateCheckInTotal(checkInId: string) {
-    const res = await fetch(`/api/checkins/${checkInId}`);
-    const checkIn = await res.json();
-    return checkIn.summary || { subTotal: 0, totalPayments: 0, totalDue: 0 };
+  async calculateTableSessionTotal(tableSessionId: string) {
+    const res = await fetch(`/api/table-sessions/${tableSessionId}`);
+    const tableSession = await res.json();
+    return tableSession.summary || { subTotal: 0, totalPayments: 0, totalDue: 0 };
   },
   async registerPayment(orderId: string, amount: number, method: string) {
     const res = await fetch('/api/payments', {
@@ -54,11 +54,11 @@ const paymentsAPI: PaymentsAPI = {
     });
     return res.json();
   },
-  async registerCheckInPayment(checkInId: string, amount: number, method: string) {
+  async registerTableSessionPayment(tableSessionId: string, amount: number, method: string) {
     const res = await fetch('/api/payments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ checkInId, amount, method }),
+      body: JSON.stringify({ tableSessionId, amount, method }),
     });
     return res.json();
   },

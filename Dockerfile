@@ -22,13 +22,18 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 
 # Copia o restante do código fonte
-COPY . .
+COPY . .
 
 # IMPORTANTE: Adicione os pacotes necessários no builder também
 RUN apk add --no-cache libc6-compat openssl
 
 # Gera o Prisma Client (necessário para compilar o TypeScript do Next.js)
 RUN npx prisma generate --schema=prisma/schema.prisma
+
+ENV STRIPE_SECRET_KEY="TESTE"
+ENV STRIPE_PUBLISHABLE_KEY="TESTE"
+ENV NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="TESTE"
+ENV STRIPE_WEBHOOK_SECRET="TESTE"
 
 # Executa o build do Nx
 RUN corepack enable pnpm && pnpm exec nx build app --verbose=false
