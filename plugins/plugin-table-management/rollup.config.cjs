@@ -5,7 +5,7 @@ const svg = require('@svgr/rollup');
 module.exports = withNx(
   {
     main: './src/index.ts',
-    outputPath: '../../dist/plugins/plugin-orders-delivery',
+    outputPath: '../../dist/plugins/plugin-table-management',
     tsConfig: './tsconfig.lib.json',
     compiler: 'swc',
     skipTypeCheck: true,

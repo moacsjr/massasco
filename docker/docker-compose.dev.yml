@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: devxp
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+
+  app: # <-- Esse nome deve ser o mesmo do "service" no devcontainer.json
+    image: mcr.microsoft.com/devcontainers/typescript-node:4-24-trixie
+    volumes:
+      - ..:/workspace:cached # Sincroniza a pasta do código com o container
+    
+    # Mantém o container vivo em segundo plano para o VS Code se conectar
+    command: /bin/sh -c "while sleep 1000; do :; done" 
+    # Dummy values so the app starts; S3 is not available locally
+
+# Volume removed - using bind mount instead (./postgres-data)

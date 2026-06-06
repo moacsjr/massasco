@@ -1,0 +1,212 @@
+{
+    "compilerOptions": {
+        "rootDir": "../..",
+        "sourceMap": true,
+        "declaration": false,
+        "moduleResolution": "bundler",
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "importHelpers": true,
+        "target": "es6",
+        "module": "esnext",
+        "lib": [
+            "dom",
+            "dom.iterable",
+            "esnext"
+        ],
+        "skipLibCheck": true,
+        "skipDefaultLibCheck": true,
+        "paths": {
+            "@/*": [
+                "./src/*"
+            ],
+            "@temp-workspace/ui-contracts": [
+                "../../libs/ui-contracts/src/index.ts"
+            ],
+            "@temp-workspace/ui-registry": [
+                "../../libs/core/ui-registry/src/index.ts"
+            ],
+            "@temp-workspace/plugin-loader": [
+                "../../libs/core/plugin-loader/src/index.ts"
+            ],
+            "@temp-workspace/token-bridge": [
+                "../../libs/core/token-bridge/src/index.ts"
+            ],
+            "@temp-workspace/ui-project": [
+                "../../ui-project/src/index.tsx"
+            ],
+            "@temp-workspace/plugin-auth": [
+                "../../plugins/plugin-auth/src/index.ts"
+            ],
+            "@temp-workspace/plugin-login": [
+                "../../plugins/plugin-login/src/index.ts"
+            ],
+            "@temp-workspace/plugin-menubar": [
+                "../../plugins/plugin-menubar/src/index.ts"
+            ],
+            "@temp-workspace/plugin-user-service": [
+                "../../plugins/plugin-user-service/src/index.ts"
+            ],
+            "@temp-workspace/plugin-user-management": [
+                "../../plugins/plugin-user-management/src/index.ts"
+            ],
+            "@temp-workspace/plugin-main-template": [
+                "../../plugins/plugin-main-template/src/index.ts"
+            ],
+            "@temp-workspace/plugin-menu-nav-bar": [
+                "../../plugins/plugin-menu-nav-bar/src/index.ts"
+            ],
+            "@temp-workspace/plugin-order-core": [
+                "../../plugins/plugin-order-core/src/index.ts"
+            ],
+            "@temp-workspace/plugin-menu-catalog": [
+                "../../plugins/plugin-menu-catalog/src/index.ts"
+            ],
+            "@temp-workspace/plugin-orders-delivery": [
+                "../../plugins/plugin-orders-delivery/src/index.ts"
+            ],
+            "@temp-workspace/plugin-kds": [
+                "../../plugins/plugin-kds/src/index.ts"
+            ],
+            "@temp-workspace/plugin-payments": [
+                "../../plugins/plugin-payments/src/index.ts"
+            ],
+            "@temp-workspace/plugin-audit": [
+                "../../plugins/plugin-audit/src/index.ts"
+            ],
+            "@temp-workspace/plugin-ui-components": [
+                "../../plugins/plugin-ui-components/src/index.ts"
+            ],
+            "@temp-workspace/plugin-customer-portal": [
+                "../../plugins/plugin-customer-portal/src/index.ts"
+            ],
+            "@temp-workspace/skills": [
+                "../../skills/src/index.ts"
+            ]
+        },
+        "jsx": "preserve",
+        "baseUrl": "./",
+        "strict": true,
+        "noEmit": true,
+        "emitDeclarationOnly": false,
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "allowJs": true,
+        "allowSyntheticDefaultImports": true,
+        "forceConsistentCasingInFileNames": true,
+        "incremental": true,
+        "plugins": [
+            {
+                "name": "next"
+            }
+        ],
+        "resolvePackageJsonExports": true,
+        "resolvePackageJsonImports": true,
+        "preserveConstEnums": true,
+        "noImplicitAny": true,
+        "noImplicitThis": true,
+        "strictNullChecks": true,
+        "strictFunctionTypes": true,
+        "strictBindCallApply": true,
+        "strictPropertyInitialization": true,
+        "strictBuiltinIteratorReturn": true,
+        "alwaysStrict": true,
+        "useUnknownInCatchVariables": true
+    },
+    "files": [
+        "./index.d.ts",
+        "./next-env.d.ts",
+        "./src/plugins-registry.ts",
+        "./src/proxy.ts",
+        "./src/app/api/audit/route.ts",
+        "./src/app/api/auth/login/route.ts",
+        "./src/app/api/auth/logout/route.ts",
+        "./src/app/api/auth/me/route.ts",
+        "./src/app/api/categories/route.ts",
+        "./src/app/api/categories/[id]/route.ts",
+        "./src/app/api/checkins/route.ts",
+        "./src/app/api/checkins/[id]/route.ts",
+        "./src/app/api/complements/route.ts",
+        "./src/app/api/complements/[id]/route.ts",
+        "./src/app/api/device-sessions/route.ts",
+        "./src/app/api/events/route.ts",
+        "./src/app/api/health/route.ts",
+        "./src/app/api/hello/route.ts",
+        "./src/app/api/menu/categories/route.ts",
+        "./src/app/api/menu/products/route.ts",
+        "./src/app/api/order-items/[id]/route.ts",
+        "./src/app/api/orders/route.ts",
+        "./src/app/api/orders/[id]/route.ts",
+        "./src/app/api/participant-join-requests/route.ts",
+        "./src/app/api/participant-join-requests/[id]/route.ts",
+        "./src/app/api/participants/route.ts",
+        "./src/app/api/payments/route.ts",
+        "./src/app/api/prices/route.ts",
+        "./src/app/api/prices/[id]/route.ts",
+        "./src/app/api/products/route.ts",
+        "./src/app/api/products/[id]/route.ts",
+        "./src/app/api/qr-codes/route.ts",
+        "./src/app/api/stripe/create-checkout-session/route.ts",
+        "./src/app/api/table-sessions/route.ts",
+        "./src/app/api/table-sessions/[id]/route.ts",
+        "./src/app/api/tables/route.ts",
+        "./src/app/api/tables/[id]/route.ts",
+        "./src/app/api/test/reset/route.ts",
+        "./src/app/api/upload/route.ts",
+        "./src/app/api/users/route.ts",
+        "./src/lib/prisma.ts",
+        "./src/lib/sqs.ts",
+        "./src/lib/sse-bus.ts",
+        "./src/lib/utils.ts",
+        "./src/app/layout.tsx",
+        "./src/app/page.tsx",
+        "./src/app/admin/layout.tsx",
+        "./src/app/admin/page.tsx",
+        "./src/app/cancelado/page.tsx",
+        "./src/app/customer/layout.tsx",
+        "./src/app/customer/page.tsx",
+        "./src/app/domain/page.tsx",
+        "./src/app/feature/page.tsx",
+        "./src/app/feature/new/page.tsx",
+        "./src/app/plugins/[...slug]/page.tsx",
+        "./src/app/service/page.tsx",
+        "./src/app/service/new/page.tsx",
+        "./src/app/sucesso/page.tsx",
+        "./src/components/providers.tsx",
+        "./src/components/ui/badge.tsx",
+        "./src/components/ui/button.tsx",
+        "./src/components/ui/card.tsx",
+        "./src/components/ui/dialog.tsx",
+        "./src/components/ui/input.tsx",
+        "./src/components/ui/progress.tsx",
+        "./src/components/ui/scroll-area.tsx",
+        "./src/components/ui/select.tsx",
+        "./src/components/ui/sheet.tsx",
+        "./src/components/ui/skeleton.tsx",
+        "./src/components/ui/table.tsx",
+        "./src/components/ui/tabs.tsx",
+        "./src/components/ui/textarea.tsx",
+        "./src/components/ui/toaster.tsx",
+        "./next.config.js",
+        "./postcss.config.js",
+        "./.next/types/routes.d.ts",
+        "./.next/types/validator.ts"
+    ],
+    "include": [
+        "**/*.ts",
+        "**/*.tsx",
+        "**/*.js",
+        "**/*.jsx",
+        "../../apps/app/.next/types/**/*.ts",
+        "../../dist/apps/app/.next/types/**/*.ts",
+        "next-env.d.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        "jest.config.ts",
+        "jest.config.cts",
+        "**/*.spec.ts",
+        "**/*.test.ts"
+    ]
+}
