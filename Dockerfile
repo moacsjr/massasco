@@ -3,7 +3,7 @@ FROM node:22-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat openssl
 ENV CI=true
 ENV FORCE_COLOR=0
 WORKDIR /app
@@ -23,6 +23,9 @@ COPY --from=deps /app/node_modules ./node_modules
 
 # Copia o restante do código fonte
 COPY . .
+
+# IMPORTANTE: Adicione os pacotes necessários no builder também
+RUN apk add --no-cache libc6-compat openssl
 
 # Gera o Prisma Client (necessário para compilar o TypeScript do Next.js)
 RUN npx prisma generate --schema=prisma/schema.prisma
