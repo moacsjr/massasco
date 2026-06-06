@@ -14,7 +14,7 @@ services:
   app: # <-- Esse nome deve ser o mesmo do "service" no devcontainer.json
     image: mcr.microsoft.com/devcontainers/typescript-node:4-24-trixie
     volumes:
-      - ..:/workspace:cached # Sincroniza a pasta do código com o container
+      - ..:/workspace
     
     # Mantém o container vivo em segundo plano para o VS Code se conectar
     command: /bin/sh -c "while sleep 1000; do :; done" 

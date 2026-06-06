@@ -32,7 +32,7 @@ export const InputContractSchema = z.object({
   name: z.string(),
   label: z.string(),
   type: z
-    .enum(['text', 'password', 'email', 'number'])
+    .enum(['text', 'password', 'email', 'number', 'tel'])
     .optional()
     .default('text'),
   error: z.string().optional(),

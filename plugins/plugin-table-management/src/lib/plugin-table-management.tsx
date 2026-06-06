@@ -6,6 +6,7 @@ import {
 } from '@temp-workspace/plugin-loader';
 import { useUI } from '@temp-workspace/ui-registry';
 import { ParticipantList } from './ParticipantList';
+import { CheckInView } from './CheckInView';
 
 // ============================================================================
 // Table Management Component
@@ -452,6 +453,13 @@ export const tableManagementPlugin: FeaturePlugin = {
       component: TableManagementView,
       label: 'Mesas',
       icon: 'LayoutDashboard',
+      showInMenu: true,
+    },
+    {
+      path: 'check-in',
+      component: CheckInView,
+      label: 'Check-in',
+      icon: 'UserCheck',
       showInMenu: true,
     },
     {
