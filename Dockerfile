@@ -3,7 +3,7 @@ FROM node:22-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat openssl openssl-dev
 ENV CI=true
 ENV FORCE_COLOR=0
 WORKDIR /app

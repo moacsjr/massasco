@@ -1,11 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import Stripe from 'stripe';
+import type Stripe from 'stripe';
 
-// Initialize Stripe with secret key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2026-05-27.dahlia',
-});
+// Lazy Stripe initialization to avoid build-time errors when API key is not set
+let stripeInstance: Stripe | null = null;
+
+async function getStripe() {
+  if (!stripeInstance) {
+    const Stripe = (await import('stripe')).default;
+    const apiKey = process.env.STRIPE_SECRET_KEY;
+    
+    if (!apiKey) {
+      console.warn('STRIPE_SECRET_KEY is not set. Stripe functionality will not be available.');
+      return null;
+    }
+    
+    stripeInstance = new Stripe(apiKey, {
+      apiVersion: '2026-05-27.dahlia',
+    });
+  }
+  return stripeInstance;
+}
 
 // Disable Next.js body parser for this route to handle raw Stripe webhook data
 export const runtime = 'nodejs';
@@ -78,6 +93,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Get Stripe instance
+    const stripe = await getStripe();
+    
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Stripe is not configured. Please contact support.' },
+        { status: 503 },
+      );
+    }
+
     // Create Stripe Checkout Session
     // Note: payment_method_types must be enabled in your Stripe dashboard
     // 'card' is universally available on all Stripe accounts
@@ -123,6 +148,16 @@ export async function POST_WEBHOOK(req: NextRequest) {
     return NextResponse.json(
       { error: 'No stripe-signature header' },
       { status: 400 },
+    );
+  }
+
+  // Get Stripe instance
+  const stripe = await getStripe();
+  
+  if (!stripe) {
+    return NextResponse.json(
+      { error: 'Stripe is not configured.' },
+      { status: 503 },
     );
   }
 
