@@ -9,7 +9,7 @@ import { ParticipantList } from './ParticipantList';
 import { CheckInView } from './CheckInView';
 
 // ============================================================================
-// Table Management Component
+// Types
 // ============================================================================
 
 interface Table {
@@ -17,9 +17,24 @@ interface Table {
   number: number;
   name?: string;
   token?: string;
-  isActive?: boolean;
+  isActive: boolean;
+  qrCodeUrl?: string;
   createdAt?: string;
   sessions?: TableSession[];
+  tableAccessTokens?: TableAccessToken[];
+}
+
+interface TableWithSession extends Table {
+  currentSession: TableSession;
+}
+
+interface TableAccessToken {
+  id: string;
+  token: string;
+  isActive: boolean;
+  revoked: boolean;
+  revokedAt?: string;
+  createdAt: string;
 }
 
 interface TableSession {
@@ -35,24 +50,39 @@ interface TableItem {
   currentSession: TableSession | null;
 }
 
+// ============================================================================
+// Table Management Component
+// ============================================================================
+
 const TableManagementView: React.FC = () => {
   const { resolve } = useUI();
   const Card = resolve('Card');
   const Button = resolve('Button');
   const Input = resolve('Input');
+  const Icon = resolve('Icon');
 
   const [tables, setTables] = React.useState<TableItem[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-
-  // Modal state
+  
+  // Modal states
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [isDeactivateModalOpen, setIsDeactivateModalOpen] = React.useState(false);
+  const [isQRModalOpen, setIsQRModalOpen] = React.useState(false);
   const [modalMode, setModalMode] = React.useState<'create' | 'edit' | null>(null);
   const [editingTable, setEditingTable] = React.useState<Table | null>(null);
-
-  // Form state
+  const [tableToDeactivate, setTableToDeactivate] = React.useState<Table | null>(null);
+  const [tableToRegenerateQR, setTableToRegenerateQR] = React.useState<Table | null>(null);
+  
+  // Form states
   const [tableNumber, setTableNumber] = React.useState('');
   const [tableName, setTableName] = React.useState('');
+  const [deactivationReason, setDeactivationReason] = React.useState('');
+  const [qrAction, setQrAction] = React.useState<'generate' | 'download' | 'regenerate'>('generate');
+  
+  // Loading states
+  const [isQRLoading, setIsQRLoading] = React.useState(false);
+  const [isDownloadingQR, setIsDownloadingQR] = React.useState(false);
 
   // Fetch tables from /api/tables
   React.useEffect(() => {
@@ -106,6 +136,29 @@ const TableManagementView: React.FC = () => {
     }
   };
 
+  const getTableStatusBadge = (table: Table) => {
+    if (!table.isActive) {
+      return <span className="px-2 py-1 rounded text-xs font-medium bg-gray-500/20 text-gray-400 border border-gray-500/30">Inativa</span>;
+    }
+    
+    if (table.sessions && table.sessions.length > 0) {
+      const currentSession = table.sessions[0];
+      return (
+        <span
+          className={`
+            px-2 py-1 rounded text-xs font-medium border
+            ${getStatusColor(currentSession.status)}
+          `}
+        >
+          {currentSession.status === 'OPEN' && 'Aberta'}
+          {currentSession.status === 'AWAITING_PAYMENT' && 'Aguardando Pagamento'}
+          {currentSession.status === 'CLOSED' && 'Fechada'}
+        </span>
+      );
+    }
+    return <span className="px-2 py-1 rounded text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">Disponível</span>;
+  };
+
   const openCreateModal = () => {
     setModalMode('create');
     setTableNumber('');
@@ -128,6 +181,30 @@ const TableManagementView: React.FC = () => {
     setEditingTable(null);
     setTableNumber('');
     setTableName('');
+  };
+
+  const openDeactivateModal = (table: Table) => {
+    setTableToDeactivate(table);
+    setDeactivationReason('');
+    setIsDeactivateModalOpen(true);
+  };
+
+  const closeDeactivateModal = () => {
+    setIsDeactivateModalOpen(false);
+    setTableToDeactivate(null);
+    setDeactivationReason('');
+  };
+
+  const openQRModal = (table: Table, action: 'generate' | 'download' | 'regenerate') => {
+    setTableToRegenerateQR(table);
+    setQrAction(action);
+    setIsQRModalOpen(true);
+  };
+
+  const closeQRModal = () => {
+    setIsQRModalOpen(false);
+    setTableToRegenerateQR(null);
+    setQrAction('generate');
   };
 
   const handleSave = async () => {
@@ -165,7 +242,6 @@ const TableManagementView: React.FC = () => {
           }),
         });
       } else {
-        // This should never happen, but TypeScript needs it
         throw new Error('Modo inválido');
       }
 
@@ -175,27 +251,145 @@ const TableManagementView: React.FC = () => {
       }
 
       // Refresh tables list
-      const refreshRes = await fetch('/api/tables');
-      if (refreshRes.ok) {
-        const data = await refreshRes.json();
-        const tableMap = new Map<number, TableItem>();
-        
-        data.forEach((table: Table) => {
-          const sessions = table.sessions || [];
-          const currentSession = sessions.length > 0 ? sessions[0] : null;
-          tableMap.set(table.number, { table, currentSession });
-        });
-
-        const sortedTables = Array.from(tableMap.values()).sort(
-          (a, b) => a.table.number - b.table.number
-        );
-        setTables(sortedTables);
-      }
-
+      await fetchTables();
       closeModal();
       setError(null);
     } catch (err: any) {
       setError(err.message || 'Erro ao salvar mesa');
+    }
+  };
+
+  const handleDeactivate = async () => {
+    if (!tableToDeactivate) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/tables/${tableToDeactivate.id}/deactivate`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reason: deactivationReason || undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Erro ao desativar mesa');
+      }
+
+      await fetchTables();
+      closeDeactivateModal();
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || 'Erro ao desativar mesa');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleActivate = async (tableId: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/tables/${tableId}/activate`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Erro ao ativar mesa');
+      }
+
+      await fetchTables();
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || 'Erro ao ativar mesa');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQRAction = async () => {
+    if (!tableToRegenerateQR) return;
+
+    setIsQRLoading(true);
+    setIsDownloadingQR(false);
+    setError(null);
+
+    try {
+      if (qrAction === 'generate' || qrAction === 'regenerate') {
+        const res = await fetch('/api/qr-codes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tableId: tableToRegenerateQR.id,
+            regenerate: qrAction === 'regenerate',
+          }),
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Erro ao gerar QR Code');
+        }
+
+        const data = await res.json();
+        alert(`QR Code gerado com sucesso!\nURL: ${data.qrCodeUrl}`);
+      } else if (qrAction === 'download') {
+        setIsDownloadingQR(true);
+        const res = await fetch(`/api/qr-codes/download?tableId=${tableToRegenerateQR.id}`);
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Erro ao baixar QR Code');
+        }
+
+        // Download PDF
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `qr-code-mesa-${tableToRegenerateQR.number}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }
+
+      closeQRModal();
+    } catch (err: any) {
+      setError(err.message || 'Erro na operação do QR Code');
+    } finally {
+      setIsQRLoading(false);
+      setIsDownloadingQR(false);
+    }
+  };
+
+  const fetchTables = async () => {
+    try {
+      const res = await fetch('/api/tables');
+      if (!res.ok) throw new Error('Failed to fetch tables');
+      const data = await res.json();
+      
+      const tableMap = new Map<number, TableItem>();
+      
+      data.forEach((table: Table) => {
+        const sessions = table.sessions || [];
+        const currentSession = sessions.length > 0 ? sessions[0] : null;
+        tableMap.set(table.number, { table, currentSession });
+      });
+
+      const sortedTables = Array.from(tableMap.values()).sort(
+        (a, b) => a.table.number - b.table.number
+      );
+      
+      setTables(sortedTables);
+    } catch (err: any) {
+      console.error('Error fetching tables:', err);
+      setError(err.message || 'Erro ao carregar mesas');
     }
   };
 
@@ -214,24 +408,7 @@ const TableManagementView: React.FC = () => {
         throw new Error(errorData.error || 'Erro ao excluir mesa');
       }
 
-      // Refresh tables list
-      const refreshRes = await fetch('/api/tables');
-      if (refreshRes.ok) {
-        const data = await refreshRes.json();
-        const tableMap = new Map<number, TableItem>();
-        
-        data.forEach((table: Table) => {
-          const sessions = table.sessions || [];
-          const currentSession = sessions.length > 0 ? sessions[0] : null;
-          tableMap.set(table.number, { table, currentSession });
-        });
-
-        const sortedTables = Array.from(tableMap.values()).sort(
-          (a, b) => a.table.number - b.table.number
-        );
-        setTables(sortedTables);
-      }
-
+      await fetchTables();
       setError(null);
     } catch (err: any) {
       setError(err.message || 'Erro ao excluir mesa');
@@ -285,11 +462,13 @@ const TableManagementView: React.FC = () => {
             {tables.map((item) => (
               <div
                 key={item.table.id}
-                className="
+                className={`
                   p-4 rounded-lg border
-                  bg-card hover:bg-surface-elevated
+                  ${item.table.isActive 
+                    ? 'bg-card hover:bg-surface-elevated' 
+                    : 'bg-gray-50 dark:bg-gray-800/50 opacity-60'}
                   transition-colors duration-150
-                "
+                `}
               >
                 <div className="flex justify-between items-start mb-3">
                   <div>
@@ -301,24 +480,13 @@ const TableManagementView: React.FC = () => {
                         Mesa {item.table.number}
                       </p>
                     )}
-                    {item.currentSession?.customerName && (
+                    {item.currentSession && item.currentSession.customerName && (
                       <p className="text-sm text-muted-foreground mt-1">
                         {item.currentSession.customerName}
                       </p>
                     )}
                   </div>
-                  {item.currentSession && (
-                    <span
-                      className={`
-                        px-2 py-1 rounded text-xs font-medium border
-                        ${getStatusColor(item.currentSession.status)}
-                      `}
-                    >
-                      {item.currentSession.status === 'OPEN' && 'Aberta'}
-                      {item.currentSession.status === 'AWAITING_PAYMENT' && 'Aguardando Pagamento'}
-                      {item.currentSession.status === 'CLOSED' && 'Fechada'}
-                    </span>
-                  )}
+                  {getTableStatusBadge(item.table)}
                 </div>
                 
                 {item.currentSession && (
@@ -327,15 +495,15 @@ const TableManagementView: React.FC = () => {
                   </div>
                 )}
                 
-                {!item.currentSession && (
+                {!item.currentSession && item.table.isActive && (
                   <p className="text-sm text-muted-foreground italic mb-3">
                     Sem sessão ativa
                   </p>
                 )}
 
                 {/* Action buttons */}
-                <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-                  <div className="flex gap-2">
+                <div className="flex gap-2 mt-3 pt-3 border-t border-border flex-wrap">
+                  <div className="flex gap-2 flex-wrap">
                     <Button
                       variant="outline"
                       size="sm"
@@ -343,12 +511,40 @@ const TableManagementView: React.FC = () => {
                     >
                       Editar
                     </Button>
+                    
+                    {item.table.isActive ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openDeactivateModal(item.table)}
+                        className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800"
+                      >
+                        <span className="mr-1">🛑</span> Desativar
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleActivate(item.table.id)}
+                        className="text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 border-green-200 dark:border-green-800"
+                      >
+                        <span className="mr-1">✅</span> Ativar
+                      </Button>
+                    )}
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openQRModal(item.table, 'generate')}
+                    >
+                      <span className="mr-1">📱</span> QR Code
+                    </Button>
+
                     {item.currentSession && (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          // Navigate to participant list
                           const sessionId = item.currentSession!.id;
                           window.location.href = `/plugins/table-management/participants/${sessionId}`;
                         }}
@@ -356,6 +552,7 @@ const TableManagementView: React.FC = () => {
                         <span className="mr-1">👥</span> Participantes
                       </Button>
                     )}
+                    
                     <button
                       onClick={() => handleDelete(item.table.id)}
                       className="
@@ -363,6 +560,7 @@ const TableManagementView: React.FC = () => {
                         bg-red-600 text-white hover:bg-red-700
                         transition-colors
                       "
+                      title="Excluir mesa"
                     >
                       Excluir
                     </button>
@@ -429,6 +627,126 @@ const TableManagementView: React.FC = () => {
                   {modalMode === 'create' ? 'Salvar' : 'Atualizar'}
                 </Button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Deactivate Modal */}
+      {isDeactivateModalOpen && tableToDeactivate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-semibold mb-4 text-red-600 dark:text-red-400">
+              Desativar Mesa {tableToDeactivate.number}
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Motivo da desativação (opcional)
+                </label>
+                <textarea
+                  value={deactivationReason}
+                  onChange={(e) => setDeactivationReason(e.target.value)}
+                  className="w-full px-4 py-3 border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-brand min-h-[100px]"
+                  placeholder="Ex: Mesa danificada, em manutenção..."
+                />
+              </div>
+              
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                  ⚠️ A mesa deixará de aceitar novos check-ins, mas sessões existentes permanecerão válidas.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <Button
+                variant="outline"
+                size="md"
+                onClick={closeDeactivateModal}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={handleDeactivate}
+                isLoading={loading}
+              >
+                Desativar Mesa
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Modal */}
+      {isQRModalOpen && tableToRegenerateQR && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-semibold mb-4">
+              {qrAction === 'generate' && 'Gerar QR Code'}
+              {qrAction === 'regenerate' && 'Regenerar QR Code'}
+              {qrAction === 'download' && 'Baixar QR Code'}
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="text-sm text-foreground mb-2">
+                  <strong>Mesa {tableToRegenerateQR.number}</strong>
+                </p>
+                {tableToRegenerateQR.name && (
+                  <p className="text-sm text-muted-foreground mb-2">{tableToRegenerateQR.name}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  QR Code gerado para: <code className="bg-white dark:bg-gray-700 px-1 py-0.5 rounded">/customer-portal/checkin/{tableToRegenerateQR.token}</code>
+                </p>
+              </div>
+              
+              {qrAction === 'regenerate' && (
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                    ⚠️ O QR Code anterior será invalidado. Novo token gerado com 128 bits de entropia.
+                  </p>
+                </div>
+              )}
+              
+              {qrAction === 'download' && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">PDF Pronto para Impressão</p>
+                      <p className="text-xs text-muted-foreground">Contém QR code e número da mesa</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <Button
+                variant="outline"
+                size="md"
+                onClick={closeQRModal}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={handleQRAction}
+                isLoading={isQRLoading || isDownloadingQR}
+              >
+                {qrAction === 'generate' && 'Gerar QR Code'}
+                {qrAction === 'regenerate' && 'Regenerar QR Code'}
+                {qrAction === 'download' && 'Baixar PDF'}
+              </Button>
             </div>
           </div>
         </div>
