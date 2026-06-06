@@ -6,24 +6,24 @@ import { sendOrderToQueue } from '../../../lib/sqs';
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get('status');
-  const checkInId = searchParams.get('checkInId');
+  const tableSessionId = searchParams.get('tableSessionId');
   const tableNumber = searchParams.get('tableNumber');
 
   const where: Record<string, unknown> = {};
   if (status) {
     where.status = status;
   }
-  if (checkInId) {
-    where.checkInId = checkInId;
+  if (tableSessionId) {
+    where.tableSessionId = tableSessionId;
   }
-  if (tableNumber && !checkInId) {
+  if (tableNumber && !tableSessionId) {
     where.tableNumber = parseInt(tableNumber, 10);
   }
 
   const orders = await prisma.order.findMany({
     where,
     include: {
-      checkIn: true,
+      tableSession: true,
       items: {
         include: {
           product: { include: { prices: true, complements: true } },
@@ -52,8 +52,8 @@ export async function GET(req: NextRequest) {
 // Update request type for Next.js 15
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { checkInId, tableNumber, customerName, items } = body as {
-    checkInId?: string;
+  const { tableSessionId, tableNumber, customerName, items } = body as {
+    tableSessionId?: string;
     tableNumber?: number;
     customerName: string;
     items: {
@@ -66,9 +66,9 @@ export async function POST(req: NextRequest) {
   };
 
   // Validate required fields
-  if (!checkInId && !tableNumber) {
+  if (!tableSessionId && !tableNumber) {
     return NextResponse.json(
-      { error: 'checkInId or tableNumber is required' },
+      { error: 'tableSessionId or tableNumber is required' },
       { status: 400 },
     );
   }
@@ -96,52 +96,65 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // If checkInId is provided, verify it exists and is open
-  let finalCheckInId: string;
+  // If tableSessionId is provided, verify it exists and is open
+  let finalTableSessionId: string;
   let finalTableNumber: number;
 
-  if (checkInId) {
-    const checkIn = await prisma.checkIn.findUnique({
-      where: { id: checkInId },
+  if (tableSessionId) {
+    const tableSession = await prisma.tableSession.findUnique({
+      where: { id: tableSessionId },
+      include: { table: true },
     });
 
-    if (!checkIn) {
+    if (!tableSession) {
       return NextResponse.json(
-        { error: 'Check-in not found' },
+        { error: 'Table session not found' },
         { status: 404 },
       );
     }
 
-    if (checkIn.status === 'CLOSED') {
+    if (tableSession.status === 'CLOSED') {
       return NextResponse.json(
         { error: 'Esta mesa já foi encerrada.' },
         { status: 400 },
       );
     }
 
-    finalCheckInId = checkInId;
-    finalTableNumber = checkIn.tableNumber;
+    finalTableSessionId = tableSessionId;
+    finalTableNumber = tableSession.table.number;
   } else if (tableNumber) {
-    // If no checkInId, create a new check-in for the table
-    const checkIn = await prisma.checkIn.create({
+    // If no tableSessionId, create a new table session for the table
+    const table = await prisma.table.findFirst({
+      where: { number: tableNumber },
+    });
+
+    if (!table) {
+      return NextResponse.json(
+        { error: 'Table not found' },
+        { status: 404 },
+      );
+    }
+
+    const tableSession = await prisma.tableSession.create({
       data: {
-        tableNumber,
-        customerName: customerName,
+        tableId: table.id,
+        hostName: customerName,
+        capacity: 1,
         status: 'OPEN',
       },
     });
-    finalCheckInId = checkIn.id;
-    finalTableNumber = checkIn.tableNumber;
+    finalTableSessionId = tableSession.id;
+    finalTableNumber = table.number;
   } else {
     return NextResponse.json(
-      { error: 'checkInId or tableNumber is required' },
+      { error: 'tableSessionId or tableNumber is required' },
       { status: 400 },
     );
   }
 
   const order = await prisma.order.create({
     data: {
-      checkInId: finalCheckInId,
+      tableSessionId: finalTableSessionId,
       tableNumber: finalTableNumber,
       customerName,
       items: {
@@ -180,13 +193,13 @@ export async function POST(req: NextRequest) {
   sseBus.publish('ORDER_CREATED', {
     orderId: serialized.id,
     tableNumber: finalTableNumber as number,
-    checkInId: finalCheckInId,
+    tableSessionId: finalTableSessionId,
   });
 
   try {
     await sendOrderToQueue(serialized as Record<string, unknown>);
   } catch (err) {
-    console.error('Failed to send order to SQS:', err);
+    console.error('Failed to send order to queue:', err);
   }
 
   return NextResponse.json(serialized, { status: 201 });

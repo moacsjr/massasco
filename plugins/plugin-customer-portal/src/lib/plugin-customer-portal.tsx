@@ -51,13 +51,12 @@ interface OrderDTO {
   createdAt: string;
 }
 
-interface CheckInDTO {
+interface TableSessionDTO {
   id: string;
   tableNumber: number;
-  customerName: string;
-  status: 'OPEN' | 'CLOSED';
+  customerName?: string;
+  status: 'OPEN' | 'CLOSED' | 'AWAITING_PAYMENT';
   createdAt: string;
-  closedAt?: string;
 }
 
 // ============================================================================
@@ -86,26 +85,26 @@ export const useCustomerTable = () => {
   return { tableNumber, setTable, clearTable };
 };
 
-export const useCustomerCheckIn = () => {
-  const [checkIn, setCheckInState] = React.useState<CheckInDTO | null>(() => {
+export const useCustomerTableSession = () => {
+  const [tableSession, setTableSessionState] = React.useState<TableSessionDTO | null>(() => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('customerCheckIn');
+      const stored = localStorage.getItem('customerTableSession');
       return stored ? JSON.parse(stored) : null;
     }
     return null;
   });
 
-  const setCheckIn = (checkInData: CheckInDTO) => {
-    setCheckInState(checkInData);
-    localStorage.setItem('customerCheckIn', JSON.stringify(checkInData));
+  const setTableSession = (sessionData: TableSessionDTO) => {
+    setTableSessionState(sessionData);
+    localStorage.setItem('customerTableSession', JSON.stringify(sessionData));
   };
 
-  const clearCheckIn = () => {
-    setCheckInState(null);
-    localStorage.removeItem('customerCheckIn');
+  const clearTableSession = () => {
+    setTableSessionState(null);
+    localStorage.removeItem('customerTableSession');
   };
 
-  return { checkIn, setCheckIn, clearCheckIn };
+  return { tableSession, setTableSession, clearTableSession };
 };
 
 // Hook to listen for CHECKIN_CLOSED SSE event
@@ -131,16 +130,16 @@ export const useCheckInSSE = (onCheckInClosed?: (tableNumber: number) => void) =
   }, [onCheckInClosed]);
 };
 
-export const useCustomerOrders = (checkInId: string) => {
+export const useCustomerOrders = (tableSessionId: string) => {
   const [orders, setOrders] = React.useState<OrderDTO[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    if (!checkInId) return;
+    if (!tableSessionId) return;
 
     const fetchOrders = async () => {
       try {
-        const res = await fetch(`/api/orders?checkInId=${checkInId}`);
+        const res = await fetch(`/api/orders?tableSessionId=${tableSessionId}`);
         const data = await res.json();
         // Ensure data is an array before setting state
         setOrders(Array.isArray(data) ? data : []);
@@ -166,7 +165,7 @@ export const useCustomerOrders = (checkInId: string) => {
     return () => {
       eventSource.close();
     };
-  }, [checkInId]);
+  }, [tableSessionId]);
 
   return { orders, isLoading };
 };
@@ -329,16 +328,16 @@ const MenuPage: React.FC = () => {
 
 // --- OrdersPage ---
 const OrdersPage: React.FC = () => {
-  const { checkIn } = useCustomerCheckIn();
+  const { tableSession } = useCustomerTableSession();
   const { resolve } = useUI();
   const Card = resolve('Card');
   const Button = resolve('Button');
 
-  if (!checkIn) {
+  if (!tableSession) {
     return (
       <div className="p-4">
         <Card padding="lg">
-          <p className="text-muted-foreground">Nenhum check-in ativo.</p>
+          <p className="text-muted-foreground">Nenhuma sessão ativa.</p>
           <Button
             variant="primary"
             size="md"
@@ -351,7 +350,7 @@ const OrdersPage: React.FC = () => {
     );
   }
 
-  const { orders: customerOrders, isLoading } = useCustomerOrders(checkIn.id);
+  const { orders: customerOrders, isLoading } = useCustomerOrders(tableSession.id);
 
   // Ensure customerOrders is always an array to prevent .map() errors
   const ordersArray = Array.isArray(customerOrders) ? customerOrders : [];
@@ -365,7 +364,7 @@ const OrdersPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-foreground">Meus Pedidos</h2>
         <span className="text-sm text-muted-foreground">
-          Mesa {checkIn.tableNumber}
+          Mesa {tableSession.tableNumber}
         </span>
       </div>
 

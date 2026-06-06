@@ -5,6 +5,7 @@ import { sseBus } from '../../../lib/sse-bus';
 export async function GET(req: NextRequest) {
   const orderId = req.nextUrl.searchParams.get('orderId');
   const checkInId = req.nextUrl.searchParams.get('checkInId');
+  const tableSessionId = req.nextUrl.searchParams.get('tableSessionId');
 
   const where: Record<string, unknown> = {};
   if (orderId) {
@@ -13,12 +14,18 @@ export async function GET(req: NextRequest) {
   if (checkInId) {
     where.checkInId = checkInId;
   }
+  if (tableSessionId) {
+    where.tableSessionId = tableSessionId;
+  }
 
   const payments = await prisma.payment.findMany({
     where,
     include: {
       order: true,
-      checkIn: true
+      checkIn: true,
+      tableSession: {
+        include: { table: true }
+      }
     },
     orderBy: { createdAt: 'desc' },
   });
@@ -27,12 +34,19 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { checkInId, orderId, amount, method } = body;
+  const { checkInId, tableSessionId, orderId, amount, method } = body;
 
-  // Validate required fields
-  if (!checkInId || !amount) {
+  // Validate required fields - at least one of checkInId or tableSessionId is required
+  if (!checkInId && !tableSessionId) {
     return NextResponse.json(
-      { error: 'checkInId and amount are required' },
+      { error: 'checkInId or tableSessionId is required' },
+      { status: 400 },
+    );
+  }
+
+  if (!amount) {
+    return NextResponse.json(
+      { error: 'amount is required' },
       { status: 400 },
     );
   }
@@ -40,19 +54,31 @@ export async function POST(req: NextRequest) {
   const payment = await prisma.payment.create({
     data: {
       orderId: orderId || undefined,
-      checkInId,
+      checkInId: checkInId || undefined,
+      tableSessionId: tableSessionId || undefined,
       amount: Number(amount),
       method
     },
     include: {
       order: true,
-      checkIn: true
+      checkIn: true,
+      tableSession: {
+        include: { table: true }
+      }
     },
   });
 
-  // Get all orders for this check-in
-  const checkInOrders = await prisma.order.findMany({
-    where: { checkInId },
+  // Get all orders for this check-in or table session
+  const whereOrders: Record<string, unknown> = {};
+  if (checkInId) {
+    whereOrders.checkInId = checkInId;
+  }
+  if (tableSessionId) {
+    whereOrders.tableSessionId = tableSessionId;
+  }
+
+  const orders = await prisma.order.findMany({
+    where: whereOrders,
     include: {
       items: {
         include: {
@@ -65,7 +91,7 @@ export async function POST(req: NextRequest) {
 
   // Calculate total from all orders
   let total = 0;
-  for (const order of checkInOrders) {
+  for (const order of orders) {
     for (const item of order.items) {
       const priceValue = item.selectedPrice
         ? Number(item.selectedPrice.value)
@@ -80,9 +106,17 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Get all payments for this check-in
+  // Get all payments for this check-in or table session
+  const wherePayments: Record<string, unknown> = {};
+  if (checkInId) {
+    wherePayments.checkInId = checkInId;
+  }
+  if (tableSessionId) {
+    wherePayments.tableSessionId = tableSessionId;
+  }
+
   const allPayments = await prisma.payment.findMany({
-    where: { checkInId },
+    where: wherePayments,
   });
 
   const paid = allPayments.reduce(
@@ -91,46 +125,86 @@ export async function POST(req: NextRequest) {
   );
 
   // Check if all items are delivered or cancelled (no pending items)
-  const hasPendingItems = checkInOrders.some((order) =>
+  const hasPendingItems = orders.some((order) =>
     order.items.some((item) => item.status !== 'DELIVERED' && item.status !== 'CANCELLED')
   );
 
-  // Check if check-in is fully paid
+  // Check if check-in or table session is fully paid
   const isFullyPaid = paid >= total;
 
-  if (isFullyPaid && !hasPendingItems) {
-    // Close the check-in
-    await prisma.checkIn.update({
-      where: { id: checkInId },
-      data: {
-        status: 'CLOSED',
-        closedAt: new Date(),
-      },
-    });
+  // Get table number from checkIn or tableSession
+  let tableNumber: number | null = null;
+  if (payment.checkIn) {
+    tableNumber = payment.checkIn.tableNumber;
+  } else if (payment.tableSession) {
+    tableNumber = payment.tableSession.table.number;
+  }
 
-    // Publish SSE event for check-in closed
-    sseBus.publish('CHECKIN_CLOSED', {
-      checkInId,
-      tableNumber: payment.checkIn.tableNumber,
-      total,
-      paid,
-    });
+  if (isFullyPaid && !hasPendingItems) {
+    // Close the check-in or table session
+    if (checkInId) {
+      await prisma.checkIn.update({
+        where: { id: checkInId },
+        data: {
+          status: 'CLOSED',
+          closedAt: new Date(),
+        },
+      });
+      sseBus.publish('CHECKIN_CLOSED', {
+        checkInId,
+        tableNumber: tableNumber!,
+        total,
+        paid,
+      });
+    } else if (tableSessionId) {
+      await prisma.tableSession.update({
+        where: { id: tableSessionId },
+        data: {
+          status: 'CLOSED',
+          closedAt: new Date(),
+        },
+      });
+      sseBus.publish('TABLE_SESSION_CLOSED', {
+        tableSessionId,
+        tableNumber: tableNumber!,
+        total,
+        paid,
+      });
+    }
   } else if (isFullyPaid) {
     // Publish event that payment is complete but items still pending
-    sseBus.publish('PAYMENT_COMPLETE_PENDING_ITEMS', {
-      checkInId,
-      tableNumber: payment.checkIn.tableNumber,
-      total,
-      paid,
-    });
+    if (checkInId) {
+      sseBus.publish('PAYMENT_COMPLETE_PENDING_ITEMS', {
+        checkInId,
+        tableNumber: tableNumber!,
+        total,
+        paid,
+      });
+    } else if (tableSessionId) {
+      sseBus.publish('TABLE_SESSION_PAYMENT_COMPLETE_PENDING_ITEMS', {
+        tableSessionId,
+        tableNumber: tableNumber!,
+        total,
+        paid,
+      });
+    }
   } else {
     // Partial payment
-    sseBus.publish('PARTIAL_PAYMENT_ACCEPTED', {
-      checkInId,
-      tableNumber: payment.checkIn.tableNumber,
-      total,
-      paid,
-    });
+    if (checkInId) {
+      sseBus.publish('PARTIAL_PAYMENT_ACCEPTED', {
+        checkInId,
+        tableNumber: tableNumber!,
+        total,
+        paid,
+      });
+    } else if (tableSessionId) {
+      sseBus.publish('TABLE_SESSION_PARTIAL_PAYMENT_ACCEPTED', {
+        tableSessionId,
+        tableNumber: tableNumber!,
+        total,
+        paid,
+      });
+    }
   }
 
   return NextResponse.json(payment, { status: 201 });

@@ -56,7 +56,27 @@ model ProductComplement {
 }
 
 // ============================================================================
-// CheckIn Model - Represents a customer session at a table
+// Order Model - Represents an order placed during a table session
+// ============================================================================
+
+model Order {
+  id             String        @id @default(uuid())
+  checkInId      String?
+  checkIn        CheckIn?      @relation(fields: [checkInId], references: [id], onDelete: SetNull)
+  tableSessionId String?
+  tableSession   TableSession? @relation(fields: [tableSessionId], references: [id], onDelete: SetNull)
+  tableNumber    Int
+  customerName   String
+  status         OrderStatus   @default(OPEN)
+  items          OrderItem[]
+  payments       Payment[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+// ============================================================================
+// CheckIn Model - DEPRECATED: Represents a customer session at a table
+// This model is kept for backward compatibility during migration
 // ============================================================================
 
 model CheckIn {
@@ -78,25 +98,6 @@ enum CheckInStatus {
   CLOSED
 }
 
-// ============================================================================
-// Order Model - Represents an order placed during a check-in
-// ============================================================================
-
-model Order {
-  id             String        @id @default(uuid())
-  checkInId      String
-  checkIn        CheckIn       @relation(fields: [checkInId], references: [id], onDelete: Cascade)
-  tableSessionId String?
-  tableSession   TableSession? @relation(fields: [tableSessionId], references: [id], onDelete: SetNull)
-  tableNumber    Int
-  customerName   String
-  status         OrderStatus   @default(OPEN)
-  items          OrderItem[]
-  payments       Payment[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-}
-
 model OrderItem {
   id                  String      @id @default(uuid())
   orderId             String
@@ -115,14 +116,16 @@ model OrderItem {
 }
 
 model Payment {
-  id        String   @id @default(uuid())
-  orderId   String?  // Nullable - payments can be against CheckIn directly
-  checkInId String   // Required - payments are now against CheckIn
-  order     Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
-  checkIn   CheckIn  @relation(fields: [checkInId], references: [id], onDelete: Cascade)
-  amount    Decimal  @db.Decimal(10, 2)
-  method    String   // cash, card, pix
-  createdAt DateTime @default(now())
+  id             String   @id @default(uuid())
+  orderId        String?  // Nullable - payments can be against Order
+  checkInId      String?  // Nullable - payments can be against CheckIn
+  tableSessionId String?  // Nullable - payments can be against TableSession
+  order          Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  checkIn        CheckIn? @relation(fields: [checkInId], references: [id], onDelete: SetNull)
+  tableSession   TableSession? @relation(fields: [tableSessionId], references: [id], onDelete: SetNull)
+  amount         Decimal  @db.Decimal(10, 2)
+  method         String   // cash, card, pix
+  createdAt      DateTime @default(now())
 }
 
 // ============================================================================
@@ -173,6 +176,7 @@ model TableSession {
 
   participants   Participant[]
   orders         Order[]
+  payments       Payment[]
   joinRequests   ParticipantJoinRequest[]
 
   @@map("table_sessions")
