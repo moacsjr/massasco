@@ -8,6 +8,12 @@ function generateTableToken(): string {
   return randomBytes(16).toString('base64url');
 }
 
+// Generate QR code data
+function generateQRCodeData(tableToken: string): string {
+  // Format: /customer-portal/checkin/{tableToken}
+  return `/customer-portal/checkin/${tableToken}`;
+}
+
 // Get all tables
 export async function GET(req: NextRequest) {
   try {
@@ -79,18 +85,45 @@ export async function POST(req: NextRequest) {
     }
 
     // Create the table with a unique token
-    const table = await prisma.table.create({
-      data: {
-        number,
-        name,
-        token: generateTableToken(),
-      },
+    const table = await prisma.$transaction(async (tx) => {
+      const newTable = await tx.table.create({
+        data: {
+          number,
+          name,
+          token: generateTableToken(),
+        },
+      });
+
+      // Auto-generate QR code for the new table
+      const token = await tx.tableAccessToken.create({
+        data: {
+          tableId: newTable.id,
+          token: generateTableToken(),
+          isActive: true,
+        },
+      });
+
+      // Update table token with the access token
+      await tx.table.update({
+        where: { id: newTable.id },
+        data: {
+          token: token.token,
+        },
+      });
+
+      return newTable;
     });
 
     // Publish SSE event for new table
     sseBus.publish('TABLE_CREATED', { tableId: table.id, tableNumber: table.number });
 
-    return NextResponse.json(table, { status: 201 });
+    return NextResponse.json(
+      {
+        ...table,
+        qrCodeUrl: generateQRCodeData(table.token),
+      },
+      { status: 201 },
+    );
   } catch (error) {
     console.error('Error creating table:', error);
     return NextResponse.json(
@@ -130,12 +163,38 @@ async function createBulkTables(count: number) {
       ),
     );
 
+    // Auto-generate QR codes for all new tables
+    for (const table of tables) {
+      await prisma.$transaction(async (tx) => {
+        const token = await tx.tableAccessToken.create({
+          data: {
+            tableId: table.id,
+            token: generateTableToken(),
+            isActive: true,
+          },
+        });
+
+        await tx.table.update({
+          where: { id: table.id },
+          data: {
+            token: token.token,
+          },
+        });
+      });
+    }
+
     // Publish SSE event for new tables
     tables.forEach((table) => {
       sseBus.publish('TABLE_CREATED', { tableId: table.id, tableNumber: table.number });
     });
 
-    return NextResponse.json(tables, { status: 201 });
+    return NextResponse.json(
+      tables.map((table) => ({
+        ...table,
+        qrCodeUrl: generateQRCodeData(table.token),
+      })),
+      { status: 201 },
+    );
   } catch (error) {
     console.error('Error creating tables:', error);
     return NextResponse.json(
