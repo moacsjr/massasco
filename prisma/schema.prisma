@@ -55,14 +55,44 @@ model ProductComplement {
   createdAt   DateTime @default(now())
 }
 
+// ============================================================================
+// CheckIn Model - Represents a customer session at a table
+// ============================================================================
+
+model CheckIn {
+  id           String        @id @default(uuid())
+  tableNumber  Int
+  customerName String
+  status       CheckInStatus @default(OPEN)
+  createdAt    DateTime      @default(now())
+  closedAt     DateTime?
+
+  orders       Order[]
+  payments     Payment[]
+
+  @@unique([tableNumber, status]) // Only one OPEN check-in per table
+}
+
+enum CheckInStatus {
+  OPEN
+  CLOSED
+}
+
+// ============================================================================
+// Order Model - Represents an order placed during a check-in
+// ============================================================================
+
 model Order {
-  id          String       @id @default(uuid())
-  tableNumber Int
-  status      OrderStatus  @default(OPEN)
-  items       OrderItem[]
-  payments    Payment[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id           String        @id @default(uuid())
+  checkInId    String
+  checkIn      CheckIn       @relation(fields: [checkInId], references: [id], onDelete: Cascade)
+  tableNumber  Int
+  customerName String
+  status       OrderStatus   @default(OPEN)
+  items        OrderItem[]
+  payments     Payment[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
 model OrderItem {
@@ -84,8 +114,10 @@ model OrderItem {
 
 model Payment {
   id        String   @id @default(uuid())
-  orderId   String
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String?  // Nullable - payments can be against CheckIn directly
+  checkInId String   // Required - payments are now against CheckIn
+  order     Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  checkIn   CheckIn  @relation(fields: [checkInId], references: [id], onDelete: Cascade)
   amount    Decimal  @db.Decimal(10, 2)
   method    String   // cash, card, pix
   createdAt DateTime @default(now())

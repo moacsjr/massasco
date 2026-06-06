@@ -1,0 +1,5 @@
+- generic [active] [ref=e1]:
+  - link "🏠 Home" [ref=e2] [cursor=pointer]:
+    - /url: /
+  - paragraph [ref=e3]: Carregando componente do plugin...
+  - region "Notifications alt+T"

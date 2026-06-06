@@ -29,7 +29,8 @@ export function proxy(request: NextRequest) {
     path.startsWith('/api/auth/') ||
     path.startsWith('/_next/') ||
     path.includes('/favicon.ico') ||
-    path.startsWith('/images/');
+    path.startsWith('/images/') ||
+    path.startsWith('/plugins/customer-portal/');
 
   const idToken = request.cookies.get('id_token')?.value;
   const isExpired = idToken ? isTokenExpired(idToken) : true;

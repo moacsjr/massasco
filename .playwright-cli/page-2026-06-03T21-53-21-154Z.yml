@@ -1,0 +1,31 @@
+- generic [active] [ref=e1]:
+  - link "🏠 Home" [ref=e2] [cursor=pointer]:
+    - /url: /
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - img [ref=e7]
+        - generic [ref=e9]: massas.co
+        - link "👥 Usuários" [ref=e12] [cursor=pointer]:
+          - /url: /plugins/user-management
+    - generic [ref=e13]:
+      - navigation [ref=e15]:
+        - link "Categorias" [ref=e16] [cursor=pointer]:
+          - /url: /plugins/menu-catalog-ui/categories
+          - img [ref=e17]
+        - link "Produtos" [ref=e21] [cursor=pointer]:
+          - /url: /plugins/menu-catalog-ui/products
+          - img [ref=e22]
+        - link "Pedidos" [ref=e26] [cursor=pointer]:
+          - /url: /plugins/orders-delivery
+          - img [ref=e27]
+        - link "Cozinha" [ref=e31] [cursor=pointer]:
+          - /url: /plugins/kds
+          - img [ref=e32]
+        - link "Pagamentos" [ref=e34] [cursor=pointer]:
+          - /url: /plugins/payments-ui
+          - img [ref=e35]
+      - main [ref=e41]:
+        - paragraph [ref=e42]: Carregando componente do plugin...
+    - contentinfo [ref=e43]
+  - region "Notifications alt+T"

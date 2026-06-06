@@ -20,6 +20,10 @@ export interface UseNewOrderDataReturn {
   setCart: (cart: CartItem[]) => void;
   tableNumber: number;
   setTableNumber: (num: number) => void;
+  checkInId: string | null;
+  setCheckInId: (id: string | null) => void;
+  customerName: string;
+  setCustomerName: (name: string) => void;
   categories: CategoryDTO[];
   products: ProductDTO[];
   isLoading: boolean;
@@ -43,6 +47,31 @@ export const useNewOrderData = (): UseNewOrderDataReturn => {
   );
   const [cart, setCart] = useState<CartItem[]>([]);
   const [tableNumber, setTableNumber] = useState(1);
+  const [checkInId, setCheckInId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('customerCheckIn');
+      if (stored) {
+        const checkIn = JSON.parse(stored);
+        return checkIn.id;
+      }
+    }
+    return null;
+  });
+  const [customerName, setCustomerName] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('customerCheckIn');
+      if (stored) {
+        const checkIn = JSON.parse(stored);
+        return checkIn.customerName;
+      }
+      // Fallback to customerTable if checkIn not found
+      const table = localStorage.getItem('customerTable');
+      if (table) {
+        return `Cliente Mesa ${table}`;
+      }
+    }
+    return '';
+  });
   const [categories, setCategories] = useState<CategoryDTO[]>([]);
   const [products, setProducts] = useState<ProductDTO[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -101,7 +130,9 @@ export const useNewOrderData = (): UseNewOrderDataReturn => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          checkInId,
           tableNumber,
+          customerName,
           items: cart.map((c) => ({
             productId: c.product.id,
             quantity: c.quantity,
@@ -116,7 +147,8 @@ export const useNewOrderData = (): UseNewOrderDataReturn => {
         }),
       });
       if (!res.ok) {
-        throw new Error('Failed to create order');
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to create order');
       }
       setCart([]);
       setStep('product-list');
@@ -146,6 +178,10 @@ export const useNewOrderData = (): UseNewOrderDataReturn => {
     setCart,
     tableNumber,
     setTableNumber,
+    checkInId,
+    setCheckInId,
+    customerName,
+    setCustomerName,
     categories,
     products,
     isLoading,

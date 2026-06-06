@@ -115,7 +115,7 @@ export const OrdersDeliveryView = ({
             { key: 'active' as const, label: '🔥 Pedidos Ativos' },
             {
               key: 'deliver' as const,
-              label: `📦 Para Entregar${readyItems.length > 0 ? ` (${readyItems.length})` : ''}`,
+              label: `📦 Para Entregar${(readyItems ?? []).length > 0 ? ` (${(readyItems ?? []).length})` : ''}`,
             },
           ].map((tab) => (
             <button
@@ -139,23 +139,14 @@ export const OrdersDeliveryView = ({
         {activeTab === 'active' && (
           <div>
             <h4 className="mt-0 text-foreground">Itens em Preparo</h4>
-            {activeOrders.length === 0 ||
-            activeOrders.every((o) => (o.items || []).length === 0) ? (
+            {(activeOrders ?? []).length === 0 ||
+            (activeOrders ?? []).every((o) => (o.items || []).length === 0) ? (
               <p className="text-muted-foreground">Nenhum pedido ativo.</p>
             ) : (
-              activeOrders.map((order) => (
+              (activeOrders ?? []).map((order) => (
                 <div key={order.id} className="mb-3">
                   <Card
-                    title={
-                      <div className="flex items-center gap-2">
-                        <span>Mesa {order.tableNumber}</span>
-                        <span
-                          className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${orderStatusBadge(order.status)}`}
-                        >
-                          {orderStatusLabel(order.status)}
-                        </span>
-                      </div>
-                    }
+                    title={`Mesa ${order.tableNumber} — ${orderStatusLabel(order.status)}`}
                     padding="md"
                   >
                     <ul className="list-none p-0">
@@ -202,10 +193,10 @@ export const OrdersDeliveryView = ({
         {activeTab === 'deliver' && (
           <div>
             <h4 className="mt-0 text-foreground">Itens Prontos para Entrega</h4>
-            {readyItems.length === 0 ? (
+            {(readyItems ?? []).length === 0 ? (
               <p className="text-muted-foreground">Nenhum item pronto.</p>
             ) : (
-              readyItems.map((item) => (
+              (readyItems ?? []).map((item) => (
                 <div key={item.id} className="mb-2 border-l-4 border-brand">
                   <Card padding="md">
                     <div className="flex justify-between items-center">
@@ -216,7 +207,7 @@ export const OrdersDeliveryView = ({
                         <div className="text-sm text-muted-foreground">
                           Mesa{' '}
                           {
-                            activeOrders.find((o) => o.id === item.orderId)
+                            (activeOrders ?? []).find((o) => o.id === item.orderId)
                               ?.tableNumber
                           }
                         </div>

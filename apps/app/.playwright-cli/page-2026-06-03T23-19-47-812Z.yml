@@ -1,0 +1,21 @@
+- generic [active] [ref=e1]:
+  - link "🏠 Home" [ref=e2] [cursor=pointer]:
+    - /url: /
+  - generic [ref=e6]:
+    - generic [ref=e7]:
+      - img [ref=e9]
+      - heading "massas.co" [level=1] [ref=e11]
+      - paragraph [ref=e12]: Portal do Desenvolvedor DevXP
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e15]: E-mail
+        - textbox "exemplo@massas.co" [ref=e16]
+      - generic [ref=e17]:
+        - generic [ref=e18]: Senha
+        - textbox "Sua senha secreta" [ref=e19]
+      - button "Entrar no Portal" [ref=e21]
+    - generic [ref=e22]: Apenas colaboradores autorizados. Acesso auditado.
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e28] [cursor=pointer]:
+    - img [ref=e29]
+  - alert [ref=e32]
