@@ -68,6 +68,13 @@ interface Order {
   createdAt: string;
 }
 
+interface TableSessionSummary {
+  subTotal: number;
+  totalPayments: number;
+  totalDue: number;
+  isFullyPaid: boolean;
+}
+
 // ============================================================================
 // ParticipantList Component
 // ============================================================================
@@ -106,41 +113,50 @@ const ParticipantList: React.FC<ParticipantListProps> = ({
   const [success, setSuccess] = React.useState<string | null>(null);
   const [processingId, setProcessingId] = React.useState<string | null>(null);
   const [expandedParticipant, setExpandedParticipant] = React.useState<string | null>(null);
+  const [sessionSummary, setSessionSummary] = React.useState<TableSessionSummary | null>(null);
+  const [isClosingSession, setIsClosingSession] = React.useState(false);
 
   // Fetch all data
-  React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch participants
-        const participantsRes = await fetch(`/api/participants?tableSessionId=${tableSessionId}`);
-        if (participantsRes.ok) {
-          const participantsData = await participantsRes.json();
-          setParticipants(participantsData);
-        }
-
-        // Fetch pending join requests
-        const requestsRes = await fetch(`/api/participant-join-requests?tableSessionId=${tableSessionId}`);
-        if (requestsRes.ok) {
-          const requestsData = await requestsRes.json();
-          setJoinRequests(requestsData);
-        } else {
-          console.error('Failed to fetch join requests:', requestsRes.statusText);
-        }
-
-        // Fetch orders for this session
-        const ordersRes = await fetch(`/api/orders?tableSessionId=${tableSessionId}`);
-        if (ordersRes.ok) {
-          const ordersData = await ordersRes.json();
-          setOrders(ordersData);
-        }
-      } catch (err: any) {
-        console.error('Error fetching data:', err);
-        setError(err.message || 'Erro ao carregar dados');
-      } finally {
-        setLoading(false);
+  const fetchData = React.useCallback(async () => {
+    try {
+      // Fetch participants
+      const participantsRes = await fetch(`/api/participants?tableSessionId=${tableSessionId}`);
+      if (participantsRes.ok) {
+        const participantsData = await participantsRes.json();
+        setParticipants(participantsData);
       }
-    };
 
+      // Fetch pending join requests
+      const requestsRes = await fetch(`/api/participant-join-requests?tableSessionId=${tableSessionId}`);
+      if (requestsRes.ok) {
+        const requestsData = await requestsRes.json();
+        setJoinRequests(requestsData);
+      } else {
+        console.error('Failed to fetch join requests:', requestsRes.statusText);
+      }
+
+      // Fetch orders for this session
+      const ordersRes = await fetch(`/api/orders?tableSessionId=${tableSessionId}`);
+      if (ordersRes.ok) {
+        const ordersData = await ordersRes.json();
+        setOrders(ordersData);
+      }
+
+      // Fetch session summary
+      const sessionRes = await fetch(`/api/table-sessions/${tableSessionId}`);
+      if (sessionRes.ok) {
+        const sessionData = await sessionRes.json();
+        setSessionSummary(sessionData.summary);
+      }
+    } catch (err: any) {
+      console.error('Error fetching data:', err);
+      setError(err.message || 'Erro ao carregar dados');
+    } finally {
+      setLoading(false);
+    }
+  }, [tableSessionId]);
+
+  React.useEffect(() => {
     fetchData();
 
     // SSE listener for JOIN_REQUEST_APPROVED events (real-time updates)
@@ -160,7 +176,48 @@ const ParticipantList: React.FC<ParticipantListProps> = ({
     return () => {
       eventSource.close();
     };
-  }, [tableSessionId]);
+  }, [tableSessionId, fetchData]);
+
+  // Handle close session
+  const handleCloseSession = async () => {
+    if (!sessionSummary?.isFullyPaid) {
+      setError('Não é possível encerrar a sessão. Existem pedidos não pagos.');
+      return;
+    }
+
+    if (!confirm('Tem certeza que deseja encerrar esta sessão? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    setIsClosingSession(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/table-sessions/${tableSessionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'CLOSED',
+          closedBy: 'Administrador',
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Erro ao encerrar sessão');
+      }
+
+      setSuccess('Sessão encerrada com sucesso! A mesa foi liberada.');
+      setTimeout(() => {
+        handleBack();
+      }, 2000);
+    } catch (err: any) {
+      console.error('Error closing session:', err);
+      setError(err.message || 'Erro ao encerrar sessão');
+    } finally {
+      setIsClosingSession(false);
+    }
+  };
 
   // Get orders for a participant
   const getParticipantOrders = (participantName: string) => {
@@ -256,13 +313,64 @@ const ParticipantList: React.FC<ParticipantListProps> = ({
   return (
     <div className="max-w-[1200px]">
       <Card title="Participantes e Check-ins Pendentes" padding="lg">
-        {/* Back button */}
-        <div className="mb-4">
+        {/* Header with back button and close session button */}
+        <div className="mb-4 flex justify-between items-center">
           <Button variant="outline" size="sm" onClick={handleBack}>
             <Icon name="ArrowLeft" size="sm" />
             <span className="ml-2">Voltar para Mesas</span>
           </Button>
+
+          {/* Close Session Button - Only show when fully paid */}
+          {sessionSummary?.isFullyPaid && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleCloseSession}
+              isLoading={isClosingSession}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              <Icon name="Power" size="sm" />
+              <span className="ml-2">Encerrar Mesa</span>
+            </Button>
+          )}
         </div>
+
+        {/* Session Summary */}
+        {sessionSummary && (
+          <div className="mb-4 p-4 bg-muted rounded-lg">
+            <h4 className="text-sm font-semibold text-muted-foreground uppercase mb-3">
+              Resumo da Sessão
+            </h4>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground">Subtotal</p>
+                <p className="text-lg font-semibold text-foreground">
+                  {formatCurrency(sessionSummary.subTotal)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Pagamentos</p>
+                <p className="text-lg font-semibold text-green-400">
+                  {formatCurrency(sessionSummary.totalPayments)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  {sessionSummary.isFullyPaid ? 'Status' : 'Restante'}
+                </p>
+                {sessionSummary.isFullyPaid ? (
+                  <p className="text-lg font-semibold text-green-400">
+                    ✅ Pago
+                  </p>
+                ) : (
+                  <p className="text-lg font-semibold text-destructive">
+                    {formatCurrency(sessionSummary.totalDue)}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Messages */}
         {error && (
