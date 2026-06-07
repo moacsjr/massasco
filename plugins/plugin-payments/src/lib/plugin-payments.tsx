@@ -224,10 +224,11 @@ const PaymentsPage: React.FC = () => {
       return;
     }
 
-    // Determine if we're paying for an order or check-in
+    // Determine if we're paying for an order or table session
     let res;
     if (selectedCheckInId) {
-      res = await paymentsAPI.registerCheckInPayment(
+      // Use tableSessionId (selectedCheckInId is now a tableSessionId after migration)
+      res = await paymentsAPI.registerTableSessionPayment(
         selectedCheckInId,
         Number(paymentAmount),
         paymentMethod,
@@ -252,9 +253,9 @@ const PaymentsPage: React.FC = () => {
   const handleMaquininhaPaymentCompleted = async () => {
     if (maquininhaAmount === 0) return;
 
-    // Determine if we're paying for an order or check-in
+    // Determine if we're paying for an order or table session
     if (selectedCheckInId) {
-      await paymentsAPI.registerCheckInPayment(
+      await paymentsAPI.registerTableSessionPayment(
         selectedCheckInId,
         maquininhaAmount,
         'maquininha',

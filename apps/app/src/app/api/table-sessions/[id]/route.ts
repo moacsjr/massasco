@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { sseBus } from '../../../../lib/sse-bus';
-import { Decimal } from '@prisma/client';
 
 // Get a single table session by ID
 export async function GET(
@@ -43,28 +42,28 @@ export async function GET(
     }
 
     // Calculate summary
-    const subTotal = session.orders.reduce((sum, order) => {
-      return sum + order.items.reduce((itemSum, item) => {
-        const price = item.selectedPrice?.value ?? new Decimal(0);
-        return itemSum + price.mul(item.quantity);
+    const subTotal = session.orders.reduce((sum: number, order: any) => {
+      return sum + order.items.reduce((itemSum: number, item: any) => {
+        const priceValue = item.selectedPrice?.value ? Number(item.selectedPrice.value) : 0;
+        return itemSum + priceValue * item.quantity;
       }, sum);
-    }, new Decimal(0));
+    }, 0);
 
     const totalPayments = session.payments.reduce(
-      (sum, payment) => sum.add(payment.amount),
-      new Decimal(0),
+      (sum: number, payment: any) => sum + Number(payment.amount),
+      0,
     );
 
-    const totalDue = subTotal.sub(totalPayments);
+    const totalDue = subTotal - totalPayments;
 
     // Add summary to response
     const response = {
       ...session,
       summary: {
-        subTotal: subTotal.toNumber(),
-        totalPayments: totalPayments.toNumber(),
-        totalDue: totalDue.toNumber(),
-        isFullyPaid: totalDue.lte(0),
+        subTotal: subTotal,
+        totalPayments: totalPayments,
+        totalDue: totalDue,
+        isFullyPaid: totalDue <= 0,
       },
     };
 
