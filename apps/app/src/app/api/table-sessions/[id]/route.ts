@@ -94,6 +94,9 @@ export async function PUT(
     // Check if session exists
     const existingSession = await prisma.tableSession.findUnique({
       where: { id },
+      include: {
+        participants: true,
+      },
     });
 
     if (!existingSession) {
@@ -101,6 +104,32 @@ export async function PUT(
         { error: 'Table session not found' },
         { status: 404 },
       );
+    }
+
+    // If closing the session, close all orders and expire participants
+    if (status === 'CLOSED' && existingSession.status !== 'CLOSED') {
+      await prisma.$transaction(async (tx) => {
+        // Close all orders for this session
+        await tx.order.updateMany({
+          where: { tableSessionId: id },
+          data: { status: 'CLOSED' },
+        });
+
+        // Update all participants to EXPIRED status
+        await tx.participant.updateMany({
+          where: { tableSessionId: id },
+          data: { status: 'EXPIRED' },
+        });
+
+        // Update all device sessions to expired
+        const participantIds = existingSession.participants.map((p) => p.id);
+        if (participantIds.length > 0) {
+          await tx.deviceSession.updateMany({
+            where: { participantId: { in: participantIds } },
+            data: { expiresAt: new Date() },
+          });
+        }
+      });
     }
 
     // Update the session
@@ -125,6 +154,15 @@ export async function PUT(
         tableId: session.tableId,
         tableNumber: session.table.number,
       });
+
+      // If session was closed, publish close event
+      if (status === 'CLOSED') {
+        sseBus.publish('TABLE_SESSION_CLOSED', {
+          sessionId: id,
+          tableId: session.tableId,
+          tableNumber: session.table.number,
+        });
+      }
     }
 
     return NextResponse.json(session);

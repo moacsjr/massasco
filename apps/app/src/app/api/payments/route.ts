@@ -124,11 +124,6 @@ export async function POST(req: NextRequest) {
     0,
   );
 
-  // Check if all items are delivered or cancelled (no pending items)
-  const hasPendingItems = orders.some((order) =>
-    order.items.some((item) => item.status !== 'DELIVERED' && item.status !== 'CANCELLED')
-  );
-
   // Check if check-in or table session is fully paid
   const isFullyPaid = paid >= total;
 
@@ -140,7 +135,16 @@ export async function POST(req: NextRequest) {
     tableNumber = payment.tableSession.table.number;
   }
 
-  if (isFullyPaid && !hasPendingItems) {
+  if (isFullyPaid) {
+    // Close all orders for this check-in or table session
+    const orderIds = orders.map((order) => order.id);
+    if (orderIds.length > 0) {
+      await prisma.order.updateMany({
+        where: { id: { in: orderIds } },
+        data: { status: 'CLOSED' },
+      });
+    }
+
     // Close the check-in or table session
     if (checkInId) {
       await prisma.checkIn.update({
@@ -157,6 +161,13 @@ export async function POST(req: NextRequest) {
         paid,
       });
     } else if (tableSessionId) {
+      // Update all participants to EXPIRED status
+      await prisma.participant.updateMany({
+        where: { tableSessionId },
+        data: { status: 'EXPIRED' },
+      });
+
+      // Close the table session
       await prisma.tableSession.update({
         where: { id: tableSessionId },
         data: {
@@ -165,23 +176,6 @@ export async function POST(req: NextRequest) {
         },
       });
       sseBus.publish('TABLE_SESSION_CLOSED', {
-        tableSessionId,
-        tableNumber: tableNumber!,
-        total,
-        paid,
-      });
-    }
-  } else if (isFullyPaid) {
-    // Publish event that payment is complete but items still pending
-    if (checkInId) {
-      sseBus.publish('PAYMENT_COMPLETE_PENDING_ITEMS', {
-        checkInId,
-        tableNumber: tableNumber!,
-        total,
-        paid,
-      });
-    } else if (tableSessionId) {
-      sseBus.publish('TABLE_SESSION_PAYMENT_COMPLETE_PENDING_ITEMS', {
         tableSessionId,
         tableNumber: tableNumber!,
         total,
