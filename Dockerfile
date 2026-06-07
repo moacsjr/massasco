@@ -22,7 +22,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 
 # Copia o restante do código fonte
-COPY . .
+COPY . .
 
 # IMPORTANTE: Adicione os pacotes necessários no builder também
 RUN apk add --no-cache libc6-compat openssl
