@@ -109,16 +109,16 @@ test.describe('Customer Portal - Checkout', () => {
     const product = await prodRes.json();
 
     // Create check-in via API
-    const checkInRes = await request.post('/api/checkins', {
+    const tableSessionRes = await request.post('/api/table-sessions', {
       data: { tableNumber: 5, customerName: 'Test Customer' },
     });
-    expect(checkInRes.ok()).toBe(true);
-    const checkIn = await checkInRes.json();
+    expect(tableSessionRes.ok()).toBe(true);
+    const tableSession = await tableSessionRes.json();
 
     // Create an order via API
     const orderRes = await request.post('/api/orders', {
       data: {
-        checkInId: checkIn.id,
+        tableSessionId: tableSession.id,
         tableNumber: 5,
         customerName: 'Test Customer',
         items: [{ productId: product.id, quantity: 2, selectedPriceId: product.prices[0].id }],
@@ -161,15 +161,15 @@ test.describe('Customer Portal - Checkout', () => {
     const product2 = await prod2Res.json();
 
     // Create check-in
-    const checkInRes = await request.post('/api/checkins', {
+    const tableSessionRes = await request.post('/api/table-sessions', {
       data: { tableNumber: 8, customerName: 'Test Customer' },
     });
-    const checkIn = await checkInRes.json();
+    const tableSession = await tableSessionRes.json();
 
     // Create two orders
     await request.post('/api/orders', {
       data: {
-        checkInId: checkIn.id,
+        tableSessionId: tableSession.id,
         tableNumber: 8,
         customerName: 'Test Customer',
         items: [
@@ -203,15 +203,15 @@ test.describe('Customer Portal - Checkout', () => {
     const product = await prodRes.json();
 
     // Create check-in
-    const checkInRes = await request.post('/api/checkins', {
+    const tableSessionRes = await request.post('/api/table-sessions', {
       data: { tableNumber: 10, customerName: 'Test Customer' },
     });
-    const checkIn = await checkInRes.json();
+    const tableSession = await tableSessionRes.json();
 
     // Create order
     await request.post('/api/orders', {
       data: {
-        checkInId: checkIn.id,
+        tableSessionId: tableSession.id,
         tableNumber: 10,
         customerName: 'Test Customer',
         items: [{ productId: product.id, quantity: 1, selectedPriceId: product.prices[0].id }],
@@ -230,7 +230,7 @@ test.describe('Customer Portal - Checkout', () => {
     // Register payment via API
     const paymentRes = await request.post('/api/payments', {
       data: {
-        checkInId: checkIn.id,
+        tableSessionId: tableSession.id,
         amount: 30,
         method: 'pix',
       },
@@ -265,15 +265,15 @@ test.describe('Payment System - Check-In Auto-Close', () => {
     const product = await prodRes.json();
 
     // Create check-in
-    const checkInRes = await request.post('/api/checkins', {
+    const tableSessionRes = await request.post('/api/table-sessions', {
       data: { tableNumber: 15, customerName: 'Test Customer' },
     });
-    const checkIn = await checkInRes.json();
+    const tableSession = await tableSessionRes.json();
 
     // Create order
     const orderRes = await request.post('/api/orders', {
       data: {
-        checkInId: checkIn.id,
+        tableSessionId: tableSession.id,
         tableNumber: 15,
         customerName: 'Test Customer',
         items: [{ productId: product.id, quantity: 1, selectedPriceId: product.prices[0].id }],
@@ -289,7 +289,7 @@ test.describe('Payment System - Check-In Auto-Close', () => {
     // Register full payment
     await request.post('/api/payments', {
       data: {
-        checkInId: checkIn.id,
+        tableSessionId: tableSession.id,
         amount: 100,
         method: 'pix',
       },
@@ -305,10 +305,10 @@ test.describe('Payment System - Check-In Auto-Close', () => {
     });
 
     // Verify check-in is closed
-    const checkInDetailRes = await request.get(`/api/checkins/${checkIn.id}`);
-    const checkInDetail = await checkInDetailRes.json();
-    expect(checkInDetail.status).toBe('CLOSED');
-    expect(checkInDetail.closedAt).toBeDefined();
+    const tableSessionDetailRes = await request.get(`/api/table-sessions/${tableSession.id}`);
+    const tableSessionDetail = await tableSessionDetailRes.json();
+    expect(tableSessionDetail.status).toBe('CLOSED');
+    expect(tableSessionDetail.closedAt).toBeDefined();
   });
 
   test('check-in summary endpoint returns correct data', async ({ request }) => {
@@ -324,15 +324,15 @@ test.describe('Payment System - Check-In Auto-Close', () => {
     const product = await prodRes.json();
 
     // Create check-in
-    const checkInRes = await request.post('/api/checkins', {
+    const tableSessionRes = await request.post('/api/table-sessions', {
       data: { tableNumber: 20, customerName: 'Test Customer' },
     });
-    const checkIn = await checkInRes.json();
+    const tableSession = await tableSessionRes.json();
 
     // Create order
     await request.post('/api/orders', {
       data: {
-        checkInId: checkIn.id,
+        tableSessionId: tableSession.id,
         tableNumber: 20,
         customerName: 'Test Customer',
         items: [{ productId: product.id, quantity: 1, selectedPriceId: product.prices[0].id }],
@@ -342,14 +342,14 @@ test.describe('Payment System - Check-In Auto-Close', () => {
     // Register partial payment
     await request.post('/api/payments', {
       data: {
-        checkInId: checkIn.id,
+        tableSessionId: tableSession.id,
         amount: 30,
         method: 'pix',
       },
     });
 
     // Get check-in summary
-    const summaryRes = await request.get(`/api/checkins/${checkIn.id}`);
+    const summaryRes = await request.get(`/api/table-sessions/${tableSession.id}`);
     const summary = await summaryRes.json();
 
     expect(summary.summary.subTotal).toBe(75);
@@ -359,7 +359,7 @@ test.describe('Payment System - Check-In Auto-Close', () => {
   });
 });
 
-test.describe('API Endpoints - Check-Ins and Payments', () => {
+test.describe('API Endpoints - Table Sessions and Payments', () => {
   let authenticatedRequest: any;
 
   test.beforeAll(async () => {
@@ -390,32 +390,32 @@ test.describe('API Endpoints - Check-Ins and Payments', () => {
     }
   });
 
-  test('GET /api/checkins?tableNumber returns active check-in', async () => {
-    // Create a check-in
-    await authenticatedRequest.post('/api/checkins', {
+  test('GET /api/table-sessions?tableNumber returns active table session', async () => {
+    // Create a table session
+    await authenticatedRequest.post('/api/table-sessions', {
       data: { tableNumber: 25, customerName: 'Test Customer' },
     });
 
-    // Get active check-in for table
-    const res = await authenticatedRequest.get('/api/checkins?tableNumber=25');
+    // Get active table session for table
+    const res = await authenticatedRequest.get('/api/table-sessions?tableNumber=25');
     expect(res.ok()).toBe(true);
-    const checkIns = await res.json();
-    expect(Array.isArray(checkIns)).toBe(true);
-    expect(checkIns.length).toBeGreaterThan(0);
-    expect(checkIns[0].tableNumber).toBe(25);
+    const tableSessions = await res.json();
+    expect(Array.isArray(tableSessions)).toBe(true);
+    expect(tableSessions.length).toBeGreaterThan(0);
+    expect(tableSessions[0].tableNumber).toBe(25);
   });
 
-  test('POST /api/payments creates payment with checkInId', async () => {
-    // Create check-in
-    const checkInRes = await authenticatedRequest.post('/api/checkins', {
+  test('POST /api/payments creates payment with tableSessionId', async () => {
+    // Create table session
+    const tableSessionRes = await authenticatedRequest.post('/api/table-sessions', {
       data: { tableNumber: 30, customerName: 'Test Customer' },
     });
-    const checkIn = await checkInRes.json();
+    const tableSession = await tableSessionRes.json();
 
     // Create payment
     const paymentRes = await authenticatedRequest.post('/api/payments', {
       data: {
-        checkInId: checkIn.id,
+        tableSessionId: tableSession.id,
         amount: 50,
         method: 'pix',
       },
@@ -423,31 +423,31 @@ test.describe('API Endpoints - Check-Ins and Payments', () => {
 
     expect(paymentRes.ok()).toBe(true);
     const payment = await paymentRes.json();
-    expect(payment.checkInId).toBe(checkIn.id);
+    expect(payment.tableSessionId).toBe(tableSession.id);
     expect(payment.amount).toBe(50);
     expect(payment.method).toBe('pix');
   });
 
-  test('GET /api/payments?checkInId returns payments for check-in', async () => {
-    // Create check-in
-    const checkInRes = await authenticatedRequest.post('/api/checkins', {
+  test('GET /api/payments?tableSessionId returns payments for table session', async () => {
+    // Create table session
+    const tableSessionRes = await authenticatedRequest.post('/api/table-sessions', {
       data: { tableNumber: 35, customerName: 'Test Customer' },
     });
-    const checkIn = await checkInRes.json();
+    const tableSession = await tableSessionRes.json();
 
     // Create multiple payments
     await authenticatedRequest.post('/api/payments', {
-      data: { checkInId: checkIn.id, amount: 20, method: 'pix' },
+      data: { tableSessionId: tableSession.id, amount: 20, method: 'pix' },
     });
     await authenticatedRequest.post('/api/payments', {
-      data: { checkInId: checkIn.id, amount: 30, method: 'maquininha' },
+      data: { tableSessionId: tableSession.id, amount: 30, method: 'maquininha' },
     });
 
-    // Get payments for check-in
-    const res = await authenticatedRequest.get(`/api/payments?checkInId=${checkIn.id}`);
+    // Get payments for table session
+    const res = await authenticatedRequest.get(`/api/payments?tableSessionId=${tableSession.id}`);
     expect(res.ok()).toBe(true);
     const payments = await res.json();
     expect(payments.length).toBe(2);
-    expect(payments[0].checkInId).toBe(checkIn.id);
+    expect(payments[0].tableSessionId).toBe(tableSession.id);
   });
 });
