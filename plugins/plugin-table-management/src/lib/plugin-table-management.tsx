@@ -540,7 +540,7 @@ const TableManagementView: React.FC = () => {
                       <span className="mr-1">📱</span> QR Code
                     </Button>
 
-                    {item.currentSession && (
+                    {item.currentSession && item.currentSession.status === 'OPEN' && (
                       <Button
                         variant="outline"
                         size="sm"
