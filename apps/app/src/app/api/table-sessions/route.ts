@@ -12,35 +12,63 @@ function generateSessionToken(): string {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { tableId, hostName, capacity } = body as {
-      tableId: string;
-      hostName: string;
+    
+    // Support both legacy format (tableNumber, customerName) and new format (tableId, hostName)
+    const { tableId, tableNumber, hostName, customerName, capacity } = body as {
+      tableId?: string;
+      tableNumber?: number;
+      hostName?: string;
+      customerName?: string;
       capacity?: number;
     };
 
-    // Validate required fields
-    if (!tableId || !hostName) {
-      return NextResponse.json(
-        { error: 'tableId and hostName are required' },
-        { status: 400 },
-      );
-    }
+    // Determine table and host from either format
+    let resolvedTableId: string;
+    const host = hostName || customerName;
 
-    // Check if table exists and is active
-    const table = await prisma.table.findUnique({
-      where: { id: tableId },
-    });
+    if (tableId) {
+      // New format: look up by tableId
+      const table = await prisma.table.findUnique({
+        where: { id: tableId },
+      });
 
-    if (!table) {
-      return NextResponse.json(
-        { error: 'Table not found' },
-        { status: 404 },
-      );
-    }
+      if (!table) {
+        return NextResponse.json(
+          { error: 'Table not found' },
+          { status: 404 },
+        );
+      }
 
-    if (!table.isActive) {
+      if (!table.isActive) {
+        return NextResponse.json(
+          { error: 'Table is not active' },
+          { status: 400 },
+        );
+      }
+
+      resolvedTableId = tableId;
+    } else if (tableNumber && host) {
+      // Legacy format: look up by tableNumber
+      // Find or create a table with this number
+      let table = await prisma.table.findFirst({
+        where: { number: tableNumber, isActive: true },
+      });
+
+      if (!table) {
+        // Create a new table if it doesn't exist
+        table = await prisma.table.create({
+          data: {
+            number: tableNumber,
+            name: `Mesa ${tableNumber}`,
+            isActive: true,
+          },
+        });
+      }
+
+      resolvedTableId = table.id;
+    } else {
       return NextResponse.json(
-        { error: 'Table is not active' },
+        { error: 'tableId or tableNumber with hostName/customerName are required' },
         { status: 400 },
       );
     }
@@ -48,7 +76,7 @@ export async function POST(req: NextRequest) {
     // Check if table already has an active session
     const activeSession = await prisma.tableSession.findFirst({
       where: {
-        tableId,
+        tableId: resolvedTableId,
         status: {
           in: ['OPEN', 'OCCUPIED', 'CLOSING'],
         },
@@ -67,8 +95,8 @@ export async function POST(req: NextRequest) {
       // Create the table session
       const tableSession = await tx.tableSession.create({
         data: {
-          tableId,
-          hostName,
+          tableId: resolvedTableId,
+          hostName: host!,
           capacity: capacity || 1,
           status: 'OPEN',
         },
@@ -78,10 +106,10 @@ export async function POST(req: NextRequest) {
       });
 
       // Create the host participant
-      const host = await tx.participant.create({
+      const hostParticipant = await tx.participant.create({
         data: {
           tableSessionId: tableSession.id,
-          name: hostName,
+          name: host!,
           status: 'APPROVED',
           role: 'HOST',
           joinedAt: new Date(),
@@ -91,13 +119,13 @@ export async function POST(req: NextRequest) {
       // Create the device session for the host
       const deviceSession = await tx.deviceSession.create({
         data: {
-          participantId: host.id,
+          participantId: hostParticipant.id,
           sessionId: generateSessionToken(),
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
         },
       });
 
-      return { tableSession, host, deviceSession };
+      return { tableSession, hostParticipant, deviceSession };
     });
 
     // Publish SSE event for new session
@@ -110,7 +138,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         ...session.tableSession,
-        host: session.host,
+        host: session.hostParticipant,
         deviceSession: session.deviceSession,
       },
       { status: 201 },

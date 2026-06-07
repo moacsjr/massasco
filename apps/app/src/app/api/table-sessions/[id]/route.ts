@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { sseBus } from '../../../../lib/sse-bus';
+import { Decimal } from '@prisma/client';
 
 // Get a single table session by ID
 export async function GET(
@@ -19,7 +20,17 @@ export async function GET(
             deviceSessions: true,
           },
         },
-        orders: true,
+        orders: {
+          include: {
+            items: {
+              include: {
+                product: true,
+                selectedPrice: true,
+              },
+            },
+          },
+        },
+        payments: true,
         joinRequests: true,
       },
     });
@@ -31,7 +42,33 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(session);
+    // Calculate summary
+    const subTotal = session.orders.reduce((sum, order) => {
+      return sum + order.items.reduce((itemSum, item) => {
+        const price = item.selectedPrice?.value ?? new Decimal(0);
+        return itemSum + price.mul(item.quantity);
+      }, sum);
+    }, new Decimal(0));
+
+    const totalPayments = session.payments.reduce(
+      (sum, payment) => sum.add(payment.amount),
+      new Decimal(0),
+    );
+
+    const totalDue = subTotal.sub(totalPayments);
+
+    // Add summary to response
+    const response = {
+      ...session,
+      summary: {
+        subTotal: subTotal.toNumber(),
+        totalPayments: totalPayments.toNumber(),
+        totalDue: totalDue.toNumber(),
+        isFullyPaid: totalDue.lte(0),
+      },
+    };
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Error fetching session:', error);
     return NextResponse.json(
