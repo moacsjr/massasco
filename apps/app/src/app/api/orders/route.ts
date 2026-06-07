@@ -113,9 +113,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (tableSession.status === 'CLOSED') {
+    if (tableSession.status === 'CLOSED' || tableSession.status === 'CLOSING') {
       return NextResponse.json(
-        { error: 'Esta mesa já foi encerrada.' },
+        { error: 'Esta mesa já foi encerrada e não aceita novos pedidos.' },
         { status: 400 },
       );
     }
