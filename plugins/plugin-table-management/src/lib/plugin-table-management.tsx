@@ -143,18 +143,18 @@ const TableManagementView: React.FC = () => {
     
     if (table.sessions && table.sessions.length > 0) {
       const currentSession = table.sessions[0];
-      return (
-        <span
-          className={`
-            px-2 py-1 rounded text-xs font-medium border
-            ${getStatusColor(currentSession.status)}
-          `}
-        >
-          {currentSession.status === 'OPEN' && 'Aberta'}
-          {currentSession.status === 'AWAITING_PAYMENT' && 'Aguardando Pagamento'}
-          {currentSession.status === 'CLOSED' && 'Fechada'}
-        </span>
-      );
+      if (currentSession.status === 'OPEN') {
+        return (
+          <span
+            className={`
+              px-2 py-1 rounded text-xs font-medium border
+              ${getStatusColor(currentSession.status)}
+            `}
+          >
+            Aberta
+          </span>
+        );
+      }
     }
     return <span className="px-2 py-1 rounded text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">Disponível</span>;
   };
