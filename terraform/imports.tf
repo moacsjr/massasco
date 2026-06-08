@@ -84,6 +84,11 @@ import {
 }
 
 import {
+  to = github_actions_environment_variable.sqs_queue_url
+  id = "massasco:staging:SQS_QUEUE_URL"
+}
+
+import {
   to = aws_ssm_parameter.media_bucket
   id = "/devxp-portal/media_bucket_name"
 }
