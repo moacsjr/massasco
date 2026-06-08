@@ -168,9 +168,89 @@ export const useCustomerOrders = (tableSessionId: string) => {
   return { orders, isLoading };
 };
 
+// Hook para verificar se a sessão está ativa (localStorage + banco de dados)
+export const useActiveSessionCheck = () => {
+  const { tableSession, clearTableSession } = useCustomerTableSession();
+  const [isActive, setIsActive] = React.useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const checkSession = async () => {
+      // Se não tem sessão no localStorage, já considera inativa
+      if (!tableSession) {
+        setIsActive(false);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Verifica no banco de dados se a sessão ainda existe e está ativa
+        const res = await fetch(`/api/table-sessions/${tableSession.id}`);
+        
+        if (!res.ok) {
+          // Sessão não existe mais ou erro na API
+          setIsActive(false);
+          clearTableSession();
+          setIsLoading(false);
+          return;
+        }
+
+        const data = await res.json();
+        
+        // Verifica se o status da sessão é OPEN (ativa)
+        if (data.status === 'OPEN') {
+          setIsActive(true);
+        } else {
+          // Sessão foi encerrada (CLOSED ou AWAITING_PAYMENT)
+          setIsActive(false);
+          clearTableSession();
+        }
+      } catch (err) {
+        console.error('Error checking session status:', err);
+        setIsActive(false);
+        clearTableSession();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkSession();
+  }, [tableSession, clearTableSession]);
+
+  return { isActive, isLoading, tableSession };
+};
+
 // ============================================================================
 // Components
 // ============================================================================
+
+// --- SessionExpiredPage ---
+// Página exibida quando a sessão não está mais ativa
+const SessionExpiredPage: React.FC = () => {
+  const { resolve } = useUI();
+  const Card = resolve('Card');
+
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <Card padding="lg">
+        <div className="text-center py-8">
+          <div className="mx-auto w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mb-4">
+            <span className="text-3xl">⚠️</span>
+          </div>
+          <h2 className="text-2xl font-bold text-foreground mb-2">
+            Sessão Encerrada
+          </h2>
+          <p className="text-muted-foreground mb-4">
+            Sua sessão foi encerrada pelo administrador.
+          </p>
+          <p className="text-muted-foreground">
+            Por favor, solicite um novo check-in para continuar.
+          </p>
+        </div>
+      </Card>
+    </div>
+  );
+};
 
 // --- CheckInStep ---
 interface CheckInStepProps {
@@ -314,6 +394,22 @@ const SelectTableStep: React.FC = () => {
 
 // --- MenuPage ---
 const MenuPage: React.FC = () => {
+  const { isActive, isLoading } = useActiveSessionCheck();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <p className="text-muted-foreground">Verificando sessão...</p>
+      </div>
+    );
+  }
+
+  if (!isActive) {
+    // Redireciona para a página de sessão expirada
+    window.location.href = '/plugins/customer-portal/session-expired';
+    return null;
+  }
+
   return (
     <div className="p-4">
       <NewOrderContainer />
@@ -323,29 +419,25 @@ const MenuPage: React.FC = () => {
 
 // --- OrdersPage ---
 const OrdersPage: React.FC = () => {
-  const { tableSession } = useCustomerTableSession();
+  const { isActive, isLoading: isSessionLoading, tableSession } = useActiveSessionCheck();
   const { resolve } = useUI();
   const Card = resolve('Card');
   const Button = resolve('Button');
 
-  if (!tableSession) {
+  if (isSessionLoading) {
     return (
-      <div className="p-4">
-        <Card padding="lg">
-          <p className="text-muted-foreground">Nenhuma sessão ativa.</p>
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => (window.location.href = '/plugins/customer-portal/')}
-          >
-            Fazer Check-in
-          </Button>
-        </Card>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <p className="text-muted-foreground">Verificando sessão...</p>
       </div>
     );
   }
 
-  const { orders: customerOrders, isLoading } = useCustomerOrders(tableSession.id);
+  if (!isActive) {
+    window.location.href = '/plugins/customer-portal/session-expired';
+    return null;
+  }
+
+  const { orders: customerOrders, isLoading } = useCustomerOrders(tableSession!.id);
 
   const ordersArray = Array.isArray(customerOrders) ? customerOrders : [];
 
@@ -441,7 +533,7 @@ const OrdersPage: React.FC = () => {
 
 // --- CheckoutPage ---
 const CheckoutPage: React.FC = () => {
-  const { tableSession } = useCustomerTableSession();
+  const { isActive, isLoading: isSessionLoading, tableSession } = useActiveSessionCheck();
   const { resolve } = useUI();
   const Card = resolve('Card');
   const Button = resolve('Button');
@@ -524,21 +616,17 @@ const CheckoutPage: React.FC = () => {
     return items;
   }, [tableSessionData]);
 
-  if (!tableSession) {
+  if (isSessionLoading) {
     return (
-      <div className="p-4">
-        <Card padding="lg">
-          <p className="text-muted-foreground">Nenhuma sessão ativa.</p>
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => (window.location.href = '/plugins/customer-portal/')}
-          >
-            Fazer Check-in
-          </Button>
-        </Card>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <p className="text-muted-foreground">Verificando sessão...</p>
       </div>
     );
+  }
+
+  if (!isActive) {
+    window.location.href = '/plugins/customer-portal/session-expired';
+    return null;
   }
 
   if (isLoading || !tableSessionData) {
@@ -1252,6 +1340,12 @@ export const customerPortalPlugin: FeaturePlugin = {
       path: 'thank-you',
       component: ThankYouPage,
       label: 'Agradecimento',
+      showInMenu: false,
+    },
+    {
+      path: 'session-expired',
+      component: SessionExpiredPage,
+      label: 'Sessão Encerrada',
       showInMenu: false,
     },
   ],
