@@ -4,15 +4,11 @@ import { sseBus } from '../../../lib/sse-bus';
 
 export async function GET(req: NextRequest) {
   const orderId = req.nextUrl.searchParams.get('orderId');
-  const checkInId = req.nextUrl.searchParams.get('checkInId');
   const tableSessionId = req.nextUrl.searchParams.get('tableSessionId');
 
   const where: Record<string, unknown> = {};
   if (orderId) {
     where.orderId = orderId;
-  }
-  if (checkInId) {
-    where.checkInId = checkInId;
   }
   if (tableSessionId) {
     where.tableSessionId = tableSessionId;
@@ -22,7 +18,6 @@ export async function GET(req: NextRequest) {
     where,
     include: {
       order: true,
-      checkIn: true,
       tableSession: {
         include: { table: true }
       }
@@ -34,12 +29,12 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { checkInId, tableSessionId, orderId, amount, method } = body;
+  const { tableSessionId, orderId, amount, method } = body;
 
-  // Validate required fields - at least one of checkInId or tableSessionId is required
-  if (!checkInId && !tableSessionId) {
+  // Validate required fields - tableSessionId is required
+  if (!tableSessionId) {
     return NextResponse.json(
-      { error: 'checkInId or tableSessionId is required' },
+      { error: 'tableSessionId is required' },
       { status: 400 },
     );
   }
@@ -54,25 +49,20 @@ export async function POST(req: NextRequest) {
   const payment = await prisma.payment.create({
     data: {
       orderId: orderId || undefined,
-      checkInId: checkInId || undefined,
       tableSessionId: tableSessionId || undefined,
       amount: Number(amount),
       method
     },
     include: {
       order: true,
-      checkIn: true,
       tableSession: {
         include: { table: true }
       }
     },
   });
 
-  // Get all orders for this check-in or table session
+  // Get all orders for this table session
   const whereOrders: Record<string, unknown> = {};
-  if (checkInId) {
-    whereOrders.checkInId = checkInId;
-  }
   if (tableSessionId) {
     whereOrders.tableSessionId = tableSessionId;
   }
@@ -106,11 +96,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Get all payments for this check-in or table session
+  // Get all payments for this table session
   const wherePayments: Record<string, unknown> = {};
-  if (checkInId) {
-    wherePayments.checkInId = checkInId;
-  }
   if (tableSessionId) {
     wherePayments.tableSessionId = tableSessionId;
   }
@@ -124,19 +111,17 @@ export async function POST(req: NextRequest) {
     0,
   );
 
-  // Check if check-in or table session is fully paid
+  // Check if table session is fully paid
   const isFullyPaid = paid >= total;
 
-  // Get table number from checkIn or tableSession
+  // Get table number from tableSession
   let tableNumber: number | null = null;
-  if (payment.checkIn) {
-    tableNumber = payment.checkIn.tableNumber;
-  } else if (payment.tableSession) {
+  if (payment.tableSession) {
     tableNumber = payment.tableSession.table.number;
   }
 
   if (isFullyPaid) {
-    // Close all orders for this check-in or table session
+    // Close all orders for this table session
     const orderIds = orders.map((order) => order.id);
     if (orderIds.length > 0) {
       await prisma.order.updateMany({
@@ -145,60 +130,34 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Close the check-in or table session
-    if (checkInId) {
-      await prisma.checkIn.update({
-        where: { id: checkInId },
-        data: {
-          status: 'CLOSED',
-          closedAt: new Date(),
-        },
-      });
-      sseBus.publish('CHECKIN_CLOSED', {
-        checkInId,
-        tableNumber: tableNumber!,
-        total,
-        paid,
-      });
-    } else if (tableSessionId) {
-      // Update all participants to EXPIRED status
-      await prisma.participant.updateMany({
-        where: { tableSessionId },
-        data: { status: 'EXPIRED' },
-      });
+    // Update all participants to EXPIRED status
+    await prisma.participant.updateMany({
+      where: { tableSessionId },
+      data: { status: 'EXPIRED' },
+    });
 
-      // Close the table session
-      await prisma.tableSession.update({
-        where: { id: tableSessionId },
-        data: {
-          status: 'CLOSED',
-          closedAt: new Date(),
-        },
-      });
-      sseBus.publish('TABLE_SESSION_CLOSED', {
-        tableSessionId,
-        tableNumber: tableNumber!,
-        total,
-        paid,
-      });
-    }
+    // Close the table session
+    await prisma.tableSession.update({
+      where: { id: tableSessionId },
+      data: {
+        status: 'CLOSED',
+        closedAt: new Date(),
+      },
+    });
+    sseBus.publish('TABLE_SESSION_CLOSED', {
+      tableSessionId,
+      tableNumber: tableNumber!,
+      total,
+      paid,
+    });
   } else {
     // Partial payment
-    if (checkInId) {
-      sseBus.publish('PARTIAL_PAYMENT_ACCEPTED', {
-        checkInId,
-        tableNumber: tableNumber!,
-        total,
-        paid,
-      });
-    } else if (tableSessionId) {
-      sseBus.publish('TABLE_SESSION_PARTIAL_PAYMENT_ACCEPTED', {
-        tableSessionId,
-        tableNumber: tableNumber!,
-        total,
-        paid,
-      });
-    }
+    sseBus.publish('TABLE_SESSION_PARTIAL_PAYMENT_ACCEPTED', {
+      tableSessionId,
+      tableNumber: tableNumber!,
+      total,
+      paid,
+    });
   }
 
   return NextResponse.json(payment, { status: 201 });

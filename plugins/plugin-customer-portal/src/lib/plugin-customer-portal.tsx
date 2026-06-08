@@ -453,7 +453,7 @@ const OrdersPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-foreground">Meus Pedidos</h2>
         <span className="text-sm text-muted-foreground">
-          Mesa {tableSession.tableNumber}
+          Mesa {tableSession?.tableNumber}
         </span>
       </div>
 
@@ -673,6 +673,8 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
+    if (!tableSession) return;
+    
     setIsProcessing(true);
     try {
       await fetch('/api/payments', {
@@ -704,7 +706,7 @@ const CheckoutPage: React.FC = () => {
 
   // Handle maquininha payment completion
   const handleMaquininhaPaymentCompleted = async () => {
-    if (maquininhaAmount === 0) return;
+    if (maquininhaAmount === 0 || !tableSession) return;
 
     setIsProcessing(true);
     try {
@@ -737,7 +739,7 @@ const CheckoutPage: React.FC = () => {
   };
 
   const handlePayWithPix = async () => {
-    if (!pixData) return;
+    if (!pixData || !tableSession) return;
 
     setIsProcessing(true);
     try {

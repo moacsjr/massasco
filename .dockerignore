@@ -6,3 +6,7 @@ dist
 .claude
 *.md
 .DS_Store
+docker/postgres-data
+terraform/.terraform
+.nx
+tmp
