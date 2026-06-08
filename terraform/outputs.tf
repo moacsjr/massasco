@@ -3,6 +3,31 @@ output "ec2_public_ip" {
   value       = aws_instance.app.public_ip
 }
 
+output "alb_dns_name" {
+  description = "DNS name of the Application Load Balancer"
+  value       = aws_lb.app.dns_name
+}
+
+output "alb_zone_id" {
+  description = "Zone ID of the Application Load Balancer"
+  value       = aws_lb.app.zone_id
+}
+
+output "alb_arn" {
+  description = "ARN of the Application Load Balancer"
+  value       = aws_lb.app.arn
+}
+
+output "target_group_arn" {
+  description = "ARN of the Target Group"
+  value       = aws_lb_target_group.app.arn
+}
+
+output "asg_name" {
+  description = "Name of the Auto Scaling Group"
+  value       = aws_autoscaling_group.app.name
+}
+
 output "ssh_private_key" {
   description = "Chave SSH privada para acessar a EC2 (salve e mantenha em segurança)"
   value       = tls_private_key.ssh.private_key_pem
