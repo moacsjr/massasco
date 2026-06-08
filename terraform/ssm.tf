@@ -22,3 +22,10 @@ resource "aws_ssm_parameter" "order_queue_url" {
   value     = aws_sqs_queue.orders.url
   overwrite = true
 }
+
+resource "aws_ssm_parameter" "artifacts_bucket" {
+  name      = "/${var.project_name}/artifacts_bucket_name"
+  type      = "String"
+  value     = aws_s3_bucket.artifacts.id
+  overwrite = true
+}

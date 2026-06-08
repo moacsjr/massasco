@@ -60,8 +60,19 @@ jobs:
         env:
           PROJECT_NAME: devxp-portal
         run: |
-          # Upload docker-compose to S3 artifacts bucket for instances to download
-          aws s3 cp docker/docker-compose.yml s3://${PROJECT_NAME}-artifacts/docker-compose.yml
+          # Get artifacts bucket name from SSM
+          ARTIFACTS_BUCKET=$(aws ssm get-parameter \
+            --name "/${PROJECT_NAME}/artifacts_bucket_name" \
+            --query Parameter.Value --output text --region "$AWS_REGION")
+          
+          if [ -z "$ARTIFACTS_BUCKET" ] || [ "$ARTIFACTS_BUCKET" = "None" ]; then
+            echo "ERROR: /${PROJECT_NAME}/artifacts_bucket_name is missing in SSM."
+            exit 1
+          fi
+          
+          echo "Uploading docker-compose to s3://${ARTIFACTS_BUCKET}/docker-compose.yml"
+          aws s3 cp docker/docker-compose.yml s3://${ARTIFACTS_BUCKET}/docker-compose.yml
+          echo "artifacts_bucket=${ARTIFACTS_BUCKET}" >> $GITHUB_ENV
 
       - name: Deploy via SSM Run Command
         env:
@@ -93,65 +104,68 @@ jobs:
           chown -R ec2-user:ec2-user /home/ec2-user/meu-app
           
           # --- Download docker-compose from S3 ---
-          aws s3 cp s3://${PROJECT_NAME}-artifacts/docker-compose.yml /home/ec2-user/meu-app/docker/docker-compose.yml
+          ARTIFACTS_BUCKET=\$(aws ssm get-parameter \\
+            --name "/\${PROJECT_NAME}/artifacts_bucket_name" \\
+            --query Parameter.Value --output text --region "\$AWS_REGION")
+          aws s3 cp s3://\${ARTIFACTS_BUCKET}/docker-compose.yml /home/ec2-user/meu-app/docker/docker-compose.yml
           
           # --- Fetch runtime config from SSM and write .env ---
-          DATABASE_URL=$(aws ssm get-parameter \
-            --name "/${PROJECT_NAME}/database_url" \
-            --with-decryption \
-            --query Parameter.Value --output text --region "$AWS_REGION")
-          if [ -z "$DATABASE_URL" ] || [ "$DATABASE_URL" = "None" ]; then
-            echo "ERROR: /${PROJECT_NAME}/database_url is missing in SSM."
+          DATABASE_URL=\$(aws ssm get-parameter \\
+            --name "/\${PROJECT_NAME}/database_url" \\
+            --with-decryption \\
+            --query Parameter.Value --output text --region "\$AWS_REGION")
+          if [ -z "\$DATABASE_URL" ] || [ "\$DATABASE_URL" = "None" ]; then
+            echo "ERROR: /\${PROJECT_NAME}/database_url is missing in SSM."
             exit 1
           fi
           
-          CDN_URL=$(aws ssm get-parameter \
-            --name "/${PROJECT_NAME}/cloudfront_url" \
-            --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
-          if [ -z "$CDN_URL" ] || [ "$CDN_URL" = "None" ]; then
-            echo "ERROR: /${PROJECT_NAME}/cloudfront_url is missing in SSM."
+          CDN_URL=\$(aws ssm get-parameter \\
+            --name "/\${PROJECT_NAME}/cloudfront_url" \\
+            --query Parameter.Value --output text --region "\$AWS_REGION" 2>/dev/null || echo "")
+          if [ -z "\$CDN_URL" ] || [ "\$CDN_URL" = "None" ]; then
+            echo "ERROR: /\${PROJECT_NAME}/cloudfront_url is missing in SSM."
             exit 1
           fi
           
-          MEDIA_BUCKET=$(aws ssm get-parameter \
-            --name "/${PROJECT_NAME}/media_bucket_name" \
-            --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
-          if [ -z "$MEDIA_BUCKET" ] || [ "$MEDIA_BUCKET" = "None" ]; then
-            echo "ERROR: /${PROJECT_NAME}/media_bucket_name is missing in SSM."
+          MEDIA_BUCKET=\$(aws ssm get-parameter \\
+            --name "/\${PROJECT_NAME}/media_bucket_name" \\
+            --query Parameter.Value --output text --region "\$AWS_REGION" 2>/dev/null || echo "")
+          if [ -z "\$MEDIA_BUCKET" ] || [ "\$MEDIA_BUCKET" = "None" ]; then
+            echo "ERROR: /\${PROJECT_NAME}/media_bucket_name is missing in SSM."
             exit 1
           fi
           
-          COGNITO_USER_POOL_ID=$(aws ssm get-parameter \
-            --name "/${PROJECT_NAME}/cognito_user_pool_id" \
-            --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
-          if [ -z "$COGNITO_USER_POOL_ID" ] || [ "$COGNITO_USER_POOL_ID" = "None" ]; then
-            echo "ERROR: /${PROJECT_NAME}/cognito_user_pool_id is missing in SSM."
+          COGNITO_USER_POOL_ID=\$(aws ssm get-parameter \\
+            --name "/\${PROJECT_NAME}/cognito_user_pool_id" \\
+            --query Parameter.Value --output text --region "\$AWS_REGION" 2>/dev/null || echo "")
+          if [ -z "\$COGNITO_USER_POOL_ID" ] || [ "\$COGNITO_USER_POOL_ID" = "None" ]; then
+            echo "ERROR: /\${PROJECT_NAME}/cognito_user_pool_id is missing in SSM."
             exit 1
           fi
           
-          COGNITO_CLIENT_ID=$(aws ssm get-parameter \
-            --name "/${PROJECT_NAME}/cognito_client_id" \
-            --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
-          if [ -z "$COGNITO_CLIENT_ID" ] || [ "$COGNITO_CLIENT_ID" = "None" ]; then
-            echo "ERROR: /${PROJECT_NAME}/cognito_client_id is missing in SSM."
+          COGNITO_CLIENT_ID=\$(aws ssm get-parameter \\
+            --name "/\${PROJECT_NAME}/cognito_client_id" \\
+            --query Parameter.Value --output text --region "\$AWS_REGION" 2>/dev/null || echo "")
+          if [ -z "\$COGNITO_CLIENT_ID" ] || [ "\$COGNITO_CLIENT_ID" = "None" ]; then
+            echo "ERROR: /\${PROJECT_NAME}/cognito_client_id is missing in SSM."
             exit 1
           fi
           
-          COGNITO_REGION=$(aws ssm get-parameter \
-            --name "/${PROJECT_NAME}/cognito_region" \
-            --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
-          ORDER_QUEUE_URL=$(aws ssm get-parameter \
-            --name "/${PROJECT_NAME}/order_queue_url" \
-            --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
+          COGNITO_REGION=\$(aws ssm get-parameter \\
+            --name "/\${PROJECT_NAME}/cognito_region" \\
+            --query Parameter.Value --output text --region "\$AWS_REGION" 2>/dev/null || echo "")
+          ORDER_QUEUE_URL=\$(aws ssm get-parameter \\
+            --name "/\${PROJECT_NAME}/order_queue_url" \\
+            --query Parameter.Value --output text --region "\$AWS_REGION" 2>/dev/null || echo "")
           
           {
-            echo "DATABASE_URL=\"${DATABASE_URL}\""
-            echo "NEXT_PUBLIC_CDN_URL=\"${CDN_URL}\""
-            echo "AWS_S3_BUCKET_NAME=\"${MEDIA_BUCKET}\""
-            echo "COGNITO_USER_POOL_ID=\"${COGNITO_USER_POOL_ID}\""
-            echo "COGNITO_CLIENT_ID=\"${COGNITO_CLIENT_ID}\""
-            echo "COGNITO_REGION=\"${COGNITO_REGION:-$AWS_REGION}\""
-            echo "SQS_QUEUE_URL=\"${ORDER_QUEUE_URL}\""
+            echo "DATABASE_URL=\"\${DATABASE_URL}\""
+            echo "NEXT_PUBLIC_CDN_URL=\"\${CDN_URL}\""
+            echo "AWS_S3_BUCKET_NAME=\"\${MEDIA_BUCKET}\""
+            echo "COGNITO_USER_POOL_ID=\"\${COGNITO_USER_POOL_ID}\""
+            echo "COGNITO_CLIENT_ID=\"\${COGNITO_CLIENT_ID}\""
+            echo "COGNITO_REGION=\"\${COGNITO_REGION:-\$AWS_REGION}\""
+            echo "SQS_QUEUE_URL=\"\${ORDER_QUEUE_URL}\""
           } > /home/ec2-user/meu-app/apps/app/.env
           chmod 600 /home/ec2-user/meu-app/apps/app/.env
           echo "apps/app/.env created."
@@ -166,12 +180,12 @@ jobs:
           
           # --- Wait for database ---
           echo "Waiting for database to be ready..."
-          for i in $(seq 1 30); do
-            if docker exec $(docker compose -f docker/docker-compose.yml ps -q db) pg_isready -U postgres &>/dev/null; then
+          for i in \$(seq 1 30); do
+            if docker exec \$(docker compose -f docker/docker-compose.yml ps -q db) pg_isready -U postgres &>/dev/null; then
               echo "Database is ready!"
               break
             fi
-            echo "Waiting for database... ($i/30)"
+            echo "Waiting for database... (\$i/30)"
             sleep 2
           done
           
@@ -195,7 +209,7 @@ jobs:
             exit 1
           fi
           
-          echo "Deployment completed successfully on $(hostname)!"
+          echo "Deployment completed successfully on \$(hostname)!"
           DEPLOY_EOF
           
           # Send command to all instances via SSM
