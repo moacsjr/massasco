@@ -84,9 +84,11 @@ jobs:
           INSTANCE_IDS="${{ steps.get-instances.outputs.instance_ids }}"
           
           # Create the deployment script
-          cat > /tmp/deploy-script.sh << 'DEPLOY_EOF'
+          # NOTE: Unquoted heredoc (DEPLOY_EOF) allows GitHub Actions env vars to be substituted.
+          # Variables escaped with \$ will become literal $ in the output (evaluated on the instance).
+          cat > /tmp/deploy-script.sh << DEPLOY_EOF
           #!/bin/bash
-          set -e
+          set -ex
           
           PROJECT_NAME="devxp-portal"
           AWS_REGION="${AWS_REGION}"
