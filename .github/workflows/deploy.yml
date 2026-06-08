@@ -213,6 +213,11 @@ jobs:
           
           echo "Deployment completed successfully on \$(hostname)!"
           DEPLOY_EOF
+
+          SCRIPT_B64=$(base64 -w0 /tmp/deploy-script.sh)
+
+          echo "Primeiros 200 chars:"
+          echo "$SCRIPT_B64" | cut -c1-200
           
           # Send command to all instances via SSM
           COMMAND_ID=$(aws ssm send-command \
@@ -274,8 +279,8 @@ jobs:
           echo "Waiting 30 seconds for instances to register..."
           sleep 30
           
-          # Wait for ALB to be healthy (up to 10 minutes)
-          MAX_ATTEMPTS=60
+          # Wait for ALB to be healthy (up to 5 minutes)
+          MAX_ATTEMPTS=30
           for i in $(seq 1 $MAX_ATTEMPTS); do
             if curl -f --connect-timeout 5 "http://${ALB_DNS}/api/health" 2>/dev/null; then
               echo "ALB health check passed!"
@@ -285,7 +290,7 @@ jobs:
             sleep 10
           done
           
-          echo "ALB health check failed after 10 minutes"
+          echo "ALB health check failed after 5 minutes"
           
           # Debug: Show target group health
           echo "Checking target group health..."
