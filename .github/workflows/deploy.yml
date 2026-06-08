@@ -1,4 +1,4 @@
-name: CI/CD Pipeline - Docker + SSH
+name: CI/CD Pipeline - Docker + ASG
 
 on:
   push:
@@ -32,143 +32,237 @@ jobs:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: devxp-app
           IMAGE_TAG: ${{ github.sha }}
-          STRIPE_SECRET_KEY: ${{ vars.STRIPE_SECRET_KEY }}
-          STRIPE_PUBLISHABLE_KEY: ${{ vars.STRIPE_PUBLISHABLE_KEY }}
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
-          STRIPE_WEBHOOK_SECRET: ${{ vars.STRIPE_WEBHOOK_SECRET }}
         run: |
           docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -t $REGISTRY/$REPOSITORY:latest .
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
           docker push $REGISTRY/$REPOSITORY:latest
 
-      - name: Copy docker-compose to EC2
-        uses: appleboy/scp-action@v1.0.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: 'docker/docker-compose.yml'
-          target: '/home/ec2-user/meu-app'
-          overwrite: true
+      - name: Get ASG Instance IDs
+        id: get-instances
+        env:
+          PROJECT_NAME: devxp-portal
+        run: |
+          # Get instance IDs from the Auto Scaling Group
+          INSTANCE_IDS=$(aws autoscaling describe-auto-scaling-groups \
+            --auto-scaling-group-names "${PROJECT_NAME}-asg" \
+            --query 'AutoScalingGroups[0].Instances[?LifecycleState==`InService`].InstanceId' \
+            --output text)
+          
+          if [ -z "$INSTANCE_IDS" ]; then
+            echo "ERROR: No running instances found in ASG ${PROJECT_NAME}-asg"
+            exit 1
+          fi
+          
+          echo "instance_ids=${INSTANCE_IDS}" >> $GITHUB_OUTPUT
+          echo "Found instances: ${INSTANCE_IDS}"
 
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            # Força o shell script a falhar e parar o deploy imediatamente se algum comando falhar
-            set -e
+      - name: Copy docker-compose to S3
+        env:
+          PROJECT_NAME: devxp-portal
+        run: |
+          # Upload docker-compose to S3 artifacts bucket for instances to download
+          aws s3 cp docker/docker-compose.yml s3://${PROJECT_NAME}-artifacts/docker-compose.yml
 
-            export AWS_ACCOUNT_ID=${{ vars.AWS_ACCOUNT_ID || '458889634344' }}
-            export AWS_REGION=${{ vars.AWS_REGION }}
-
-            cd /home/ec2-user/meu-app
-
-            # --- Login no ECR ---
-            aws ecr get-login-password --region $AWS_REGION | \
-              docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-
-            # --- Fetch runtime config from SSM and write .env ---
-            PROJECT_NAME="devxp-portal"
-
-            DATABASE_URL=$(aws ssm get-parameter \
-              --name "/${PROJECT_NAME}/database_url" \
-              --with-decryption \
-              --query Parameter.Value --output text --region "$AWS_REGION")
-            if [ -z "$DATABASE_URL" ] || [ "$DATABASE_URL" = "None" ]; then
-              echo "ERROR: /${PROJECT_NAME}/database_url is missing in SSM."
+      - name: Deploy via SSM Run Command
+        env:
+          PROJECT_NAME: devxp-portal
+          AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          INSTANCE_IDS="${{ steps.get-instances.outputs.instance_ids }}"
+          
+          # Create the deployment script
+          cat > /tmp/deploy-script.sh << 'DEPLOY_EOF'
+          #!/bin/bash
+          set -e
+          
+          PROJECT_NAME="devxp-portal"
+          AWS_REGION="${AWS_REGION}"
+          AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID}"
+          
+          echo "Starting deployment on $(hostname)..."
+          
+          # --- Login to ECR ---
+          aws ecr get-login-password --region $AWS_REGION | \
+            docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+          
+          # --- Create app directory ---
+          mkdir -p /home/ec2-user/meu-app/apps/app
+          mkdir -p /home/ec2-user/meu-app/docker
+          chown -R ec2-user:ec2-user /home/ec2-user/meu-app
+          
+          # --- Download docker-compose from S3 ---
+          aws s3 cp s3://${PROJECT_NAME}-artifacts/docker-compose.yml /home/ec2-user/meu-app/docker/docker-compose.yml
+          
+          # --- Fetch runtime config from SSM and write .env ---
+          DATABASE_URL=$(aws ssm get-parameter \
+            --name "/${PROJECT_NAME}/database_url" \
+            --with-decryption \
+            --query Parameter.Value --output text --region "$AWS_REGION")
+          if [ -z "$DATABASE_URL" ] || [ "$DATABASE_URL" = "None" ]; then
+            echo "ERROR: /${PROJECT_NAME}/database_url is missing in SSM."
+            exit 1
+          fi
+          
+          CDN_URL=$(aws ssm get-parameter \
+            --name "/${PROJECT_NAME}/cloudfront_url" \
+            --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
+          if [ -z "$CDN_URL" ] || [ "$CDN_URL" = "None" ]; then
+            echo "ERROR: /${PROJECT_NAME}/cloudfront_url is missing in SSM."
+            exit 1
+          fi
+          
+          MEDIA_BUCKET=$(aws ssm get-parameter \
+            --name "/${PROJECT_NAME}/media_bucket_name" \
+            --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
+          if [ -z "$MEDIA_BUCKET" ] || [ "$MEDIA_BUCKET" = "None" ]; then
+            echo "ERROR: /${PROJECT_NAME}/media_bucket_name is missing in SSM."
+            exit 1
+          fi
+          
+          COGNITO_USER_POOL_ID=$(aws ssm get-parameter \
+            --name "/${PROJECT_NAME}/cognito_user_pool_id" \
+            --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
+          if [ -z "$COGNITO_USER_POOL_ID" ] || [ "$COGNITO_USER_POOL_ID" = "None" ]; then
+            echo "ERROR: /${PROJECT_NAME}/cognito_user_pool_id is missing in SSM."
+            exit 1
+          fi
+          
+          COGNITO_CLIENT_ID=$(aws ssm get-parameter \
+            --name "/${PROJECT_NAME}/cognito_client_id" \
+            --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
+          if [ -z "$COGNITO_CLIENT_ID" ] || [ "$COGNITO_CLIENT_ID" = "None" ]; then
+            echo "ERROR: /${PROJECT_NAME}/cognito_client_id is missing in SSM."
+            exit 1
+          fi
+          
+          COGNITO_REGION=$(aws ssm get-parameter \
+            --name "/${PROJECT_NAME}/cognito_region" \
+            --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
+          ORDER_QUEUE_URL=$(aws ssm get-parameter \
+            --name "/${PROJECT_NAME}/order_queue_url" \
+            --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
+          
+          {
+            echo "DATABASE_URL=\"${DATABASE_URL}\""
+            echo "NEXT_PUBLIC_CDN_URL=\"${CDN_URL}\""
+            echo "AWS_S3_BUCKET_NAME=\"${MEDIA_BUCKET}\""
+            echo "COGNITO_USER_POOL_ID=\"${COGNITO_USER_POOL_ID}\""
+            echo "COGNITO_CLIENT_ID=\"${COGNITO_CLIENT_ID}\""
+            echo "COGNITO_REGION=\"${COGNITO_REGION:-$AWS_REGION}\""
+            echo "SQS_QUEUE_URL=\"${ORDER_QUEUE_URL}\""
+          } > /home/ec2-user/meu-app/apps/app/.env
+          chmod 600 /home/ec2-user/meu-app/apps/app/.env
+          echo "apps/app/.env created."
+          
+          cd /home/ec2-user/meu-app
+          
+          # --- Pull the new image ---
+          docker compose -f docker/docker-compose.yml pull app
+          
+          # --- Start the database first (if not already running) ---
+          docker compose -f docker/docker-compose.yml up -d db
+          
+          # --- Wait for database ---
+          echo "Waiting for database to be ready..."
+          for i in $(seq 1 30); do
+            if docker exec $(docker compose -f docker/docker-compose.yml ps -q db) pg_isready -U postgres &>/dev/null; then
+              echo "Database is ready!"
+              break
+            fi
+            echo "Waiting for database... ($i/30)"
+            sleep 2
+          done
+          
+          # --- Run Prisma migrations ---
+          echo "Running Prisma migrations..."
+          docker compose -f docker/docker-compose.yml run --rm -T -e DATABASE_URL="postgresql://postgres:password@db:5432/devxp?schema=public" app node node_modules/prisma/build/index.js migrate deploy --schema=prisma/schema.prisma
+          
+          # --- Start the application ---
+          echo "Starting application services..."
+          docker compose -f docker/docker-compose.yml up -d app
+          
+          # --- Wait for Node to start ---
+          echo "Waiting for Next.js to initialize..."
+          sleep 5
+          
+          # --- Health check ---
+          echo "Validating application health..."
+          if ! curl -f --retry 5 --retry-delay 5 --connect-timeout 5 http://localhost:3000/api/health; then
+            echo "ERROR: Health check failed! Showing container logs:"
+            docker compose -f docker/docker-compose.yml logs --tail=150 app
+            exit 1
+          fi
+          
+          echo "Deployment completed successfully on $(hostname)!"
+          DEPLOY_EOF
+          
+          # Send command to all instances via SSM
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids $INSTANCE_IDS \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy application via GitHub Actions" \
+            --parameters "commands=[\"bash -c '$(cat /tmp/deploy-script.sh | base64 -w0 | tr -d '\n')' | base64 -d | bash\"]" \
+            --query 'Command.CommandId' \
+            --output text)
+          
+          echo "SSM Command ID: $COMMAND_ID"
+          
+          # Wait for command to complete
+          echo "Waiting for deployment to complete..."
+          sleep 10
+          
+          # Check command status
+          for i in $(seq 1 60); do
+            STATUS=$(aws ssm list-command-invocations \
+              --command-id "$COMMAND_ID" \
+              --query 'CommandInvocations[0].Status' \
+              --output text 2>/dev/null || echo "Pending")
+            
+            echo "Command status: $STATUS (attempt $i/60)"
+            
+            if [ "$STATUS" = "Success" ]; then
+              echo "Deployment completed successfully!"
+              exit 0
+            elif [ "$STATUS" = "Failed" ] || [ "$STATUS" = "Cancelled" ] || [ "$STATUS" = "TimedOut" ]; then
+              echo "Deployment failed with status: $STATUS"
+              # Get failure details
+              aws ssm list-command-invocations \
+                --command-id "$COMMAND_ID" \
+                --details \
+                --query 'CommandInvocations[*].{InstanceId:InstanceId,Status:Status,StatusDetails:StatusDetails}'
               exit 1
             fi
+            
+            sleep 10
+          done
+          
+          echo "Deployment timed out waiting for completion"
+          exit 1
 
-            CDN_URL=$(aws ssm get-parameter \
-              --name "/${PROJECT_NAME}/cloudfront_url" \
-              --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
-            if [ -z "$CDN_URL" ] || [ "$CDN_URL" = "None" ]; then
-              echo "ERROR: /${PROJECT_NAME}/cloudfront_url is missing in SSM."
-              exit 1
+      - name: Verify ALB Health
+        env:
+          PROJECT_NAME: devxp-portal
+        run: |
+          # Get ALB DNS name
+          ALB_DNS=$(aws elbv2 describe-load-balancers \
+            --names "${PROJECT_NAME}-alb" \
+            --query 'LoadBalancers[0].DNSName' \
+            --output text)
+          
+          echo "ALB DNS: $ALB_DNS"
+          echo "Verifying ALB health..."
+          
+          # Wait for ALB to be healthy
+          for i in $(seq 1 30); do
+            if curl -f --connect-timeout 5 "http://${ALB_DNS}/api/health" 2>/dev/null; then
+              echo "ALB health check passed!"
+              exit 0
             fi
-
-            MEDIA_BUCKET=$(aws ssm get-parameter \
-              --name "/${PROJECT_NAME}/media_bucket_name" \
-              --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
-            if [ -z "$MEDIA_BUCKET" ] || [ "$MEDIA_BUCKET" = "None" ]; then
-              echo "ERROR: /${PROJECT_NAME}/media_bucket_name is missing in SSM."
-              exit 1
-            fi
-
-            COGNITO_USER_POOL_ID=$(aws ssm get-parameter \
-              --name "/${PROJECT_NAME}/cognito_user_pool_id" \
-              --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
-            if [ -z "$COGNITO_USER_POOL_ID" ] || [ "$COGNITO_USER_POOL_ID" = "None" ]; then
-              echo "ERROR: /${PROJECT_NAME}/cognito_user_pool_id is missing in SSM."
-              exit 1
-            fi
-
-            COGNITO_CLIENT_ID=$(aws ssm get-parameter \
-              --name "/${PROJECT_NAME}/cognito_client_id" \
-              --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
-            if [ -z "$COGNITO_CLIENT_ID" ] || [ "$COGNITO_CLIENT_ID" = "None" ]; then
-              echo "ERROR: /${PROJECT_NAME}/cognito_client_id is missing in SSM."
-              exit 1
-            fi
-
-            COGNITO_REGION=$(aws ssm get-parameter \
-              --name "/${PROJECT_NAME}/cognito_region" \
-              --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
-            ORDER_QUEUE_URL=$(aws ssm get-parameter \
-              --name "/${PROJECT_NAME}/order_queue_url" \
-              --query Parameter.Value --output text --region "$AWS_REGION" 2>/dev/null || echo "")
-
-            mkdir -p apps/app
-            {
-              echo "DATABASE_URL=\"${DATABASE_URL}\""
-              echo "NEXT_PUBLIC_CDN_URL=\"${CDN_URL}\""
-              echo "AWS_S3_BUCKET_NAME=\"${MEDIA_BUCKET}\""
-              echo "COGNITO_USER_POOL_ID=\"${COGNITO_USER_POOL_ID}\""
-              echo "COGNITO_CLIENT_ID=\"${COGNITO_CLIENT_ID}\""
-              echo "COGNITO_REGION=\"${COGNITO_REGION:-$AWS_REGION}\""
-              echo "SQS_QUEUE_URL=\"${ORDER_QUEUE_URL}\""
-            } > apps/app/.env
-            chmod 600 apps/app/.env
-            echo "apps/app/.env created."
-
-            # --- Pull da nova imagem do app ---
-            docker compose -f docker/docker-compose.yml pull app
-
-            # --- Iniciar o banco de dados primeiro ---
-            docker compose -f docker/docker-compose.yml up -d db
-
-            # --- Wait for database ---
-            echo "Waiting for database to be ready..."
-            for i in $(seq 1 30); do
-              if docker exec $(docker compose -f docker/docker-compose.yml ps -q db) pg_isready -U postgres &>/dev/null; then
-                echo "Database is ready!"
-                break
-              fi
-              echo "Waiting for database... ($i/30)"
-              sleep 2
-            done
-
-            # --- Prisma migrations (executado via arquivo JS nativo devido aos links simbólicos do pnpm) ---
-            echo "Running Prisma migrations..."
-            docker compose -f docker/docker-compose.yml run --rm -T -e DATABASE_URL="postgresql://postgres:password@db:5432/devxp?schema=public" app node node_modules/prisma/build/index.js migrate deploy --schema=prisma/schema.prisma
-
-            # --- Subir a aplicação Next.js ---
-            echo "Starting application services..."
-            docker compose -f docker/docker-compose.yml up -d app
-
-            # --- Aguardar o processo do Node iniciar de fato ---
-            echo "Aguardando inicialização do Next.js..."
-            sleep 5
-
-
-            # --- Health check com tratamento de erro e dump de logs ---
-            echo "Validating application health..."
-            if ! curl -f --retry 5 --retry-delay 5 --connect-timeout 5 http://localhost:3000/api/health; then
-              echo "❌ ERRO: Health check falhou! Mostrando logs do container:"
-              docker compose -f docker/docker-compose.yml logs --tail=150 app
-              exit 1
-            fi
-            echo "Deploy concluído com sucesso!"
+            echo "Waiting for ALB to be healthy... ($i/30)"
+            sleep 10
+          done
+          
+          echo "ALB health check failed after 5 minutes"
+          exit 1
