@@ -108,7 +108,3 @@ import {
   id = "E1NW8TUXP04NQ0"
 }
 
-import {
-  to = aws_instance.app
-  id = "i-08062821e950abdc3"
-}

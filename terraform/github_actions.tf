@@ -6,17 +6,17 @@ data "github_repository" "app_repo" {
 # --- Environment Secrets (scoped to var.github_environment) ---
 
 resource "github_actions_environment_secret" "ec2_host" {
-  environment     = var.github_environment
-  repository      = data.github_repository.app_repo.name
-  secret_name     = "EC2_HOST"
-  plaintext_value = aws_instance.app.public_ip
+  environment = var.github_environment
+  repository  = data.github_repository.app_repo.name
+  secret_name = "EC2_HOST"
+  value       = aws_instance.app.public_ip
 }
 
 resource "github_actions_environment_secret" "ec2_ssh_key" {
-  environment     = var.github_environment
-  repository      = data.github_repository.app_repo.name
-  secret_name     = "EC2_SSH_KEY"
-  plaintext_value = tls_private_key.ssh.private_key_pem
+  environment = var.github_environment
+  repository  = data.github_repository.app_repo.name
+  secret_name = "EC2_SSH_KEY"
+  value       = tls_private_key.ssh.private_key_pem
 }
 
 # --- Environment Variables (scoped to var.github_environment) ---
