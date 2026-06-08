@@ -17,7 +17,8 @@ resource "aws_ssm_parameter" "database_url" {
 }
 
 resource "aws_ssm_parameter" "order_queue_url" {
-  name  = "/${var.project_name}/order_queue_url"
-  type  = "String"
-  value = aws_sqs_queue.orders.url
+  name      = "/${var.project_name}/order_queue_url"
+  type      = "String"
+  value     = aws_sqs_queue.orders.url
+  overwrite = true
 }
