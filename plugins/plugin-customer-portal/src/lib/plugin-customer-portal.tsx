@@ -1080,23 +1080,6 @@ const ThankYouPage: React.FC = () => {
   // Hook must be called before any conditional returns to maintain consistent hook order
   const { orders: customerOrders, isLoading } = useCustomerOrders(tableSession?.id || '');
 
-  if (!tableSession) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Card padding="lg">
-          <p className="text-muted-foreground">Nenhuma sessão ativa.</p>
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => (window.location.href = '/plugins/customer-portal/')}
-          >
-            Fazer Check-in
-          </Button>
-        </Card>
-      </div>
-    );
-  }
-
   const totalSpent = customerOrders.reduce((sum, order) => {
     return sum + order.items.reduce((orderSum, item) => {
       const price = item.selectedPrice ? item.selectedPrice.value : 0;
@@ -1132,30 +1115,32 @@ const ThankYouPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="space-y-3 text-left mb-6">
-          <div className="flex justify-between py-2 border-b border-border">
-            <span className="text-muted-foreground">Mesa:</span>
-            <span className="text-foreground font-medium">{tableSession.tableNumber}</span>
+        {tableSession && (
+          <div className="space-y-3 text-left mb-6">
+            <div className="flex justify-between py-2 border-b border-border">
+              <span className="text-muted-foreground">Mesa:</span>
+              <span className="text-foreground font-medium">{tableSession.tableNumber}</span>
+            </div>
+            <div className="flex justify-between py-2 border-b border-border">
+              <span className="text-muted-foreground">Itens consumidos:</span>
+              <span className="text-foreground font-medium">
+                {customerOrders.reduce((sum, order) => sum + order.items.length, 0)}
+              </span>
+            </div>
+            <div className="flex justify-between py-2 border-b border-border">
+              <span className="text-muted-foreground">Total gasto:</span>
+              <span className="text-foreground font-medium">
+                R$ {totalSpent.toFixed(2)}
+              </span>
+            </div>
+            <div className="flex justify-between py-2 border-b border-border">
+              <span className="text-muted-foreground">Pagamentos:</span>
+              <span className="text-green-400 font-medium">
+                R$ {totalPayments.toFixed(2)}
+              </span>
+            </div>
           </div>
-          <div className="flex justify-between py-2 border-b border-border">
-            <span className="text-muted-foreground">Itens consumidos:</span>
-            <span className="text-foreground font-medium">
-              {customerOrders.reduce((sum, order) => sum + order.items.length, 0)}
-            </span>
-          </div>
-          <div className="flex justify-between py-2 border-b border-border">
-            <span className="text-muted-foreground">Total gasto:</span>
-            <span className="text-foreground font-medium">
-              R$ {totalSpent.toFixed(2)}
-            </span>
-          </div>
-          <div className="flex justify-between py-2 border-b border-border">
-            <span className="text-muted-foreground">Pagamentos:</span>
-            <span className="text-green-400 font-medium">
-              R$ {totalPayments.toFixed(2)}
-            </span>
-          </div>
-        </div>
+        )}
 
         <Button
           variant="primary"
