@@ -217,7 +217,8 @@ resource "aws_iam_policy" "github_actions_deploy" {
         Action = [
           "ssm:SendCommand",
           "ssm:ListCommandInvocations",
-          "ssm:GetCommandInvocation"
+          "ssm:GetCommandInvocation",
+          "ssm:GetParameter"
         ]
         Resource = "*"
       },
