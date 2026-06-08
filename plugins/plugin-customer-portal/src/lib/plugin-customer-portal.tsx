@@ -243,10 +243,10 @@ const SessionExpiredPage: React.FC = () => {
             Sessão Encerrada
           </h2>
           <p className="text-muted-foreground mb-4">
-            Sua sessão foi encerrada pelo administrador.
+            Sua sessão foi encerrada.
           </p>
           <p className="text-muted-foreground">
-            Por favor, solicite um novo check-in para continuar.
+            Por favor, realize um novo check-in para continuar.
           </p>
         </div>
       </Card>
