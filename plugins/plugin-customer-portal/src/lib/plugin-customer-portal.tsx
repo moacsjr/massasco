@@ -197,8 +197,10 @@ export const useActiveSessionCheck = () => {
 
         const data = await res.json();
         
-        // Verifica se o status da sessão é OPEN (ativa)
-        if (data.status === 'OPEN') {
+        // Verifica se o status da sessão é ativo (OPEN, OCCUPIED ou CLOSING)
+        // Esses são os mesmos status considerados ativos pelo sistema de check-in
+        const activeStatuses = ['OPEN', 'OCCUPIED', 'CLOSING'];
+        if (activeStatuses.includes(data.status)) {
           setIsActive(true);
         } else {
           // Sessão foi encerrada (CLOSED ou AWAITING_PAYMENT)
@@ -424,6 +426,9 @@ const OrdersPage: React.FC = () => {
   const Card = resolve('Card');
   const Button = resolve('Button');
 
+  // Hook must be called before any conditional returns to maintain consistent hook order
+  const { orders: customerOrders, isLoading } = useCustomerOrders(tableSession?.id || '');
+
   if (isSessionLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -436,8 +441,6 @@ const OrdersPage: React.FC = () => {
     window.location.href = '/plugins/customer-portal/session-expired';
     return null;
   }
-
-  const { orders: customerOrders, isLoading } = useCustomerOrders(tableSession!.id);
 
   const ordersArray = Array.isArray(customerOrders) ? customerOrders : [];
 
@@ -1074,6 +1077,9 @@ const ThankYouPage: React.FC = () => {
   const Button = resolve('Button');
   const router = useRouter();
 
+  // Hook must be called before any conditional returns to maintain consistent hook order
+  const { orders: customerOrders, isLoading } = useCustomerOrders(tableSession?.id || '');
+
   if (!tableSession) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -1090,8 +1096,6 @@ const ThankYouPage: React.FC = () => {
       </div>
     );
   }
-
-  const { orders: customerOrders, isLoading } = useCustomerOrders(tableSession.id);
 
   const totalSpent = customerOrders.reduce((sum, order) => {
     return sum + order.items.reduce((orderSum, item) => {

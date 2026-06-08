@@ -34,6 +34,7 @@ interface CheckInRequestBody {
   };
   ipAddress?: string;
   deviceInfo?: any;
+  tableId?: string;
 }
 
 // Get geolocation settings from database
@@ -90,11 +91,33 @@ async function validateLocation(location: { latitude: number; longitude: number 
   return distanceMeters <= settings.maxDistanceMeters;
 }
 
+// Check if table already has an active session
+async function getActiveSession(tableId: string) {
+  return prisma.tableSession.findFirst({
+    where: {
+      tableId,
+      status: {
+        in: ['OPEN', 'OCCUPIED', 'CLOSING'],
+      },
+    },
+    include: {
+      table: true,
+      participants: {
+        where: {
+          role: 'HOST',
+          status: 'APPROVED',
+        },
+        take: 1,
+      },
+    },
+  });
+}
+
 // Create a new check-in (host-based, no table number required)
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, email, phone, location, ipAddress, deviceInfo } = body as CheckInRequestBody;
+    const { name, email, phone, location, ipAddress, deviceInfo, tableId } = body as CheckInRequestBody;
 
     // Validate required fields
     if (!name) {
@@ -112,7 +135,88 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create a new table session in a transaction
+    // If tableId is provided, check for existing active session
+    if (tableId) {
+      const activeSession = await getActiveSession(tableId);
+      
+      if (activeSession) {
+        // Session already exists - return error to indicate guest should use join request
+        return NextResponse.json(
+          { 
+            error: 'Table already has an active session',
+            existingSessionId: activeSession.id,
+            tableNumber: activeSession.table.number,
+            hostName: activeSession.hostName,
+          },
+          { status: 409 },
+        );
+      }
+
+      // No active session - create new one using the existing table
+      const result = await prisma.$transaction(async (tx) => {
+        // Create the table session using the existing table
+        const tableSession = await tx.tableSession.create({
+          data: {
+            tableId,
+            hostName: name,
+            capacity: 1,
+            status: 'OPEN',
+          },
+          include: {
+            table: true,
+          },
+        });
+
+        // Create the host participant
+        const host = await tx.participant.create({
+          data: {
+            tableSessionId: tableSession.id,
+            name,
+            email,
+            phone,
+            status: 'APPROVED',
+            role: 'HOST',
+            joinedAt: new Date(),
+          },
+        });
+
+        // Create the device session for the host
+        const deviceSession = await tx.deviceSession.create({
+          data: {
+            participantId: host.id,
+            sessionId: generateSessionToken(),
+            deviceInfo,
+            ipaddress: ipAddress,
+            location: location ? { latitude: location.latitude, longitude: location.longitude } : undefined,
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+          },
+          include: {
+            participant: true,
+          },
+        });
+
+        return { tableSession, host, deviceSession };
+      });
+
+      // Publish SSE event for new session
+      sseBus.publish('TABLE_SESSION_CREATED', {
+        sessionId: result.tableSession.id,
+        tableId: result.tableSession.tableId,
+        tableName: result.tableSession.table.name,
+        tableNumber: result.tableSession.table.number,
+      });
+
+      return NextResponse.json(
+        {
+          ...result.tableSession,
+          host: result.host,
+          deviceSession: result.deviceSession,
+        },
+        { status: 201 },
+      );
+    }
+
+    // No tableId provided - create a virtual table (legacy behavior)
     const result = await prisma.$transaction(async (tx) => {
       // Create a new table (virtual table for host-based check-in)
       // In production, you might want to assign to an available table

@@ -87,6 +87,25 @@ const CheckInView: React.FC<CheckInViewProps> = ({ tableToken, tableId, tableNum
             ['OPEN', 'OCCUPIED', 'CLOSING'].includes(s.status)
           );
           if (activeSession) {
+            // Check if the current user has a saved session in localStorage
+            // that matches this active session (meaning they are the host)
+            const savedSession = localStorage.getItem('customerTableSession');
+            if (savedSession) {
+              try {
+                const parsed = JSON.parse(savedSession);
+                // If the saved session ID matches the active session ID,
+                // the user is the host and can resume the session
+                if (parsed.id === activeSession.id) {
+                  // User is the host - allow them to resume the session
+                  // Don't set existingSession, so they can do a normal check-in
+                  // which will fail with 409 and we'll handle it gracefully
+                  console.log('[CheckInView] User is the host of the active session, allowing resume');
+                  return;
+                }
+              } catch (e) {
+                // Invalid JSON, ignore
+              }
+            }
             setExistingSession(activeSession);
           }
         }

@@ -61,8 +61,6 @@ model ProductComplement {
 
 model Order {
   id             String        @id @default(uuid())
-  checkInId      String?
-  checkIn        CheckIn?      @relation(fields: [checkInId], references: [id], onDelete: SetNull)
   tableSessionId String?
   tableSession   TableSession? @relation(fields: [tableSessionId], references: [id], onDelete: SetNull)
   tableNumber    Int
@@ -72,30 +70,6 @@ model Order {
   payments       Payment[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
-}
-
-// ============================================================================
-// CheckIn Model - DEPRECATED: Represents a customer session at a table
-// This model is kept for backward compatibility during migration
-// ============================================================================
-
-model CheckIn {
-  id           String        @id @default(uuid())
-  tableNumber  Int
-  customerName String
-  status       CheckInStatus @default(OPEN)
-  createdAt    DateTime      @default(now())
-  closedAt     DateTime?
-
-  orders       Order[]
-  payments     Payment[]
-
-  @@unique([tableNumber, status]) // Only one OPEN check-in per table
-}
-
-enum CheckInStatus {
-  OPEN
-  CLOSED
 }
 
 model OrderItem {
@@ -118,10 +92,8 @@ model OrderItem {
 model Payment {
   id             String   @id @default(uuid())
   orderId        String?  // Nullable - payments can be against Order
-  checkInId      String?  // Nullable - payments can be against CheckIn
   tableSessionId String?  // Nullable - payments can be against TableSession
   order          Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
-  checkIn        CheckIn? @relation(fields: [checkInId], references: [id], onDelete: SetNull)
   tableSession   TableSession? @relation(fields: [tableSessionId], references: [id], onDelete: SetNull)
   amount         Decimal  @db.Decimal(10, 2)
   method         String   // cash, card, pix
