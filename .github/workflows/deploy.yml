@@ -192,6 +192,29 @@ jobs:
           docker compose -f docker/docker-compose.yml pull --quiet app
           echo "Image pulled successfully."
           
+          # --- Test database connectivity before migrations ---
+          echo "Testing database connectivity..."
+          echo "DATABASE_URL host: \$(echo \$DATABASE_URL | grep -oP '(?<=@)[^:]+')"
+          
+          # Extract host from DATABASE_URL
+          DB_HOST=\$(echo "\$DATABASE_URL" | grep -oP '(?<=@)[^:]+')
+          echo "Database host: \$DB_HOST"
+          
+          # Test TCP connectivity
+          echo "Testing TCP connection to \$DB_HOST:5432..."
+          if timeout 5 bash -c "echo > /dev/tcp/\$DB_HOST/5432" 2>/dev/null; then
+            echo "TCP connection successful!"
+          else
+            echo "ERROR: Cannot reach \$DB_HOST:5432"
+            echo "Checking network interfaces..."
+            ip addr show
+            echo "Checking route to database..."
+            ip route get \$DB_HOST || true
+            echo "Attempting ping..."
+            ping -c 2 -W 2 \$DB_HOST || true
+            exit 1
+          fi
+          
           # --- Run Prisma migrations against the dedicated database ---
           echo "Running Prisma migrations..."
           docker compose -f docker/docker-compose.yml run --rm -T app node node_modules/prisma/build/index.js migrate deploy --schema=prisma/schema.prisma
