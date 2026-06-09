@@ -112,15 +112,23 @@ resource "aws_route_table_association" "private_az2" {
 
 resource "aws_security_group" "postgres" {
   name        = "${var.project_name}-postgres-sg"
-  description = "Security Group para PostgreSQL - acesso restrito apenas da aplicacao"
+  description = "Security Group para PostgreSQL - acesso restrito a VPC"
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description     = "Permite conexao PostgreSQL apenas do Security Group da Aplicacao"
+    description     = "Permite conexao PostgreSQL do Security Group da Aplicacao"
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
     security_groups = [aws_security_group.ec2.id]
+  }
+
+  ingress {
+    description = "Permite conexao PostgreSQL de qualquer IP da VPC (para containers Docker)"
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = [aws_vpc.main.cidr_block]
   }
 
   # Egress limitado - necessario para operacoes internas
