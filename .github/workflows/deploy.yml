@@ -164,6 +164,8 @@ jobs:
             --query Parameter.Value --output text --region "\$AWS_REGION" 2>/dev/null || echo "")
           
           {
+            echo "AWS_ACCOUNT_ID=\"\${AWS_ACCOUNT_ID}\""
+            echo "AWS_REGION=\"\${AWS_REGION}\""
             echo "DATABASE_URL=\"\${DATABASE_URL}\""
             echo "NEXT_PUBLIC_CDN_URL=\"\${CDN_URL}\""
             echo "AWS_S3_BUCKET_NAME=\"\${MEDIA_BUCKET}\""
@@ -176,6 +178,8 @@ jobs:
           echo "apps/app/.env created."
           
           cd /home/ec2-user/meu-app
+
+
           
           # --- Pull the new image ---
           docker compose -f docker/docker-compose.yml pull app
