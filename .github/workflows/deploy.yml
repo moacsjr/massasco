@@ -93,6 +93,9 @@ jobs:
           PROJECT_NAME="devxp-portal"
           AWS_REGION="${AWS_REGION}"
           AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID}"
+
+          export AWS_REGION="${AWS_REGION}"
+          export AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID}"
           
           echo "Starting deployment on $(hostname)..."
           
