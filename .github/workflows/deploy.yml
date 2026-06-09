@@ -194,24 +194,61 @@ jobs:
           
           # --- Test database connectivity before migrations ---
           echo "Testing database connectivity..."
-          echo "DATABASE_URL host: \$(echo \$DATABASE_URL | grep -oP '(?<=@)[^:]+')"
           
           # Extract host from DATABASE_URL
           DB_HOST=\$(echo "\$DATABASE_URL" | grep -oP '(?<=@)[^:]+')
           echo "Database host: \$DB_HOST"
           
-          # Test TCP connectivity
+          # Test TCP connectivity using multiple methods
           echo "Testing TCP connection to \$DB_HOST:5432..."
+          
+          # Method 1: bash /dev/tcp
+          echo "Method 1: bash /dev/tcp..."
           if timeout 5 bash -c "echo > /dev/tcp/\$DB_HOST/5432" 2>/dev/null; then
-            echo "TCP connection successful!"
+            echo "TCP connection successful (bash)!"
           else
-            echo "ERROR: Cannot reach \$DB_HOST:5432"
-            echo "Checking network interfaces..."
-            ip addr show
-            echo "Checking route to database..."
+            echo "bash /dev/tcp failed"
+            
+            # Method 2: nc (netcat)
+            echo "Method 2: netcat..."
+            if command -v nc &> /dev/null; then
+              if timeout 5 nc -zv \$DB_HOST 5432 2>&1; then
+                echo "TCP connection successful (nc)!"
+              else
+                echo "nc failed"
+              fi
+            fi
+            
+            # Method 3: curl
+            echo "Method 3: curl..."
+            if timeout 5 curl -v telnet://\$DB_HOST:5432 2>&1 | head -20; then
+              echo "curl test completed"
+            fi
+            
+            # Show network diagnostics
+            echo ""
+            echo "=== Network Diagnostics ==="
+            echo "Network interfaces:"
+            ip addr show | grep -E "inet |^[0-9]"
+            echo ""
+            echo "Route to database:"
             ip route get \$DB_HOST || true
-            echo "Attempting ping..."
-            ping -c 2 -W 2 \$DB_HOST || true
+            echo ""
+            echo "ARP table:"
+            arp -n | head -10 || true
+            echo ""
+            echo "Checking if port 5432 is reachable via nmap (if available)..."
+            if command -v nmap &> /dev/null; then
+              nmap -p 5432 \$DB_HOST 2>&1 || true
+            fi
+            
+            echo ""
+            echo "ERROR: Cannot establish TCP connection to \$DB_HOST:5432"
+            echo "Possible causes:"
+            echo "  1. PostgreSQL not running on target host"
+            echo "  2. PostgreSQL not listening on all interfaces (check listen_addresses)"
+            echo "  3. pg_hba.conf blocking connections from this subnet"
+            echo "  4. Local firewall (iptables/ufw) blocking port 5432"
             exit 1
           fi
           
