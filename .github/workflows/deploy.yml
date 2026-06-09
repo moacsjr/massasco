@@ -221,16 +221,20 @@ jobs:
 
           SCRIPT_B64=$(base64 -w0 /tmp/deploy-script.sh)
 
-          echo "Command being sent:"
-          echo "echo '$SCRIPT_B64' | base64 -d | bash"
-          
-          # Send command to all instances via SSM
+          cat > /tmp/ssm-params.json <<EOF
+          {
+            "commands": [
+              "echo '$SCRIPT_B64' | base64 -d | bash"
+            ]
+          }
+          EOF
+
           COMMAND_ID=$(aws ssm send-command \
-          --instance-ids "$INSTANCE_IDS" \
-          --document-name "AWS-RunShellScript" \
-          --parameters commands="echo '$SCRIPT_B64' | base64 -d | bash" \
-          --query 'Command.CommandId' \
-          --output text)
+            --instance-ids "$INSTANCE_IDS" \
+            --document-name "AWS-RunShellScript" \
+            --parameters file:///tmp/ssm-params.json \
+            --query 'Command.CommandId' \
+            --output text)
           
           echo "SSM Command ID: $COMMAND_ID"
           
