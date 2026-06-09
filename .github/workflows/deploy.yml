@@ -187,16 +187,20 @@ jobs:
           
           cd /home/ec2-user/meu-app
           
-          # --- Pull the new image ---
-          docker compose -f docker/docker-compose.yml pull app
+          # --- Pull the new image (quiet mode to reduce output) ---
+          echo "Pulling Docker image..."
+          docker compose -f docker/docker-compose.yml pull --quiet app
+          echo "Image pulled successfully."
           
           # --- Run Prisma migrations against the dedicated database ---
           echo "Running Prisma migrations..."
           docker compose -f docker/docker-compose.yml run --rm -T app node node_modules/prisma/build/index.js migrate deploy --schema=prisma/schema.prisma
+          echo "Migrations completed."
           
           # --- Start the application ---
           echo "Starting application services..."
           docker compose -f docker/docker-compose.yml up -d app
+          echo "Application started."
           
           # --- Wait for Node to start ---
           echo "Waiting for Next.js to initialize..."
