@@ -19,6 +19,20 @@ resource "github_actions_environment_secret" "ec2_ssh_key" {
   value       = tls_private_key.ssh.private_key_pem
 }
 
+resource "github_actions_environment_secret" "postgres_private_ip" {
+  environment = var.github_environment
+  repository  = data.github_repository.app_repo.name
+  secret_name = "POSTGRES_PRIVATE_IP"
+  value       = aws_instance.postgres.private_ip
+}
+
+resource "github_actions_environment_secret" "postgres_database_url" {
+  environment = var.github_environment
+  repository  = data.github_repository.app_repo.name
+  secret_name = "DATABASE_URL"
+  value       = "postgresql://postgres:${var.postgres_db_password}@${aws_instance.postgres.private_ip}:5432/${var.postgres_db_name}?schema=public"
+}
+
 # --- Environment Variables (scoped to var.github_environment) ---
 
 data "aws_caller_identity" "current" {}
