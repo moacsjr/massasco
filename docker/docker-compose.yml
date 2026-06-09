@@ -2,8 +2,9 @@ services:
   app:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION:-us-east-1}.amazonaws.com/devxp-app:latest
     restart: always
-    ports:
-      - '3000:3000'
+    network_mode: host
     env_file:
       - /home/ec2-user/meu-app/apps/app/.env
     # DATABASE_URL is provided via .env file (populated from GitHub Actions secret)
+    # network_mode: host allows container to use host's network directly,
+    # enabling access to PostgreSQL on private VPC subnet without NAT issues
