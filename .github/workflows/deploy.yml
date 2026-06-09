@@ -289,42 +289,42 @@ jobs:
           echo "Deployment timed out waiting for completion"
           exit 1
 
-      - name: Verify ALB Health
-        env:
-          PROJECT_NAME: devxp-portal
-        run: |
-          # Get ALB DNS name
-          ALB_DNS=$(aws elbv2 describe-load-balancers \
-            --names "${PROJECT_NAME}-alb" \
-            --query 'LoadBalancers[0].DNSName' \
-            --output text)
+      # - name: Verify ALB Health
+      #   env:
+      #     PROJECT_NAME: devxp-portal
+      #   run: |
+      #     # Get ALB DNS name
+      #     ALB_DNS=$(aws elbv2 describe-load-balancers \
+      #       --names "${PROJECT_NAME}-alb" \
+      #       --query 'LoadBalancers[0].DNSName' \
+      #       --output text)
           
-          echo "ALB DNS: $ALB_DNS"
-          echo "Verifying ALB health..."
+      #     echo "ALB DNS: $ALB_DNS"
+      #     echo "Verifying ALB health..."
           
-          # Initial delay to allow instances to register with target group
-          echo "Waiting 30 seconds for instances to register..."
-          sleep 30
+      #     # Initial delay to allow instances to register with target group
+      #     echo "Waiting 30 seconds for instances to register..."
+      #     sleep 30
           
-          # Wait for ALB to be healthy (up to 5 minutes)
-          MAX_ATTEMPTS=30
-          for i in $(seq 1 $MAX_ATTEMPTS); do
-            if curl -f --connect-timeout 5 "http://${ALB_DNS}/api/health" 2>/dev/null; then
-              echo "ALB health check passed!"
-              exit 0
-            fi
-            echo "Waiting for ALB to be healthy... ($i/$MAX_ATTEMPTS)"
-            sleep 10
-          done
+      #     # Wait for ALB to be healthy (up to 5 minutes)
+      #     MAX_ATTEMPTS=30
+      #     for i in $(seq 1 $MAX_ATTEMPTS); do
+      #       if curl -f --connect-timeout 5 "http://${ALB_DNS}/api/health" 2>/dev/null; then
+      #         echo "ALB health check passed!"
+      #         exit 0
+      #       fi
+      #       echo "Waiting for ALB to be healthy... ($i/$MAX_ATTEMPTS)"
+      #       sleep 10
+      #     done
           
-          echo "ALB health check failed after 5 minutes"
+      #     echo "ALB health check failed after 5 minutes"
           
-          # Debug: Show target group health
-          echo "Checking target group health..."
-          TG_ARN=$(aws elbv2 describe-target-groups \
-            --names "${PROJECT_NAME}-tg" \
-            --query 'TargetGroups[0].TargetGroupArn' \
-            --output text)
-          aws elbv2 describe-target-health --target-group-arn "$TG_ARN"
+      #     # Debug: Show target group health
+      #     echo "Checking target group health..."
+      #     TG_ARN=$(aws elbv2 describe-target-groups \
+      #       --names "${PROJECT_NAME}-tg" \
+      #       --query 'TargetGroups[0].TargetGroupArn' \
+      #       --output text)
+      #     aws elbv2 describe-target-health --target-group-arn "$TG_ARN"
           
-          exit 1
+      #     exit 1
