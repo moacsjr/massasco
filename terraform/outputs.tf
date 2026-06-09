@@ -63,3 +63,33 @@ output "order_queue_arn" {
   description = "ARN da fila SQS de pedidos"
   value       = aws_sqs_queue.orders.arn
 }
+
+# =============================================================================
+# OUTPUTS DO BANCO DE DADOS POSTGRESQL (EC2 PRIVADO)
+# =============================================================================
+
+output "postgres_instance_id" {
+  description = "ID da instancia EC2 do PostgreSQL"
+  value       = aws_instance.postgres.id
+}
+
+output "postgres_private_ip" {
+  description = "IP privado da instancia EC2 do PostgreSQL (usar na DATABASE_URL)"
+  value       = aws_instance.postgres.private_ip
+}
+
+output "postgres_security_group_id" {
+  description = "ID do Security Group do PostgreSQL"
+  value       = aws_security_group.postgres.id
+}
+
+output "postgres_private_subnet_ids" {
+  description = "IDs das subnets privadas"
+  value       = [aws_subnet.private_az1.id, aws_subnet.private_az2.id]
+}
+
+output "postgres_database_url" {
+  description = "Connection string completa para o PostgreSQL na EC2 privada"
+  value       = "postgresql://postgres:${var.postgres_db_password}@${aws_instance.postgres.private_ip}:5432/${var.postgres_db_name}?schema=public"
+  sensitive   = true
+}

@@ -8,6 +8,22 @@ data "aws_ami" "amazon_linux_2023" {
   }
 }
 
+# AMI do Ubuntu Server 22.04 LTS para o PostgreSQL
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  owners      = ["099720109477"] # Canonical
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
 resource "tls_private_key" "ssh" {
   algorithm = "RSA"
   rsa_bits  = 4096
@@ -216,6 +232,82 @@ resource "aws_instance" "app" {
 
   tags = {
     Name        = "${var.project_name}-ec2"
+    Environment = var.environment
+  }
+}
+
+# =============================================================================
+# INSTANCIA EC2 DO POSTGRESQL (SUBNET PRIVADA - SEM IP PUBLICO)
+# =============================================================================
+
+resource "aws_instance" "postgres" {
+  ami           = data.aws_ami.ubuntu.id
+  instance_type = "t3.micro"
+
+  # Alocacao na Subnet Privada
+  subnet_id              = aws_subnet.private_az1.id
+  vpc_security_group_ids = [aws_security_group.postgres.id]
+  key_name               = aws_key_pair.ec2_key.key_name
+
+  # Desabilita explicitamente a atribuicao de IP publico
+  associate_public_ip_address = false
+
+  # Volume root para o sistema operacional
+  root_block_device {
+    volume_size           = 10
+    volume_type           = "gp3"
+    throughput            = 125
+    iops                  = 3000
+    encrypted             = true
+    delete_on_termination = true
+  }
+
+  credit_specification {
+    cpu_credits = "standard"
+  }
+
+  # Script de instalacao e configuracao do PostgreSQL
+  user_data = base64encode(<<-USERDATA
+    #!/bin/bash
+    set -e
+
+    # 1. Atualizar pacotes e instalar Postgres 16
+    apt-get update -y
+    apt-get install -y gnupg wget curl
+    sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+    curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/postgresql-keyring.gpg
+    sed -i 's|apt-key add -|gpg --dearmor -o /usr/share/keyrings/postgresql-keyring.gpg|' /dev/null 2>&1 || true
+    apt-get update -y
+    apt-get install -y postgresql-16 postgresql-contrib-16
+
+    # Parar o servico para configuracao
+    systemctl stop postgresql
+
+    # 2. Configurar pg_hba.conf para permitir conexoes da rede privada
+    cat >> /etc/postgresql/16/main/pg_hba.conf <<PGEOF
+    # Permitir conexoes da VPC privada
+    host    all    all    10.0.0.0/16    scram-sha-256
+    PGEOF
+
+    # 3. Configurar postgresql.conf
+    sed -i "s|#listen_addresses = 'localhost'|listen_addresses = '*'|g" /etc/postgresql/16/main/postgresql.conf
+
+    # 4. Definir senha do usuario postgres
+    systemctl start postgresql
+    sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD '${var.postgres_db_password}';"
+    sudo -u postgres psql -c "CREATE DATABASE ${var.postgres_db_name};"
+    systemctl stop postgresql
+
+    # 5. Reiniciar o servico
+    systemctl start postgresql
+    systemctl enable postgresql
+
+    echo "PostgreSQL installation completed successfully"
+  USERDATA
+  )
+
+  tags = {
+    Name        = "${var.project_name}-postgres"
     Environment = var.environment
   }
 }

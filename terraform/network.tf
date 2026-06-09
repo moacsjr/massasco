@@ -61,6 +61,82 @@ resource "aws_route_table_association" "public_az2" {
   route_table_id = aws_route_table.public.id
 }
 
+# =============================================================================
+# SUBNETS PRIVADAS PARA O BANCO DE DADOS POSTGRESQL
+# =============================================================================
+
+resource "aws_subnet" "private_az1" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.20.0/24"
+  availability_zone       = "${var.aws_region}a"
+  map_public_ip_on_launch = false
+
+  tags = {
+    Name = "${var.project_name}-private-subnet-az1"
+  }
+}
+
+resource "aws_subnet" "private_az2" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.21.0/24"
+  availability_zone       = "${var.aws_region}b"
+  map_public_ip_on_launch = false
+
+  tags = {
+    Name = "${var.project_name}-private-subnet-az2"
+  }
+}
+
+# Route table para subnets privadas (sem acesso direto à internet)
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "${var.project_name}-private-rt"
+  }
+}
+
+resource "aws_route_table_association" "private_az1" {
+  subnet_id      = aws_subnet.private_az1.id
+  route_table_id = aws_route_table.private.id
+}
+
+resource "aws_route_table_association" "private_az2" {
+  subnet_id      = aws_subnet.private_az2.id
+  route_table_id = aws_route_table.private.id
+}
+
+# =============================================================================
+# SECURITY GROUP DO POSTGRESQL (ACESSO RESTRITO VIA REDE PRIVADA)
+# =============================================================================
+
+resource "aws_security_group" "postgres" {
+  name        = "${var.project_name}-postgres-sg"
+  description = "Security Group para PostgreSQL - acesso restrito apenas da aplicacao"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description     = "Permite conexao PostgreSQL apenas do Security Group da Aplicacao"
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ec2.id]
+  }
+
+  # Egress limitado - necessario para operacoes internas
+  egress {
+    description = "Permite trafego de saida para operacoes internas"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.project_name}-postgres-sg"
+  }
+}
+
 resource "aws_security_group" "ec2" {
   name        = "${var.project_name}-ec2-sg"
   description = "Security Group para EC2 DevXP Portal"

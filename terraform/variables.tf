@@ -46,3 +46,20 @@ variable "database_url" {
   sensitive   = true
   default     = "postgresql://postgres:password@localhost:5432/devxp?schema=public"
 }
+
+# =============================================================================
+# VARIAVEIS DO BANCO DE DADOS POSTGRESQL (EC2 PRIVADO)
+# =============================================================================
+
+variable "postgres_db_name" {
+  description = "Nome do banco de dados PostgreSQL a ser criado na instancia EC2 privada"
+  type        = string
+  default     = "massasco"
+}
+
+variable "postgres_db_password" {
+  description = "Senha do usuario postgres para o banco de dados na EC2 privada"
+  type        = string
+  sensitive   = true
+  default     = "changeme"
+}
