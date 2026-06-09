@@ -218,15 +218,19 @@ jobs:
 
           echo "Primeiros 200 chars:"
           echo "$SCRIPT_B64" | cut -c1-200
+
+          SCRIPT_B64=$(base64 -w0 /tmp/deploy-script.sh)
+
+          echo "Command being sent:"
+          echo "echo '$SCRIPT_B64' | base64 -d | bash"
           
           # Send command to all instances via SSM
           COMMAND_ID=$(aws ssm send-command \
-            --instance-ids $INSTANCE_IDS \
-            --document-name "AWS-RunShellScript" \
-            --comment "Deploy application via GitHub Actions" \
-            --parameters "commands=[\"bash -c '$(cat /tmp/deploy-script.sh | base64 -w0 | tr -d '\n')' | base64 -d | bash\"]" \
-            --query 'Command.CommandId' \
-            --output text)
+          --instance-ids "$INSTANCE_IDS" \
+          --document-name "AWS-RunShellScript" \
+          --parameters commands="echo '$SCRIPT_B64' | base64 -d | bash" \
+          --query 'Command.CommandId' \
+          --output text)
           
           echo "SSM Command ID: $COMMAND_ID"
           
