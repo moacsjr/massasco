@@ -1,26 +1,9 @@
 services:
-  db:
-    image: postgres:15-alpine
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: devxp
-    ports:
-      - '5432:5432'
-    volumes:
-      - ./postgres-data:/var/lib/postgresql/data
-
   app:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION:-us-east-1}.amazonaws.com/devxp-app:latest
     restart: always
-    depends_on:
-      - db
     ports:
       - '3000:3000'
     env_file:
       - /home/ec2-user/meu-app/apps/app/.env
-    environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/devxp?schema=public
-
-# Volume removed - using bind mount instead (./postgres-data)
+    # DATABASE_URL is provided via .env file (populated from GitHub Actions secret)

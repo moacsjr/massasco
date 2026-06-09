@@ -115,14 +115,8 @@ jobs:
           aws s3 cp s3://\${ARTIFACTS_BUCKET}/docker-compose.yml /home/ec2-user/meu-app/docker/docker-compose.yml
           
           # --- Fetch runtime config from SSM and write .env ---
-          DATABASE_URL=\$(aws ssm get-parameter \\
-            --name "/\${PROJECT_NAME}/database_url" \\
-            --with-decryption \\
-            --query Parameter.Value --output text --region "\$AWS_REGION")
-          if [ -z "\$DATABASE_URL" ] || [ "\$DATABASE_URL" = "None" ]; then
-            echo "ERROR: /\${PROJECT_NAME}/database_url is missing in SSM."
-            exit 1
-          fi
+          # DATABASE_URL comes from GitHub Actions secret (set by Terraform)
+          DATABASE_URL="${DATABASE_URL}"
           
           CDN_URL=\$(aws ssm get-parameter \\
             --name "/\${PROJECT_NAME}/cloudfront_url" \\
@@ -166,7 +160,7 @@ jobs:
           {
             echo "AWS_ACCOUNT_ID=\"\${AWS_ACCOUNT_ID}\""
             echo "AWS_REGION=\"\${AWS_REGION}\""
-            echo "DATABASE_URL=\"\${DATABASE_URL}\""
+            echo "DATABASE_URL=\"${DATABASE_URL}\""
             echo "NEXT_PUBLIC_CDN_URL=\"\${CDN_URL}\""
             echo "AWS_S3_BUCKET_NAME=\"\${MEDIA_BUCKET}\""
             echo "COGNITO_USER_POOL_ID=\"\${COGNITO_USER_POOL_ID}\""
@@ -188,23 +182,9 @@ jobs:
           # --- Pull the new image ---
           docker compose -f docker/docker-compose.yml pull app
           
-          # --- Start the database first (if not already running) ---
-          docker compose -f docker/docker-compose.yml up -d db
-          
-          # --- Wait for database ---
-          echo "Waiting for database to be ready..."
-          for i in \$(seq 1 30); do
-            if docker exec \$(docker compose -f docker/docker-compose.yml ps -q db) pg_isready -U postgres &>/dev/null; then
-              echo "Database is ready!"
-              break
-            fi
-            echo "Waiting for database... (\$i/30)"
-            sleep 2
-          done
-          
-          # --- Run Prisma migrations ---
+          # --- Run Prisma migrations against the dedicated database ---
           echo "Running Prisma migrations..."
-          docker compose -f docker/docker-compose.yml run --rm -T -e DATABASE_URL="postgresql://postgres:password@db:5432/devxp?schema=public" app node node_modules/prisma/build/index.js migrate deploy --schema=prisma/schema.prisma
+          docker compose -f docker/docker-compose.yml run --rm -T app node node_modules/prisma/build/index.js migrate deploy --schema=prisma/schema.prisma
           
           # --- Start the application ---
           echo "Starting application services..."
