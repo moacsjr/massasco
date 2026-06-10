@@ -70,3 +70,4 @@ auth.json
 .pnpm-store/ 
 
 .playwright*/console-*.log
+.playwright*/*.pdf
