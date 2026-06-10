@@ -68,3 +68,5 @@ auth.json
 .env
 
 .pnpm-store/ 
+
+.playwright*/console-*.log
