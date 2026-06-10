@@ -259,7 +259,7 @@ jobs:
           
           # --- Start the application ---
           echo "Starting application services..."
-          docker compose -f docker/docker-compose.yml up -d app
+          docker compose -f docker/docker-compose.yml up -d --pull always app
           echo "Application started."
           
           # --- Wait for Node to start ---
