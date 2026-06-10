@@ -30,6 +30,10 @@ export async function POST(request: Request) {
       );
     }
 
+    // Verificar se a requisição veio via HTTPS (diretamente ou via proxy/ALB)
+    const forwardedProto = request.headers.get('x-forwarded-proto');
+    const isSecure = forwardedProto === 'https' || new URL(request.url).protocol === 'https:';
+
     const userPoolId = process.env.COGNITO_USER_POOL_ID;
     const clientId = process.env.COGNITO_CLIENT_ID;
     const region = process.env.COGNITO_REGION || 'us-east-1';
@@ -89,7 +93,7 @@ export async function POST(request: Request) {
     // Cookie de ID Token (utilizado pelo Middleware e pelo frontend)
     nextResponse.cookies.set('id_token', idToken, {
       httpOnly: false, // Permitir leitura no client do monorepo se necessário
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecure, // Usar secure apenas se a conexão for HTTPS
       sameSite: 'lax',
       path: '/',
       maxAge: 3600 * 24, // 24h
@@ -98,7 +102,7 @@ export async function POST(request: Request) {
     // Cookie de Access Token (HTTP-Only para requisições de API)
     nextResponse.cookies.set('access_token', accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecure, // Usar secure apenas se a conexão for HTTPS
       sameSite: 'lax',
       path: '/',
       maxAge: 3600 * 24,
