@@ -1,0 +1,65 @@
+- generic [active] [ref=e1]:
+  - link "🏠 Home" [ref=e2] [cursor=pointer]:
+    - /url: /
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - img [ref=e7]
+        - generic [ref=e9]: massas.co
+    - generic [ref=e10]:
+      - navigation [ref=e12]:
+        - link "Categorias" [ref=e13] [cursor=pointer]:
+          - /url: /plugins/menu-catalog-ui/categories
+          - img [ref=e14]
+        - link "Produtos" [ref=e18] [cursor=pointer]:
+          - /url: /plugins/menu-catalog-ui/products
+          - img [ref=e19]
+        - link "Pedidos" [ref=e23] [cursor=pointer]:
+          - /url: /plugins/orders-delivery
+          - img [ref=e24]
+        - link "Cozinha" [ref=e28] [cursor=pointer]:
+          - /url: /plugins/kds
+          - img [ref=e29]
+        - link "Pagamentos" [ref=e31] [cursor=pointer]:
+          - /url: /plugins/payments-ui
+          - img [ref=e32]
+        - link "Cardápio" [ref=e35] [cursor=pointer]:
+          - /url: /plugins/customer-portal/menu
+          - img [ref=e36]
+        - link "Pedidos" [ref=e40] [cursor=pointer]:
+          - /url: /plugins/customer-portal/orders
+          - img [ref=e41]
+        - link "Checkout" [ref=e42] [cursor=pointer]:
+          - /url: /plugins/customer-portal/checkout
+          - img [ref=e43]
+        - link "Mesas" [ref=e45] [cursor=pointer]:
+          - /url: /plugins/table-management
+          - img [ref=e46]
+        - link "Check-in" [ref=e51] [cursor=pointer]:
+          - /url: /plugins/table-management/check-in
+          - img [ref=e52]
+      - main [ref=e59]:
+        - generic [ref=e61]:
+          - heading "Bem-vindo ao DevXP Portal v2.2" [level=3] [ref=e63]
+          - generic [ref=e64]:
+            - paragraph [ref=e65]:
+              - text: O sistema foi atualizado para uma arquitetura puramente baseada em
+              - strong [ref=e66]: Plugins
+              - text: .
+            - generic [ref=e67]:
+              - heading "O que mudou?" [level=3] [ref=e68]
+              - list [ref=e69]:
+                - listitem [ref=e70]:
+                  - strong [ref=e71]: "Entities Removidas:"
+                  - text: O conceito de entidades foi removido para simplificar o core.
+                - listitem [ref=e72]:
+                  - strong [ref=e73]: "Features:"
+                  - text: Plugins que adicionam interface visual por meio de
+                  - emphasis [ref=e74]: Extension Points
+                  - text: .
+                - listitem [ref=e75]:
+                  - strong [ref=e76]: "Services:"
+                  - text: Plugins que fornecem APIs de backend para outros plugins.
+            - paragraph [ref=e78]: 💡 Explore o menu lateral para ver as funcionalidades instaladas via plugins.
+    - contentinfo [ref=e81]
+  - region "Notifications alt+T"

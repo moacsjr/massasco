@@ -1,0 +1,46 @@
+- generic [active] [ref=e1]:
+  - link "🏠 Home" [ref=e2] [cursor=pointer]:
+    - /url: /
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - img [ref=e7]
+        - generic [ref=e9]: massas.co
+    - generic [ref=e10]:
+      - navigation [ref=e12]:
+        - link "Categorias" [ref=e13] [cursor=pointer]:
+          - /url: /plugins/menu-catalog-ui/categories
+          - img [ref=e14]
+        - link "Produtos" [ref=e18] [cursor=pointer]:
+          - /url: /plugins/menu-catalog-ui/products
+          - img [ref=e19]
+        - link "Pedidos" [ref=e23] [cursor=pointer]:
+          - /url: /plugins/orders-delivery
+          - img [ref=e24]
+        - link "Cozinha" [ref=e28] [cursor=pointer]:
+          - /url: /plugins/kds
+          - img [ref=e29]
+        - link "Pagamentos" [ref=e31] [cursor=pointer]:
+          - /url: /plugins/payments-ui
+          - img [ref=e32]
+        - link "Cardápio" [ref=e35] [cursor=pointer]:
+          - /url: /plugins/customer-portal/menu
+          - img [ref=e36]
+        - link "Pedidos" [ref=e40] [cursor=pointer]:
+          - /url: /plugins/customer-portal/orders
+          - img [ref=e41]
+        - link "Checkout" [ref=e42] [cursor=pointer]:
+          - /url: /plugins/customer-portal/checkout
+          - img [ref=e43]
+        - link "Mesas" [ref=e45] [cursor=pointer]:
+          - /url: /plugins/table-management
+          - img [ref=e46]
+        - link "Check-in" [ref=e51] [cursor=pointer]:
+          - /url: /plugins/table-management/check-in
+          - img [ref=e52]
+      - main [ref=e59]:
+        - paragraph [ref=e60]: Carregando componente do plugin...
+    - contentinfo [ref=e63]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e69] [cursor=pointer]:
+    - img [ref=e70]

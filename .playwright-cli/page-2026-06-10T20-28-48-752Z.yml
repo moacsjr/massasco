@@ -1,0 +1,229 @@
+- generic [active] [ref=e1]:
+  - link "🏠 Home" [ref=e2] [cursor=pointer]:
+    - /url: /
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - img [ref=e7]
+        - generic [ref=e9]: massas.co
+    - generic [ref=e10]:
+      - navigation [ref=e12]:
+        - link "Categorias" [ref=e13] [cursor=pointer]:
+          - /url: /plugins/menu-catalog-ui/categories
+          - img [ref=e14]
+        - link "Produtos" [ref=e18] [cursor=pointer]:
+          - /url: /plugins/menu-catalog-ui/products
+          - img [ref=e19]
+        - link "Pedidos" [ref=e23] [cursor=pointer]:
+          - /url: /plugins/orders-delivery
+          - img [ref=e24]
+        - link "Cozinha" [ref=e28] [cursor=pointer]:
+          - /url: /plugins/kds
+          - img [ref=e29]
+        - link "Pagamentos" [ref=e31] [cursor=pointer]:
+          - /url: /plugins/payments-ui
+          - img [ref=e32]
+        - link "Cardápio" [ref=e35] [cursor=pointer]:
+          - /url: /plugins/customer-portal/menu
+          - img [ref=e36]
+        - link "Pedidos" [ref=e40] [cursor=pointer]:
+          - /url: /plugins/customer-portal/orders
+          - img [ref=e41]
+        - link "Checkout" [ref=e42] [cursor=pointer]:
+          - /url: /plugins/customer-portal/checkout
+          - img [ref=e43]
+        - link "Mesas" [ref=e45] [cursor=pointer]:
+          - /url: /plugins/table-management
+          - img [ref=e46]
+        - link "Check-in" [ref=e51] [cursor=pointer]:
+          - /url: /plugins/table-management/check-in
+          - img [ref=e52]
+      - main [ref=e59]:
+        - generic [ref=e75]:
+          - heading "Gerenciamento de Mesas" [level=3] [ref=e77]
+          - generic [ref=e78]:
+            - generic [ref=e79]:
+              - heading "Mesas Cadastradas" [level=2] [ref=e80]
+              - generic [ref=e81]:
+                - button "🖨️ Imprimir Todos QR Codes" [ref=e82]
+                - button "+ Adicionar Mesa" [ref=e83]
+            - generic [ref=e84]:
+              - generic [ref=e85]:
+                - generic [ref=e86]:
+                  - generic [ref=e87]:
+                    - heading "Mesa 1" [level=3] [ref=e88]
+                    - paragraph [ref=e89]: Mesa 1
+                  - generic [ref=e90]: Disponível
+                - paragraph [ref=e92]: "Criado: 07/06/2026, 21:19:09"
+                - generic [ref=e94]:
+                  - button "Editar" [ref=e95]
+                  - button "🛑 Desativar" [ref=e96]:
+                    - generic [ref=e97]: 🛑
+                    - text: Desativar
+                  - button "📱 QR Code" [ref=e98]:
+                    - generic [ref=e99]: 📱
+                    - text: QR Code
+                  - button "Excluir" [ref=e100]
+              - generic [ref=e101]:
+                - generic [ref=e102]:
+                  - generic [ref=e103]:
+                    - heading "Mesa 2" [level=3] [ref=e104]
+                    - paragraph [ref=e105]: Mesa 2
+                  - generic [ref=e106]: Disponível
+                - paragraph [ref=e107]: Sem sessão ativa
+                - generic [ref=e109]:
+                  - button "Editar" [ref=e110]
+                  - button "🛑 Desativar" [ref=e111]:
+                    - generic [ref=e112]: 🛑
+                    - text: Desativar
+                  - button "📱 QR Code" [ref=e113]:
+                    - generic [ref=e114]: 📱
+                    - text: QR Code
+                  - button "Excluir" [ref=e115]
+              - generic [ref=e116]:
+                - generic [ref=e117]:
+                  - generic [ref=e118]:
+                    - heading "Mesa 3" [level=3] [ref=e119]
+                    - paragraph [ref=e120]: Mesa 3
+                  - generic [ref=e121]: Disponível
+                - paragraph [ref=e122]: Sem sessão ativa
+                - generic [ref=e124]:
+                  - button "Editar" [ref=e125]
+                  - button "🛑 Desativar" [ref=e126]:
+                    - generic [ref=e127]: 🛑
+                    - text: Desativar
+                  - button "📱 QR Code" [ref=e128]:
+                    - generic [ref=e129]: 📱
+                    - text: QR Code
+                  - button "Excluir" [ref=e130]
+              - generic [ref=e131]:
+                - generic [ref=e132]:
+                  - generic [ref=e133]:
+                    - heading "Mesa 4" [level=3] [ref=e134]
+                    - paragraph [ref=e135]: Mesa 4
+                  - generic [ref=e136]: Disponível
+                - paragraph [ref=e137]: Sem sessão ativa
+                - generic [ref=e139]:
+                  - button "Editar" [ref=e140]
+                  - button "🛑 Desativar" [ref=e141]:
+                    - generic [ref=e142]: 🛑
+                    - text: Desativar
+                  - button "📱 QR Code" [ref=e143]:
+                    - generic [ref=e144]: 📱
+                    - text: QR Code
+                  - button "Excluir" [ref=e145]
+              - generic [ref=e146]:
+                - generic [ref=e147]:
+                  - generic [ref=e148]:
+                    - heading "Mesa 5" [level=3] [ref=e149]
+                    - paragraph [ref=e150]: Mesa 5
+                  - generic [ref=e151]: Disponível
+                - paragraph [ref=e152]: Sem sessão ativa
+                - generic [ref=e154]:
+                  - button "Editar" [ref=e155]
+                  - button "🛑 Desativar" [ref=e156]:
+                    - generic [ref=e157]: 🛑
+                    - text: Desativar
+                  - button "📱 QR Code" [ref=e158]:
+                    - generic [ref=e159]: 📱
+                    - text: QR Code
+                  - button "Excluir" [ref=e160]
+              - generic [ref=e161]:
+                - generic [ref=e162]:
+                  - generic [ref=e163]:
+                    - heading "Mesa 6" [level=3] [ref=e164]
+                    - paragraph [ref=e165]: Mesa 6
+                  - generic [ref=e166]: Disponível
+                - paragraph [ref=e167]: Sem sessão ativa
+                - generic [ref=e169]:
+                  - button "Editar" [ref=e170]
+                  - button "🛑 Desativar" [ref=e171]:
+                    - generic [ref=e172]: 🛑
+                    - text: Desativar
+                  - button "📱 QR Code" [ref=e173]:
+                    - generic [ref=e174]: 📱
+                    - text: QR Code
+                  - button "Excluir" [ref=e175]
+              - generic [ref=e176]:
+                - generic [ref=e177]:
+                  - generic [ref=e178]:
+                    - heading "Mesa 7" [level=3] [ref=e179]
+                    - paragraph [ref=e180]: Mesa 7
+                  - generic [ref=e181]: Disponível
+                - paragraph [ref=e182]: Sem sessão ativa
+                - generic [ref=e184]:
+                  - button "Editar" [ref=e185]
+                  - button "🛑 Desativar" [ref=e186]:
+                    - generic [ref=e187]: 🛑
+                    - text: Desativar
+                  - button "📱 QR Code" [ref=e188]:
+                    - generic [ref=e189]: 📱
+                    - text: QR Code
+                  - button "Excluir" [ref=e190]
+              - generic [ref=e191]:
+                - generic [ref=e192]:
+                  - generic [ref=e193]:
+                    - heading "Mesa 8" [level=3] [ref=e194]
+                    - paragraph [ref=e195]: Mesa 8
+                  - generic [ref=e196]: Disponível
+                - paragraph [ref=e197]: Sem sessão ativa
+                - generic [ref=e199]:
+                  - button "Editar" [ref=e200]
+                  - button "🛑 Desativar" [ref=e201]:
+                    - generic [ref=e202]: 🛑
+                    - text: Desativar
+                  - button "📱 QR Code" [ref=e203]:
+                    - generic [ref=e204]: 📱
+                    - text: QR Code
+                  - button "Excluir" [ref=e205]
+              - generic [ref=e206]:
+                - generic [ref=e207]:
+                  - generic [ref=e208]:
+                    - heading "Mesa 9" [level=3] [ref=e209]
+                    - paragraph [ref=e210]: Mesa 9
+                  - generic [ref=e211]: Disponível
+                - paragraph [ref=e212]: Sem sessão ativa
+                - generic [ref=e214]:
+                  - button "Editar" [ref=e215]
+                  - button "🛑 Desativar" [ref=e216]:
+                    - generic [ref=e217]: 🛑
+                    - text: Desativar
+                  - button "📱 QR Code" [ref=e218]:
+                    - generic [ref=e219]: 📱
+                    - text: QR Code
+                  - button "Excluir" [ref=e220]
+              - generic [ref=e221]:
+                - generic [ref=e222]:
+                  - generic [ref=e223]:
+                    - heading "Mesa 10" [level=3] [ref=e224]
+                    - paragraph [ref=e225]: Mesa 10
+                  - generic [ref=e226]: Disponível
+                - paragraph [ref=e227]: Sem sessão ativa
+                - generic [ref=e229]:
+                  - button "Editar" [ref=e230]
+                  - button "🛑 Desativar" [ref=e231]:
+                    - generic [ref=e232]: 🛑
+                    - text: Desativar
+                  - button "📱 QR Code" [ref=e233]:
+                    - generic [ref=e234]: 📱
+                    - text: QR Code
+                  - button "Excluir" [ref=e235]
+              - generic [ref=e236]:
+                - generic [ref=e237]:
+                  - heading "Mesa 11" [level=3] [ref=e239]
+                  - generic [ref=e240]: Disponível
+                - paragraph [ref=e241]: Sem sessão ativa
+                - generic [ref=e243]:
+                  - button "Editar" [ref=e244]
+                  - button "🛑 Desativar" [ref=e245]:
+                    - generic [ref=e246]: 🛑
+                    - text: Desativar
+                  - button "📱 QR Code" [ref=e247]:
+                    - generic [ref=e248]: 📱
+                    - text: QR Code
+                  - button "Excluir" [ref=e249]
+    - contentinfo [ref=e63]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e69] [cursor=pointer]:
+    - img [ref=e70]
+  - alert [ref=e250]

@@ -1,32 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { PDFDocument, StandardFonts, rgb, PDFPage } from 'pdf-lib';
 import QRCode from 'qrcode';
 
 // Generate QR code data
 function generateQRCodeData(tableToken: string): string {
-  // Format: https://portal.massas.co/customer-portal/checkin/{tableToken}
-  return `https://portal.massas.co/customer-portal/checkin/${tableToken}`;
+  return `https://portal.massas.co/plugins/customer-portal/checkin/${tableToken}`;
 }
 
-// Generate QR code as PNG buffer
-async function generateQRCodeImage(data: string): Promise<Uint8Array> {
-  const buffer = await QRCode.toBuffer(data, {
-    width: 200,
-    margin: 1,
-    type: 'png',
-    color: {
-      dark: '#000000',
-      light: '#ffffff',
-    },
+// Draw QR code directly on PDF using rectangles (no image embedding needed)
+function drawQRCodeOnPage(
+  page: PDFPage,
+  data: string,
+  x: number,
+  y: number,
+  size: number,
+): void {
+  const qrCodeData = QRCode.create(data, {
+    errorCorrectionLevel: 'M',
   });
-  return new Uint8Array(buffer);
+
+  const modules = qrCodeData.modules;
+  const moduleCount = modules.size;
+  const moduleSize = size / moduleCount;
+
+  // Draw white background
+  page.drawRectangle({
+    x,
+    y,
+    width: size,
+    height: size,
+    color: rgb(1, 1, 1),
+  });
+
+  // Draw black modules
+  for (let row = 0; row < moduleCount; row++) {
+    for (let col = 0; col < moduleCount; col++) {
+      if (modules.get(row, col)) {
+        const moduleX = x + col * moduleSize;
+        const moduleY = y + size - (row + 1) * moduleSize;
+
+        page.drawRectangle({
+          x: moduleX,
+          y: moduleY,
+          width: moduleSize + 0.1,
+          height: moduleSize + 0.1,
+          color: rgb(0, 0, 0),
+        });
+      }
+    }
+  }
 }
 
 // GET: Download all active tables QR codes as PDF
 export async function GET() {
   try {
-    // Get all active tables with their tokens
     const tables = await prisma.table.findMany({
       where: { isActive: true },
       orderBy: { number: 'asc' },
@@ -39,16 +67,15 @@ export async function GET() {
       );
     }
 
-    // Create PDF document
     const pdfDoc = await PDFDocument.create();
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-    // Page dimensions (A4)
+    // A4 dimensions
     const pageWidth = 595.28;
     const pageHeight = 841.89;
 
-    // Grid layout: 2 columns x 2 rows = 4 QR codes per page
+    // Grid: 2 columns x 2 rows = 4 QR codes per page
     const cols = 2;
     const rows = 2;
     const itemsPerPage = cols * rows;
@@ -61,7 +88,6 @@ export async function GET() {
       const pageIndex = Math.floor(i / itemsPerPage);
       const positionInPage = i % itemsPerPage;
 
-      // Create new page if needed
       let page = pdfDoc.getPages()[pageIndex];
       if (!page) {
         page = pdfDoc.addPage([pageWidth, pageHeight]);
@@ -70,11 +96,10 @@ export async function GET() {
       const col = positionInPage % cols;
       const row = Math.floor(positionInPage / cols);
 
-      // Cell center coordinates
       const cellCenterX = col * cellWidth + cellWidth / 2;
       const cellCenterY = pageHeight - (row * cellHeight + cellHeight / 2);
 
-      // Draw cell background FIRST (white fill with light gray border)
+      // Draw cell border
       page.drawRectangle({
         x: col * cellWidth + 10,
         y: pageHeight - (row + 1) * cellHeight + 10,
@@ -85,33 +110,17 @@ export async function GET() {
         color: rgb(1, 1, 1),
       });
 
-      // Generate QR code image
       const qrUrl = generateQRCodeData(table.token);
-      const qrImageBytes = await generateQRCodeImage(qrUrl);
-      
-      console.log(`[QR PDF] Table ${table.number}: QR URL = ${qrUrl}`);
-      console.log(`[QR PDF] Table ${table.number}: Image bytes length = ${qrImageBytes.length}`);
-      console.log(`[QR PDF] Table ${table.number}: First 8 bytes = ${Array.from(qrImageBytes.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join('')}`);
-      
-      const qrImage = await pdfDoc.embedPng(qrImageBytes);
-      
-      console.log(`[QR PDF] Table ${table.number}: Image embedded, width=${qrImage.width}, height=${qrImage.height}`);
-
-      // QR code size
       const qrSize = 150;
 
-      // Draw QR code image (centered in cell) - drawn AFTER background
-      const drawX = cellCenterX - qrSize / 2;
-      const drawY = cellCenterY - qrSize / 2 + 20;
-      
-      console.log(`[QR PDF] Table ${table.number}: Drawing at x=${drawX}, y=${drawY}, size=${qrSize}x${qrSize}`);
-      
-      page.drawImage(qrImage, {
-        x: drawX,
-        y: drawY,
-        width: qrSize,
-        height: qrSize,
-      });
+      // Draw QR code directly using rectangles
+      drawQRCodeOnPage(
+        page,
+        qrUrl,
+        cellCenterX - qrSize / 2,
+        cellCenterY - qrSize / 2 + 20,
+        qrSize,
+      );
 
       // Draw table name (above QR code)
       const tableLabel = table.name || `Mesa ${table.number}`;
@@ -136,7 +145,7 @@ export async function GET() {
       });
 
       // Draw URL (below QR code)
-      const urlText = `portal.massas.co/checkin/${table.token.substring(0, 8)}...`;
+      const urlText = `portal.massas.co/plugins/customer-portal/checkin/${table.token.substring(0, 8)}...`;
       const urlWidth = font.widthOfTextAtSize(urlText, 8);
       page.drawText(urlText, {
         x: cellCenterX - urlWidth / 2,
@@ -147,10 +156,7 @@ export async function GET() {
       });
     }
 
-    // Save PDF
     const pdfBytes = await pdfDoc.save();
-
-    // Convert Uint8Array to ArrayBuffer for NextResponse body
     const pdfBuffer = new ArrayBuffer(pdfBytes.byteLength);
     new Uint8Array(pdfBuffer).set(pdfBytes);
 
@@ -170,7 +176,7 @@ export async function GET() {
   }
 }
 
-// Download QR codes as PDF
+// POST: Download QR codes for specific tables
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -178,7 +184,6 @@ export async function POST(req: NextRequest) {
       tableIds?: string[];
     };
 
-    // If no tableIds provided, get all active tables
     const where: any = {
       isActive: true,
     };
@@ -187,7 +192,6 @@ export async function POST(req: NextRequest) {
       where.id = { in: tableIds };
     }
 
-    // Get all tables with their tokens
     const tables = await prisma.table.findMany({
       where,
       orderBy: {
@@ -202,8 +206,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Return a JSON response with QR code URLs
-    // The client can use this to generate and download QR codes
     return NextResponse.json({
       tables: tables.map((table) => ({
         id: table.id,
