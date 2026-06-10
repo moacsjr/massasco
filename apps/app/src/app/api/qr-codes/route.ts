@@ -10,8 +10,8 @@ function generateAccessToken(): string {
 
 // Generate QR code data
 function generateQRCodeData(tableToken: string): string {
-  // Format: /customer-portal/checkin/{tableToken}
-  return `/customer-portal/checkin/${tableToken}`;
+  // Format: https://portal.massas.co/customer-portal/checkin/{tableToken}
+  return `https://portal.massas.co/customer-portal/checkin/${tableToken}`;
 }
 
 // Generate a new QR code for a table

@@ -83,6 +83,9 @@ const TableManagementView: React.FC = () => {
   // Loading states
   const [isQRLoading, setIsQRLoading] = React.useState(false);
   const [isDownloadingQR, setIsDownloadingQR] = React.useState(false);
+  
+  // Generated QR code URL state
+  const [generatedQrUrl, setGeneratedQrUrl] = React.useState<string | null>(null);
 
   // Fetch tables from /api/tables
   React.useEffect(() => {
@@ -205,6 +208,7 @@ const TableManagementView: React.FC = () => {
     setIsQRModalOpen(false);
     setTableToRegenerateQR(null);
     setQrAction('generate');
+    setGeneratedQrUrl(null);
   };
 
   const handleSave = async () => {
@@ -337,7 +341,10 @@ const TableManagementView: React.FC = () => {
         }
 
         const data = await res.json();
-        alert(`QR Code gerado com sucesso!\nURL: ${data.qrCodeUrl}`);
+        setGeneratedQrUrl(data.qrCodeUrl);
+        // Don't close modal - show the QR code image
+        setIsQRLoading(false);
+        return;
       } else if (qrAction === 'download') {
         setIsDownloadingQR(true);
         const res = await fetch(`/api/qr-codes/download?tableId=${tableToRegenerateQR.id}`);
@@ -700,11 +707,31 @@ const TableManagementView: React.FC = () => {
                   <p className="text-sm text-muted-foreground mb-2">{tableToRegenerateQR.name}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  QR Code gerado para: <code className="bg-white dark:bg-gray-700 px-1 py-0.5 rounded">/customer-portal/checkin/{tableToRegenerateQR.token}</code>
+                  QR Code URL: <code className="bg-white dark:bg-gray-700 px-1 py-0.5 rounded break-all">https://portal.massas.co/customer-portal/checkin/{tableToRegenerateQR.token}</code>
                 </p>
               </div>
+
+              {/* Generated QR Code Image */}
+              {generatedQrUrl && (
+                <div className="flex flex-col items-center gap-3 p-4 bg-white rounded-lg border border-green-200 dark:border-green-800">
+                  <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <p className="text-sm font-medium">QR Code gerado com sucesso!</p>
+                  </div>
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(generatedQrUrl)}`}
+                    alt={`QR Code Mesa ${tableToRegenerateQR.number}`}
+                    className="w-[250px] h-[250px] border border-gray-200 rounded-lg"
+                  />
+                  <p className="text-xs text-muted-foreground text-center break-all max-w-full px-2">
+                    {generatedQrUrl}
+                  </p>
+                </div>
+              )}
               
-              {qrAction === 'regenerate' && (
+              {qrAction === 'regenerate' && !generatedQrUrl && (
                 <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
                   <p className="text-sm text-yellow-700 dark:text-yellow-400">
                     ⚠️ O QR Code anterior será invalidado. Novo token gerado com 128 bits de entropia.
@@ -735,18 +762,20 @@ const TableManagementView: React.FC = () => {
                 size="md"
                 onClick={closeQRModal}
               >
-                Cancelar
+                Fechar
               </Button>
-              <Button
-                variant="primary"
-                size="md"
-                onClick={handleQRAction}
-                isLoading={isQRLoading || isDownloadingQR}
-              >
-                {qrAction === 'generate' && 'Gerar QR Code'}
-                {qrAction === 'regenerate' && 'Regenerar QR Code'}
-                {qrAction === 'download' && 'Baixar PDF'}
-              </Button>
+              {!generatedQrUrl && (
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={handleQRAction}
+                  isLoading={isQRLoading || isDownloadingQR}
+                >
+                  {qrAction === 'generate' && 'Gerar QR Code'}
+                  {qrAction === 'regenerate' && 'Regenerar QR Code'}
+                  {qrAction === 'download' && 'Baixar PDF'}
+                </Button>
+              )}
             </div>
           </div>
         </div>
