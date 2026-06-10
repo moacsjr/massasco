@@ -6,8 +6,13 @@ function isTokenExpired(token: string): boolean {
     const payloadPart = token.split('.')[1];
     if (!payloadPart) return true;
 
-    // No Edge Runtime do Next.js, atob está disponível globalmente
-    const binaryString = atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/'));
+    // Converter base64url para base64 padrão e adicionar padding se necessário
+    // (tokens gerados com Buffer.toString('base64url') não incluem padding)
+    let base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+    const padLength = (4 - (base64.length % 4)) % 4;
+    base64 += '='.repeat(padLength);
+
+    const binaryString = atob(base64);
     const payload = JSON.parse(binaryString);
 
     if (payload && payload.exp) {
