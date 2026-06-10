@@ -67,7 +67,15 @@ export const authServicePlugin: ServicePlugin = {
         const cookies = document.cookie.split(';');
         const idToken = cookies.find((c) => c.trim().startsWith('id_token='));
         if (!idToken) return null;
-        const payload = JSON.parse(atob(idToken.split('=')[1].split('.')[1]));
+        const payloadPart = idToken.split('=')[1].split('.')[1];
+        if (!payloadPart) return null;
+
+        // Converter base64url para base64 padrão e adicionar padding se necessário
+        let base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+        const padLength = (4 - (base64.length % 4)) % 4;
+        base64 += '='.repeat(padLength);
+
+        const payload = JSON.parse(atob(base64));
         return { name: payload.name, email: payload.email };
       } catch (e) {
         return null;
