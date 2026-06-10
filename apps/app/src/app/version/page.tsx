@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useUI } from '@temp-workspace/ui-registry';
 
 interface VersionInfo {
   commitHash: string;
@@ -10,6 +11,8 @@ interface VersionInfo {
 }
 
 export default function VersionPage() {
+  const {resolve} = useUI();
+  const Card = resolve('Card');
   const [version, setVersion] = useState<VersionInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +64,7 @@ export default function VersionPage() {
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'monospace', maxWidth: '600px' }}>
+      <Card title="System Version" padding="md">  
       <h1 style={{ marginBottom: '1.5rem' }}>Version Info</h1>
       <table
         style={{
@@ -76,6 +80,7 @@ export default function VersionPage() {
           <Row label="Deployed At" value={deployedDate} />
         </tbody>
       </table>
+      </Card>
     </div>
   );
 }
