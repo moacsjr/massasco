@@ -84,11 +84,11 @@
   --muted: 0 0% 15%; /* superfície sutil */
   --muted-foreground: 0 0% 63%; /* #A0A0A0 — texto mutado */
   --accent: 45 93% 52%; /* amarelo como accent também */
-  --accent-foreground: 0 0% 0%;
+  --accent-foreground: 0 0% 10%; /* Changed from 0 0% 0% to a very dark grey for better contrast on yellow */
   --destructive: 0 84% 60%; /* #EF4444 */
   --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 16%; /* #2A2A2A */
-  --input: 0 0% 16%;
+  --border: 0 0% 20%; /* Changed from 0 0% 16% to a slightly lighter dark grey */
+  --input: 0 0% 20%; /* Changed from 0 0% 16% to a slightly lighter dark grey */
   --ring: 45 93% 52%; /* focus ring amarelo */
   --radius: 0.5rem;
 
