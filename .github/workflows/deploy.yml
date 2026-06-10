@@ -74,12 +74,24 @@ jobs:
           aws s3 cp docker/docker-compose.yml s3://${ARTIFACTS_BUCKET}/docker-compose.yml
           echo "artifacts_bucket=${ARTIFACTS_BUCKET}" >> $GITHUB_ENV
 
+      - name: Get Image Digest
+        id: image-digest
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: devxp-app
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' $REGISTRY/$REPOSITORY:$IMAGE_TAG | cut -d'@' -f2)
+          echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
+          echo "Image digest: ${DIGEST}"
+
       - name: Deploy via SSM Run Command
         env:
           PROJECT_NAME: devxp-portal
           AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
           AWS_REGION: ${{ vars.AWS_REGION }}
           IMAGE_TAG: ${{ github.sha }}
+          IMAGE_DIGEST: ${{ steps.image-digest.outputs.digest }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           INSTANCE_IDS="${{ steps.get-instances.outputs.instance_ids }}"
@@ -184,6 +196,17 @@ jobs:
             echo "AWS_REGION=\"\${AWS_REGION}\""
           } > /home/ec2-user/meu-app/docker/.env
           chmod 600 /home/ec2-user/meu-app/docker/.env
+
+          # --- Write version.json ---
+          {
+            echo "{"
+            echo "  \"commitHash\": \"${IMAGE_TAG}\","
+            echo "  \"imageTag\": \"${IMAGE_TAG}\","
+            echo "  \"imageDigest\": \"${IMAGE_DIGEST}\","
+            echo "  \"deployedAt\": \"\$(date -u +%Y-%m-%dT%H:%M:%SZ)\""
+            echo "}"
+          } > /home/ec2-user/meu-app/version.json
+          echo "version.json written."
           
           cd /home/ec2-user/meu-app
           
