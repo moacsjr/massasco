@@ -1,6 +1,6 @@
 services:
   app:
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION:-us-east-1}.amazonaws.com/devxp-app:latest
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION:-us-east-1}.amazonaws.com/devxp-app@${APP_IMAGE_DIGEST}
     restart: always
     network_mode: host
     env_file:

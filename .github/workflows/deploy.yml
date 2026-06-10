@@ -33,9 +33,8 @@ jobs:
           REPOSITORY: devxp-app
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -t $REGISTRY/$REPOSITORY:latest .
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
-          docker push $REGISTRY/$REPOSITORY:latest
 
       - name: Get ASG Instance IDs
         id: get-instances
@@ -194,6 +193,7 @@ jobs:
           {
             echo "AWS_ACCOUNT_ID=\"\${AWS_ACCOUNT_ID}\""
             echo "AWS_REGION=\"\${AWS_REGION}\""
+            echo "APP_IMAGE_DIGEST=\"${IMAGE_DIGEST}\""
           } > /home/ec2-user/meu-app/docker/.env
           chmod 600 /home/ec2-user/meu-app/docker/.env
 
