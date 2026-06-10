@@ -9,24 +9,18 @@ function generateQRCodeData(tableToken: string): string {
   return `https://portal.massas.co/customer-portal/checkin/${tableToken}`;
 }
 
-// Generate QR code as PNG data URI
+// Generate QR code as PNG buffer
 async function generateQRCodeImage(data: string): Promise<Uint8Array> {
-  const qrDataUrl = await QRCode.toDataURL(data, {
+  const buffer = await QRCode.toBuffer(data, {
     width: 200,
     margin: 1,
+    type: 'png',
     color: {
       dark: '#000000',
       light: '#ffffff',
     },
   });
-  // Convert data URL to Uint8Array
-  const base64 = qrDataUrl.split(',')[1];
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
+  return new Uint8Array(buffer);
 }
 
 // GET: Download all active tables QR codes as PDF
@@ -80,23 +74,46 @@ export async function GET() {
       const cellCenterX = col * cellWidth + cellWidth / 2;
       const cellCenterY = pageHeight - (row * cellHeight + cellHeight / 2);
 
+      // Draw cell background FIRST (white fill with light gray border)
+      page.drawRectangle({
+        x: col * cellWidth + 10,
+        y: pageHeight - (row + 1) * cellHeight + 10,
+        width: cellWidth - 20,
+        height: cellHeight - 20,
+        borderColor: rgb(0.85, 0.85, 0.85),
+        borderWidth: 1,
+        color: rgb(1, 1, 1),
+      });
+
       // Generate QR code image
       const qrUrl = generateQRCodeData(table.token);
       const qrImageBytes = await generateQRCodeImage(qrUrl);
+      
+      console.log(`[QR PDF] Table ${table.number}: QR URL = ${qrUrl}`);
+      console.log(`[QR PDF] Table ${table.number}: Image bytes length = ${qrImageBytes.length}`);
+      console.log(`[QR PDF] Table ${table.number}: First 8 bytes = ${Array.from(qrImageBytes.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join('')}`);
+      
       const qrImage = await pdfDoc.embedPng(qrImageBytes);
+      
+      console.log(`[QR PDF] Table ${table.number}: Image embedded, width=${qrImage.width}, height=${qrImage.height}`);
 
       // QR code size
       const qrSize = 150;
 
-      // Draw QR code image (centered in cell)
+      // Draw QR code image (centered in cell) - drawn AFTER background
+      const drawX = cellCenterX - qrSize / 2;
+      const drawY = cellCenterY - qrSize / 2 + 20;
+      
+      console.log(`[QR PDF] Table ${table.number}: Drawing at x=${drawX}, y=${drawY}, size=${qrSize}x${qrSize}`);
+      
       page.drawImage(qrImage, {
-        x: cellCenterX - qrSize / 2,
-        y: cellCenterY - qrSize / 2 + 20,
+        x: drawX,
+        y: drawY,
         width: qrSize,
         height: qrSize,
       });
 
-      // Draw table number (above QR code)
+      // Draw table name (above QR code)
       const tableLabel = table.name || `Mesa ${table.number}`;
       const labelWidth = boldFont.widthOfTextAtSize(tableLabel, 14);
       page.drawText(tableLabel, {
@@ -127,17 +144,6 @@ export async function GET() {
         size: 8,
         font,
         color: rgb(0.4, 0.4, 0.4),
-      });
-
-      // Draw cell border (light gray)
-      page.drawRectangle({
-        x: col * cellWidth + 10,
-        y: pageHeight - (row + 1) * cellHeight + 10,
-        width: cellWidth - 20,
-        height: cellHeight - 20,
-        borderColor: rgb(0.85, 0.85, 0.85),
-        borderWidth: 1,
-        color: rgb(1, 1, 1),
       });
     }
 
