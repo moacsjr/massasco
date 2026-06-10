@@ -83,6 +83,7 @@ const TableManagementView: React.FC = () => {
   // Loading states
   const [isQRLoading, setIsQRLoading] = React.useState(false);
   const [isDownloadingQR, setIsDownloadingQR] = React.useState(false);
+  const [isDownloadingAllQR, setIsDownloadingAllQR] = React.useState(false);
   
   // Generated QR code URL state
   const [generatedQrUrl, setGeneratedQrUrl] = React.useState<string | null>(null);
@@ -400,6 +401,35 @@ const TableManagementView: React.FC = () => {
     }
   };
 
+  const handleDownloadAllQR = async () => {
+    setIsDownloadingAllQR(true);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/qr-codes/download');
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Erro ao baixar QR Codes');
+      }
+
+      // Download PDF
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'qr-codes-todas-mesas.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setError(err.message || 'Erro ao baixar QR Codes de todas as mesas');
+    } finally {
+      setIsDownloadingAllQR(false);
+    }
+  };
+
   const handleDelete = async (tableId: string) => {
     if (!confirm('Tem certeza que deseja excluir esta mesa?')) return;
 
@@ -446,14 +476,26 @@ const TableManagementView: React.FC = () => {
           </div>
         )}
 
-        {/* Header with Add Button */}
+        {/* Header with Action Buttons */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-lg font-semibold text-foreground">
             Mesas Cadastradas
           </h2>
-          <Button variant="primary" size="md" onClick={openCreateModal}>
-            + Adicionar Mesa
-          </Button>
+          <div className="flex gap-2">
+            {tables.length > 0 && (
+              <Button
+                variant="outline"
+                size="md"
+                onClick={handleDownloadAllQR}
+                isLoading={isDownloadingAllQR}
+              >
+                🖨️ Imprimir Todos QR Codes
+              </Button>
+            )}
+            <Button variant="primary" size="md" onClick={openCreateModal}>
+              + Adicionar Mesa
+            </Button>
+          </div>
         </div>
 
         {/* Empty state */}
