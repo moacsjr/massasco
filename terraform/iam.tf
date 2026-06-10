@@ -128,6 +128,44 @@ resource "aws_iam_instance_profile" "ec2" {
   role = aws_iam_role.ec2.name
 }
 
+# =============================================================================
+# IAM ROLE E INSTANCE PROFILE PARA O POSTGRESQL (ACESSO VIA SSM)
+# =============================================================================
+
+resource "aws_iam_role" "postgres" {
+  name = "${var.project_name}-postgres-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${var.project_name}-postgres-role"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "postgres_ssm" {
+  role       = aws_iam_role.postgres.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_instance_profile" "postgres" {
+  name = "${var.project_name}-postgres-profile"
+  role = aws_iam_role.postgres.name
+
+  tags = {
+    Name = "${var.project_name}-postgres-profile"
+  }
+}
 
 # --- GitHub Actions OIDC ---
 data "tls_certificate" "github" {

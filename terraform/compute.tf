@@ -249,6 +249,9 @@ resource "aws_instance" "postgres" {
   vpc_security_group_ids = [aws_security_group.postgres.id]
   key_name               = aws_key_pair.ec2_key.key_name
 
+  # Instance profile para acesso via SSM Session Manager
+  iam_instance_profile = aws_iam_instance_profile.postgres.name
+
   # Desabilita explicitamente a atribuicao de IP publico
   associate_public_ip_address = false
 
@@ -270,6 +273,11 @@ resource "aws_instance" "postgres" {
   user_data = base64encode(<<-USERDATA
     #!/bin/bash
     set -e
+
+    # 0. Instalar SSM Agent para acesso remoto
+    snap install amazon-ssm-agent --classic || true
+    systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service
+    systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service
 
     # 1. Atualizar pacotes e instalar Postgres 16
     apt-get update -y

@@ -87,9 +87,39 @@ resource "aws_subnet" "private_az2" {
   }
 }
 
-# Route table para subnets privadas (sem acesso direto à internet)
+# =============================================================================
+# NAT GATEWAY PARA ACESSO A INTERNET DAS SUBNETS PRIVADAS
+# =============================================================================
+
+# Elastic IP para o NAT Gateway
+resource "aws_eip" "nat" {
+  domain = "vpc"
+
+  tags = {
+    Name = "${var.project_name}-nat-eip"
+  }
+}
+
+# NAT Gateway na subnet publica
+resource "aws_nat_gateway" "main" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public_az1.id
+
+  tags = {
+    Name = "${var.project_name}-nat-gw"
+  }
+
+  depends_on = [aws_internet_gateway.main]
+}
+
+# Route table para subnets privadas (acesso a internet via NAT Gateway)
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.main.id
+  }
 
   tags = {
     Name = "${var.project_name}-private-rt"
@@ -104,6 +134,78 @@ resource "aws_route_table_association" "private_az1" {
 resource "aws_route_table_association" "private_az2" {
   subnet_id      = aws_subnet.private_az2.id
   route_table_id = aws_route_table.private.id
+}
+
+# =============================================================================
+# VPC ENDPOINTS PARA SSM (ACESSO A INSTANCIAS EM SUBNET PRIVADA)
+# =============================================================================
+
+# Security Group para VPC Endpoints
+resource "aws_security_group" "vpc_endpoints" {
+  name        = "${var.project_name}-vpc-endpoints-sg"
+  description = "Security Group para VPC Endpoints (SSM)"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description = "HTTPS from VPC"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [aws_vpc.main.cidr_block]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.project_name}-vpc-endpoints-sg"
+  }
+}
+
+# VPC Endpoint para SSM
+resource "aws_vpc_endpoint" "ssm" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.ssm"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [aws_subnet.private_az1.id, aws_subnet.private_az2.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name = "${var.project_name}-ssm-endpoint"
+  }
+}
+
+# VPC Endpoint para SSM Messages
+resource "aws_vpc_endpoint" "ssmmessages" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.ssmmessages"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [aws_subnet.private_az1.id, aws_subnet.private_az2.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name = "${var.project_name}-ssmmessages-endpoint"
+  }
+}
+
+# VPC Endpoint para EC2 Messages
+resource "aws_vpc_endpoint" "ec2messages" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.ec2messages"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [aws_subnet.private_az1.id, aws_subnet.private_az2.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name = "${var.project_name}-ec2messages-endpoint"
+  }
 }
 
 # =============================================================================
@@ -129,6 +231,14 @@ resource "aws_security_group" "postgres" {
     to_port     = 5432
     protocol    = "tcp"
     cidr_blocks = [aws_vpc.main.cidr_block]
+  }
+
+  ingress {
+    description     = "Permite SSH do Security Group da Aplicacao (bastion)"
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ec2.id]
   }
 
   # Egress limitado - necessario para operacoes internas
