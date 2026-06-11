@@ -36,13 +36,23 @@ export function proxy(request: NextRequest) {
     path.includes('/favicon.ico') ||
     path.startsWith('/images/') ||
     path.startsWith('/plugins/customer-portal/') ||
+    // Table lookup and session management
     path.startsWith('/api/tables/token/') ||
     path.startsWith('/api/table-sessions') ||
     path.startsWith('/api/check-ins') ||
     path.startsWith('/api/participant-join-requests') ||
     path.startsWith('/api/device-sessions') ||
     path.startsWith('/api/system-settings/') ||
-    path === '/api/events';
+    path === '/api/events' ||
+    // Menu catalog (read-only for customer portal)
+    path.startsWith('/api/categories') ||
+    path.startsWith('/api/products') ||
+    path.startsWith('/api/prices') ||
+    path.startsWith('/api/complements') ||
+    // Orders and payments (customer portal order flow)
+    path.startsWith('/api/orders') ||
+    path.startsWith('/api/order-items') ||
+    path.startsWith('/api/payments');
 
   const idToken = request.cookies.get('id_token')?.value;
   const isExpired = idToken ? isTokenExpired(idToken) : true;
