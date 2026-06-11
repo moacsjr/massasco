@@ -35,7 +35,14 @@ export function proxy(request: NextRequest) {
     path.startsWith('/_next/') ||
     path.includes('/favicon.ico') ||
     path.startsWith('/images/') ||
-    path.startsWith('/plugins/customer-portal/');
+    path.startsWith('/plugins/customer-portal/') ||
+    path.startsWith('/api/tables/token/') ||
+    path.startsWith('/api/table-sessions') ||
+    path.startsWith('/api/check-ins') ||
+    path.startsWith('/api/participant-join-requests') ||
+    path.startsWith('/api/device-sessions') ||
+    path.startsWith('/api/system-settings/') ||
+    path === '/api/events';
 
   const idToken = request.cookies.get('id_token')?.value;
   const isExpired = idToken ? isTokenExpired(idToken) : true;
