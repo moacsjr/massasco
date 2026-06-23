@@ -1,0 +1,26 @@
+system_info:
+  name: "Massas & Co — Order Management"
+  stack:
+    backend: "Node.js (NestJS v11)"
+    frontend: "Next.js 16 (React 19)"
+    database: "PostgreSQL (Prisma 5)"
+    infra: "Docker"
+  architecture: "Monorepo Nx (apps + libs)"
+security:
+  auth_protocol: "JWT"
+  rbac_roles: ["ADMIN", "MANAGER", "GARCOM", "COZINHA"]
+database_schemas:
+  - table: "orders"
+    columns: "id, table_id, status, total, created_at"
+  - table: "order_items"
+    columns: "id, order_id, product_id, price, quantity, complements"
+  - table: "tables"
+    columns: "id, number, status, capacity"
+  - table: "checkins"
+    columns: "id, table_id, participant_name, payment_id"
+existing_services:
+  - name: "Payment Service"
+    endpoint: "/api/payments"
+    auth: "JWT"
+internal_libraries:
+  - "@temp-workspace/prisma (db-client)"
