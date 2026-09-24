@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
-import { sseBus } from '../../../lib/sse-bus';
 
 export async function GET(req: NextRequest) {
   const orderId = req.nextUrl.searchParams.get('orderId');
@@ -114,12 +113,6 @@ export async function POST(req: NextRequest) {
   // Check if table session is fully paid
   const isFullyPaid = paid >= total;
 
-  // Get table number from tableSession
-  let tableNumber: number | null = null;
-  if (payment.tableSession) {
-    tableNumber = payment.tableSession.table.number;
-  }
-
   if (isFullyPaid) {
     // Close all orders for this table session
     const orderIds = orders.map((order) => order.id);
@@ -143,20 +136,6 @@ export async function POST(req: NextRequest) {
         status: 'CLOSED',
         closedAt: new Date(),
       },
-    });
-    sseBus.publish('TABLE_SESSION_CLOSED', {
-      tableSessionId,
-      tableNumber: tableNumber!,
-      total,
-      paid,
-    });
-  } else {
-    // Partial payment
-    sseBus.publish('TABLE_SESSION_PARTIAL_PAYMENT_ACCEPTED', {
-      tableSessionId,
-      tableNumber: tableNumber!,
-      total,
-      paid,
     });
   }
 

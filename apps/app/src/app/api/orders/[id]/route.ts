@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
-import { sseBus } from '../../../../lib/sse-bus';
 
 export async function PATCH(
   req: Request,
@@ -37,11 +36,6 @@ export async function PATCH(
         : [],
     })),
   };
-
-  sseBus.publish('ORDER_UPDATED', {
-    orderId: serialized.id,
-    status: serialized.status,
-  });
 
   return NextResponse.json(serialized);
 }

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
-import { sseBus } from '../../../../lib/sse-bus';
 
 // Get a single table session by ID
 export async function GET(
@@ -146,25 +145,6 @@ export async function PUT(
       },
     });
 
-    // Publish SSE event for session update
-    if (status) {
-      sseBus.publish('TABLE_SESSION_UPDATED', {
-        sessionId: id,
-        status,
-        tableId: session.tableId,
-        tableNumber: session.table.number,
-      });
-
-      // If session was closed, publish close event
-      if (status === 'CLOSED') {
-        sseBus.publish('TABLE_SESSION_CLOSED', {
-          sessionId: id,
-          tableId: session.tableId,
-          tableNumber: session.table.number,
-        });
-      }
-    }
-
     return NextResponse.json(session);
   } catch (error) {
     console.error('Error updating session:', error);
@@ -236,13 +216,6 @@ export async function DELETE(
       }
 
       return updatedSession;
-    });
-
-    // Publish SSE event for session close
-    sseBus.publish('TABLE_SESSION_CLOSED', {
-      sessionId: id,
-      tableId: closedSession.tableId,
-      tableNumber: closedSession.table.number,
     });
 
     return NextResponse.json(closedSession);

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
-import { sseBus } from '../../../lib/sse-bus';
 
 // Get all participants for a session
 export async function GET(req: NextRequest) {
@@ -89,13 +88,6 @@ export async function POST(req: NextRequest) {
       include: {
         deviceSessions: true,
       },
-    });
-
-    // Publish SSE event for new participant
-    sseBus.publish('PARTICIPANT_JOINED', {
-      participantId: participant.id,
-      tableSessionId: participant.tableSessionId,
-      name: participant.name,
     });
 
     return NextResponse.json(participant, { status: 201 });

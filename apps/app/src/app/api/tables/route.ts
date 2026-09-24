@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
-import { sseBus } from '../../../lib/sse-bus';
 import { randomBytes } from 'crypto';
 
 // Generate a unique token for the table
@@ -114,9 +113,6 @@ export async function POST(req: NextRequest) {
       return newTable;
     });
 
-    // Publish SSE event for new table
-    sseBus.publish('TABLE_CREATED', { tableId: table.id, tableNumber: table.number });
-
     return NextResponse.json(
       {
         ...table,
@@ -182,11 +178,6 @@ async function createBulkTables(count: number) {
         });
       });
     }
-
-    // Publish SSE event for new tables
-    tables.forEach((table) => {
-      sseBus.publish('TABLE_CREATED', { tableId: table.id, tableNumber: table.number });
-    });
 
     return NextResponse.json(
       tables.map((table) => ({
@@ -326,9 +317,6 @@ export async function DELETE(req: NextRequest) {
         },
       });
     }
-
-    // Publish SSE event for table update
-    sseBus.publish('TABLE_UPDATED', { tableId: id, isActive: false });
 
     return NextResponse.json({ message: 'Table deleted successfully' });
   } catch (error) {

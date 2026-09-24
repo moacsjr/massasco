@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
-import { sseBus } from '../../../../lib/sse-bus';
 
 export async function PATCH(
   req: Request,
@@ -33,18 +32,6 @@ export async function PATCH(
       ? JSON.parse(JSON.stringify(item.selectedComplements))
       : [],
   };
-
-  sseBus.publish('ITEM_UPDATED', {
-    itemId: serialized.id,
-    orderId: serialized.orderId,
-    status: serialized.status,
-    tableNumber: serialized.order.tableNumber,
-  });
-
-  console.log(
-    '[SSE] Published ITEM_UPDATED, listeners:',
-    sseBus.listenerCount(),
-  );
 
   return NextResponse.json(serialized);
 }

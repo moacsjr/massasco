@@ -61,21 +61,3 @@ resource "aws_cognito_user_pool_client" "client" {
     "ALLOW_ADMIN_USER_PASSWORD_AUTH"
   ]
 }
-
-resource "aws_ssm_parameter" "cognito_user_pool_id" {
-  name  = "/${var.project_name}/cognito_user_pool_id"
-  type  = "String"
-  value = aws_cognito_user_pool.pool.id
-}
-
-resource "aws_ssm_parameter" "cognito_client_id" {
-  name  = "/${var.project_name}/cognito_client_id"
-  type  = "String"
-  value = aws_cognito_user_pool_client.client.id
-}
-
-resource "aws_ssm_parameter" "cognito_region" {
-  name  = "/${var.project_name}/cognito_region"
-  type  = "String"
-  value = var.aws_region
-}

@@ -1,0 +1,21 @@
+version: 1
+applications:
+  - appRoot: apps/app
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - (cd ../.. && npm install -g pnpm@10)
+            - (cd ../.. && pnpm install --frozen-lockfile --dangerously-allow-all-builds)
+            - (cd ../.. && npx prisma generate --schema=prisma/schema.prisma)
+        build:
+          commands:
+            # Amplify only exposes env vars to the SSR runtime through .env.production.
+            - env | grep -E '^(DATABASE_URL|STRIPE_|COGNITO_|SQS_QUEUE_URL|S3_MEDIA_BUCKET_NAME|NEXT_PUBLIC_)' >> .env.production
+            - echo "NEXT_PUBLIC_COMMIT_HASH=$AWS_COMMIT_ID" >> .env.production
+            - echo "NEXT_PUBLIC_DEPLOYED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> .env.production
+            - (cd ../.. && pnpm exec nx build app --verbose=false)
+      artifacts:
+        baseDirectory: .next
+        files:
+          - '**/*'

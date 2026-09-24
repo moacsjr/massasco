@@ -1,44 +1,26 @@
-# --- EC2 Instance Role ---
-resource "aws_iam_role" "ec2" {
-  name = "${var.project_name}-ec2-role"
+# Role assumed by the Amplify SSR compute (Next.js server/route handlers).
+resource "aws_iam_role" "amplify_compute" {
+  name = "${var.project_name}-amplify-compute-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ec2.amazonaws.com"
-        }
+        Action    = "sts:AssumeRole"
+        Effect    = "Allow"
+        Principal = { Service = "amplify.amazonaws.com" }
       }
     ]
   })
 }
 
-resource "aws_iam_role_policy_attachment" "ec2_ssm" {
-  role       = aws_iam_role.ec2.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-}
-
-resource "aws_iam_policy" "ec2_s3_access" {
-  name        = "${var.project_name}-ec2-s3-access"
-  description = "Allow EC2 to access S3 buckets"
+resource "aws_iam_role_policy" "amplify_compute" {
+  name = "${var.project_name}-amplify-compute-access"
+  role = aws_iam_role.amplify_compute.id
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:Get*",
-          "s3:List*"
-        ]
-        Resource = [
-          aws_s3_bucket.artifacts.arn,
-          "${aws_s3_bucket.artifacts.arn}/*"
-        ]
-      },
       {
         Effect = "Allow"
         Action = [
@@ -53,23 +35,8 @@ resource "aws_iam_policy" "ec2_s3_access" {
         ]
       },
       {
-        Effect   = "Allow"
-        Action   = ["ssm:GetParameter"]
-        Resource = "arn:aws:ssm:${var.aws_region}:*:parameter/${var.project_name}/*"
-      },
-      {
-        Effect   = "Allow"
-        Action   = ["kms:Decrypt"]
-        Resource = "*"
-        Condition = {
-          StringEquals = {
-            "kms:ViaService" = "ssm.${var.aws_region}.amazonaws.com"
-          }
-        }
-      },
-      {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "cognito-idp:AdminInitiateAuth",
           "cognito-idp:AdminCreateUser",
           "cognito-idp:AdminDeleteUser",
@@ -81,199 +48,10 @@ resource "aws_iam_policy" "ec2_s3_access" {
         Resource = aws_cognito_user_pool.pool.arn
       },
       {
-        Effect = "Allow"
-        Action = [
-          "sqs:SendMessage",
-          "sqs:GetQueueUrl"
-        ]
+        Effect   = "Allow"
+        Action   = ["sqs:SendMessage", "sqs:GetQueueUrl"]
         Resource = aws_sqs_queue.orders.arn
       }
     ]
   })
-}
-
-resource "aws_iam_policy" "ec2_ecr_access" {
-  name        = "${var.project_name}-ec2-ecr-access"
-  description = "Allow EC2 to pull images from ECR"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "ecr:GetAuthorizationToken",
-          "ecr:BatchCheckLayerAvailability",
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:BatchGetImage"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "ec2_s3" {
-  role       = aws_iam_role.ec2.name
-  policy_arn = aws_iam_policy.ec2_s3_access.arn
-}
-
-resource "aws_iam_role_policy_attachment" "ec2_ecr" {
-  role       = aws_iam_role.ec2.name
-  policy_arn = aws_iam_policy.ec2_ecr_access.arn
-}
-
-resource "aws_iam_instance_profile" "ec2" {
-  name = "${var.project_name}-ec2-profile"
-  role = aws_iam_role.ec2.name
-}
-
-# =============================================================================
-# IAM ROLE E INSTANCE PROFILE PARA O POSTGRESQL (ACESSO VIA SSM)
-# =============================================================================
-
-resource "aws_iam_role" "postgres" {
-  name = "${var.project_name}-postgres-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ec2.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = {
-    Name = "${var.project_name}-postgres-role"
-  }
-}
-
-resource "aws_iam_role_policy_attachment" "postgres_ssm" {
-  role       = aws_iam_role.postgres.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-}
-
-resource "aws_iam_instance_profile" "postgres" {
-  name = "${var.project_name}-postgres-profile"
-  role = aws_iam_role.postgres.name
-
-  tags = {
-    Name = "${var.project_name}-postgres-profile"
-  }
-}
-
-# --- GitHub Actions OIDC ---
-data "tls_certificate" "github" {
-  url = "https://token.actions.githubusercontent.com"
-}
-
-resource "aws_iam_openid_connect_provider" "github" {
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [data.tls_certificate.github.certificates[0].sha1_fingerprint]
-}
-
-resource "aws_iam_role" "github_actions" {
-  name = "${var.project_name}-github-actions-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Federated = aws_iam_openid_connect_provider.github.arn
-        }
-        Action = "sts:AssumeRoleWithWebIdentity"
-        Condition = {
-          StringEquals = {
-            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          }
-          StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:*"
-          }
-        }
-      }
-    ]
-  })
-}
-
-resource "aws_iam_policy" "github_actions_deploy" {
-  name        = "${var.project_name}-github-actions-deploy-policy"
-  description = "Policy for GitHub Actions to deploy application"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:PutObject",
-          "s3:GetObject",
-          "s3:GetObjectVersion",
-          "s3:GetBucketAcl",
-          "s3:GetBucketLocation"
-        ]
-        Resource = [
-          aws_s3_bucket.artifacts.arn,
-          "${aws_s3_bucket.artifacts.arn}/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "ecr:GetAuthorizationToken"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "ecr:BatchCheckLayerAvailability",
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:CompleteLayerUpload",
-          "ecr:InitiateLayerUpload",
-          "ecr:PutImage",
-          "ecr:UploadLayerPart"
-        ]
-        Resource = aws_ecr_repository.app.arn
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "autoscaling:DescribeAutoScalingGroups"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "ssm:SendCommand",
-          "ssm:ListCommandInvocations",
-          "ssm:GetCommandInvocation",
-          "ssm:GetParameter"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "elasticloadbalancing:DescribeLoadBalancers",
-          "elasticloadbalancing:DescribeTargetGroups",
-          "elasticloadbalancing:DescribeTargetHealth"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "github_actions_deploy" {
-  role       = aws_iam_role.github_actions.name
-  policy_arn = aws_iam_policy.github_actions_deploy.arn
 }

@@ -10,7 +10,6 @@ import {
 import { useUI } from '@temp-workspace/ui-registry';
 import { ComponentePix } from './ComponentePix';
 import { CheckoutButton } from './CheckoutButton';
-// SSE Event handling - using EventSource directly
 
 // ============================================================================
 // Service API
@@ -97,19 +96,14 @@ const PaymentsPage: React.FC = () => {
     cidade: 'Belo Horizonte' // Cidade do beneficiário
   };
   
-  // SSE listener for ORDER_CLOSED event
-  useEffect(() => {
-    const es = new EventSource('/api/events');
-    es.addEventListener('ORDER_CLOSED', (event) => {
-      const data = JSON.parse(event.data);
-      console.log('ORDER_CLOSED event received:', data);
-      setShowVendaConcluida(true);
-    });
-    
-    return () => {
-      es.close();
-    };
-  }, []);
+  // NOTE: the old `ORDER_CLOSED` SSE listener that used to call
+  // setShowVendaConcluida(true) here was dead code — no backend route ever
+  // published that event, so it never actually fired. Unlike the other
+  // SSE->polling conversions in this migration, this one is intentionally
+  // dropped rather than reimplemented as an unconditional interval: polling
+  // has no equivalent "event payload" to check, and unconditionally calling
+  // setShowVendaConcluida(true) every few seconds would show the
+  // "Venda Concluída" screen to every user regardless of payment state.
 
   // New state for CheckIn view
   const [checkIns, setCheckIns] = useState<any[]>([]);

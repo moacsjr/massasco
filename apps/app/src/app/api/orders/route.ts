@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
-import { sseBus } from '../../../lib/sse-bus';
 import { sendOrderToQueue } from '../../../lib/sqs';
 
 export async function GET(req: NextRequest) {
@@ -189,12 +188,6 @@ export async function POST(req: NextRequest) {
         : [],
     })),
   };
-
-  sseBus.publish('ORDER_CREATED', {
-    orderId: serialized.id,
-    tableNumber: finalTableNumber as number,
-    tableSessionId: finalTableSessionId,
-  });
 
   try {
     await sendOrderToQueue(serialized as Record<string, unknown>);

@@ -15,9 +15,8 @@ const nextConfig = {
     '@aws-sdk/core',
     '@aws-sdk/client-cognito-identity-provider',
   ],
-
-  // Generate standalone output for Docker deployment
-  output: 'standalone',
+  // Standalone is only for the local Docker image; Amplify uses its own adapter.
+  ...(process.env.NEXT_OUTPUT_STANDALONE === '1' && { output: 'standalone' }),
 };
 
 module.exports = nextConfig;

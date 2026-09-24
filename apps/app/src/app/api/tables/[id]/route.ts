@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
-import { sseBus } from '../../../../lib/sse-bus';
 
 // Get a single table by ID
 export async function GET(
@@ -92,9 +91,6 @@ export async function PUT(
       },
     });
 
-    // Publish SSE event for table update
-    sseBus.publish('TABLE_UPDATED', { tableId: id, tableNumber: table.number });
-
     return NextResponse.json(table);
   } catch (error) {
     console.error('Error updating table:', error);
@@ -149,9 +145,6 @@ export async function DELETE(
         isActive: false,
       },
     });
-
-    // Publish SSE event for table update
-    sseBus.publish('TABLE_DELETED', { tableId: id });
 
     return NextResponse.json({ message: 'Table deleted successfully' });
   } catch (error) {

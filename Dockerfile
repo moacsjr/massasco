@@ -35,6 +35,8 @@ ENV STRIPE_PUBLISHABLE_KEY="TESTE"
 ENV NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="TESTE"
 ENV STRIPE_WEBHOOK_SECRET="TESTE"
 
+ENV NEXT_OUTPUT_STANDALONE=1
+
 # Executa o build do Nx
 RUN corepack enable pnpm && pnpm exec nx build app --verbose=false
 

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
-import { sseBus } from '../../../../lib/sse-bus';
 
 // Approve a join request
 export async function POST(
@@ -66,13 +65,6 @@ export async function POST(
       return { request: updatedRequest, participant };
     });
 
-    // Publish SSE event for approved request
-    sseBus.publish('JOIN_REQUEST_APPROVED', {
-      joinRequestId: id,
-      participantId: result.participant.id,
-      tableSessionId: joinRequest.tableSessionId,
-    });
-
     return NextResponse.json(result);
   } catch (error) {
     console.error('Error approving join request:', error);
@@ -128,12 +120,6 @@ export async function PUT(
         respondedBy,
         responseMessage,
       },
-    });
-
-    // Publish SSE event for rejected request
-    sseBus.publish('JOIN_REQUEST_REJECTED', {
-      joinRequestId: id,
-      tableSessionId: joinRequest.tableSessionId,
     });
 
     return NextResponse.json(updatedRequest);

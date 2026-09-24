@@ -6,6 +6,7 @@ import {
   ExtensionContribution,
 } from '@temp-workspace/plugin-loader';
 import { useUI } from '@temp-workspace/ui-registry';
+import { usePolling } from './hooks/use-polling';
 
 interface KDSItem {
   id: string;
@@ -46,11 +47,9 @@ const KDSBoard: React.FC = () => {
 
   useEffect(() => {
     loadItems();
-    const es = new EventSource('/api/events');
-    es.addEventListener('ITEM_UPDATED', () => loadItems());
-    es.addEventListener('ORDER_CREATED', () => loadItems());
-    return () => es.close();
   }, [loadItems]);
+
+  usePolling(loadItems, 4000);
 
   const updateItemStatus = async (itemId: string, status: string) => {
     await fetch(`/api/order-items/${itemId}`, {

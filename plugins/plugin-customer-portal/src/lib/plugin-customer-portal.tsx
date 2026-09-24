@@ -13,6 +13,7 @@ import { NewOrderContainer } from '@temp-workspace/plugin-orders-delivery';
 import { PaymentsAPI, CheckoutButton, ComponentePix } from '@temp-workspace/plugin-payments';
 import { useRouter } from 'next/navigation';
 import { CheckInViewWrapper } from './CheckInViewWrapper';
+import { usePolling } from './hooks/use-polling';
 
 // ============================================================================
 // Types
@@ -107,63 +108,41 @@ export const useCustomerTableSession = () => {
   return { tableSession, setTableSession, clearTableSession };
 };
 
-// Hook to listen for CHECKIN_CLOSED SSE event (legacy - for backward compatibility)
+// Legacy hook that used to listen for a `CHECKIN_CLOSED` SSE event (kept for
+// backward compatibility of the export, but unused anywhere in the codebase).
+// NOTE: there was never a backend publisher for `CHECKIN_CLOSED` — this was
+// dead code before the SSE->polling migration. Unlike the other conversions
+// in this file, it is intentionally left as a no-op: polling has no event
+// payload to read a `tableNumber` from, so faking one would mean inventing
+// new logic this migration is not meant to add.
 export const useCheckInSSE = (onCheckInClosed?: (tableNumber: number) => void) => {
-  React.useEffect(() => {
-    const eventSource = new EventSource('/api/events');
-    
-    eventSource.addEventListener('CHECKIN_CLOSED', (event) => {
-      const data = JSON.parse(event.data);
-      console.log('CHECKIN_CLOSED event received:', data);
-      if (onCheckInClosed) {
-        onCheckInClosed(data.tableNumber);
-      }
-    });
-    
-    eventSource.onerror = () => {
-      eventSource.close();
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [onCheckInClosed]);
+  void onCheckInClosed;
 };
 
 export const useCustomerOrders = (tableSessionId: string) => {
   const [orders, setOrders] = React.useState<OrderDTO[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
-  React.useEffect(() => {
+  const fetchOrders = React.useCallback(async () => {
     if (!tableSessionId) return;
-
-    const fetchOrders = async () => {
-      try {
-        const res = await fetch(`/api/orders?tableSessionId=${tableSessionId}`);
-        const data = await res.json();
-        setOrders(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error('Error fetching orders:', err);
-        setOrders([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchOrders();
-
-    const eventSource = new EventSource('/api/events');
-    eventSource.onmessage = () => {
-      fetchOrders();
-    };
-    eventSource.onerror = () => {
-      eventSource.close();
-    };
-
-    return () => {
-      eventSource.close();
-    };
+    try {
+      const res = await fetch(`/api/orders?tableSessionId=${tableSessionId}`);
+      const data = await res.json();
+      setOrders(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error fetching orders:', err);
+      setOrders([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, [tableSessionId]);
+
+  React.useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  // Polling for real-time updates (replaces the old SSE listener)
+  usePolling(fetchOrders, 4000);
 
   return { orders, isLoading };
 };
@@ -557,51 +536,39 @@ const CheckoutPage: React.FC = () => {
   // Venda Concluída state
   const [showVendaConcluida, setShowVendaConcluida] = React.useState<boolean>(false);
 
-  // SSE listener for TABLE_SESSION_CLOSED event
-  React.useEffect(() => {
-    const es = new EventSource('/api/events');
-
-    es.addEventListener('TABLE_SESSION_CLOSED', (event) => {
-      const data = JSON.parse(event.data);
-      console.log('TABLE_SESSION_CLOSED event received:', data);
-      if (tableSession && data.tableSessionId === tableSession.id) {
-        setShowVendaConcluida(true);
-      }
-    });
-
-    es.addEventListener('ORDER_CLOSED', (event) => {
-      const data = JSON.parse(event.data);
-      console.log('ORDER_CLOSED event received:', data);
-      setShowVendaConcluida(true);
-    });
-
-    return () => {
-      es.close();
-    };
-  }, [tableSession]);
-
-  // Fetch table session data with full summary
-  React.useEffect(() => {
+  // Fetch table session data with full summary. Also detects the table
+  // session being closed elsewhere (e.g. by staff) via its `status` field —
+  // this replaces the old `TABLE_SESSION_CLOSED` SSE listener.
+  // NOTE: the old listener also handled an `ORDER_CLOSED` event, but there
+  // was never a backend publisher for it (dead code); it is intentionally
+  // dropped here rather than reimplemented.
+  const fetchTableSession = React.useCallback(async () => {
     if (!tableSession) return;
 
-    const fetchTableSession = async () => {
-      try {
-        const res = await fetch(`/api/table-sessions/${tableSession.id}`);
-        const data = await res.json();
-        setTableSessionData(data);
-        // Pre-fill payment amount with total due
-        if (data.summary?.totalDue) {
-          setPaymentAmount(data.summary.totalDue.toFixed(2));
-        }
-      } catch (err) {
-        console.error('Error fetching table session:', err);
-      } finally {
-        setIsLoading(false);
+    try {
+      const res = await fetch(`/api/table-sessions/${tableSession.id}`);
+      const data = await res.json();
+      setTableSessionData(data);
+      // Pre-fill payment amount with total due
+      if (data.summary?.totalDue) {
+        setPaymentAmount(data.summary.totalDue.toFixed(2));
       }
-    };
-
-    fetchTableSession();
+      if (data.status === 'CLOSED') {
+        setShowVendaConcluida(true);
+      }
+    } catch (err) {
+      console.error('Error fetching table session:', err);
+    } finally {
+      setIsLoading(false);
+    }
   }, [tableSession]);
+
+  React.useEffect(() => {
+    fetchTableSession();
+  }, [fetchTableSession]);
+
+  // Polling for real-time updates (replaces the old SSE listener)
+  usePolling(fetchTableSession, 4000);
 
   // Calculate totals from orders (all items, not just unpaid)
   const allItems = React.useMemo(() => {

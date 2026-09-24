@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
-import { sseBus } from '../../../lib/sse-bus';
 import { randomBytes } from 'crypto';
 
 // Haversine formula to calculate distance between two coordinates
@@ -198,14 +197,6 @@ export async function POST(req: NextRequest) {
         return { tableSession, host, deviceSession };
       });
 
-      // Publish SSE event for new session
-      sseBus.publish('TABLE_SESSION_CREATED', {
-        sessionId: result.tableSession.id,
-        tableId: result.tableSession.tableId,
-        tableName: result.tableSession.table.name,
-        tableNumber: result.tableSession.table.number,
-      });
-
       return NextResponse.json(
         {
           ...result.tableSession,
@@ -270,13 +261,6 @@ export async function POST(req: NextRequest) {
       });
 
       return { tableSession, host, deviceSession };
-    });
-
-    // Publish SSE event for new session
-    sseBus.publish('TABLE_SESSION_CREATED', {
-      sessionId: result.tableSession.id,
-      tableId: result.tableSession.tableId,
-      tableName: result.tableSession.table.name,
     });
 
     return NextResponse.json(

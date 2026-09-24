@@ -5,6 +5,7 @@ import {
   FeaturePlugin,
 } from '@temp-workspace/plugin-loader';
 import { useUI } from '@temp-workspace/ui-registry';
+import { usePolling } from './hooks/use-polling';
 
 // ============================================================================
 // Types
@@ -158,25 +159,10 @@ const ParticipantList: React.FC<ParticipantListProps> = ({
 
   React.useEffect(() => {
     fetchData();
-
-    // SSE listener for JOIN_REQUEST_APPROVED events (real-time updates)
-    const eventSource = new EventSource('/api/events');
-    eventSource.addEventListener('JOIN_REQUEST_APPROVED', () => {
-      // Refresh data when a request is approved
-      fetchData();
-    });
-    eventSource.addEventListener('JOIN_REQUEST_REJECTED', () => {
-      // Refresh data when a request is rejected
-      fetchData();
-    });
-    eventSource.onerror = () => {
-      eventSource.close();
-    };
-
-    return () => {
-      eventSource.close();
-    };
   }, [tableSessionId, fetchData]);
+
+  // Polling for real-time updates (replaces the old SSE listener)
+  usePolling(fetchData, 4000);
 
   // Handle close session
   const handleCloseSession = async () => {
@@ -251,7 +237,7 @@ const ParticipantList: React.FC<ParticipantListProps> = ({
 
       setSuccess('Check-in aprovado com sucesso!');
       setTimeout(() => setSuccess(null), 3000);
-      // Data will be refreshed via SSE
+      // Data will be refreshed on the next poll
     } catch (err: any) {
       console.error('Error approving:', err);
       setError(err.message || 'Erro ao aprovar check-in');
@@ -280,7 +266,7 @@ const ParticipantList: React.FC<ParticipantListProps> = ({
 
       setSuccess('Check-in rejeitado');
       setTimeout(() => setSuccess(null), 3000);
-      // Data will be refreshed via SSE
+      // Data will be refreshed on the next poll
     } catch (err: any) {
       console.error('Error rejecting:', err);
       setError(err.message || 'Erro ao rejeitar check-in');

@@ -5,6 +5,7 @@ import {
   FeaturePlugin,
 } from '@temp-workspace/plugin-loader';
 import { useUI } from '@temp-workspace/ui-registry';
+import { usePolling } from './hooks/use-polling';
 
 // ============================================================================
 // Types
@@ -159,43 +160,35 @@ const CheckInView: React.FC<CheckInViewProps> = ({ tableToken, tableId, tableNum
     }
   }, [propTableNumber]);
 
-  // Listen for join request approval via SSE
-  React.useEffect(() => {
+  // Poll for join request approval (replaces the old SSE listener).
+  const checkJoinRequestApproval = React.useCallback(async () => {
     if (!pendingJoinRequest) return;
-    
+
     const sessionId = existingSession?.id || joinRequestSessionId;
     const customerName = name.trim();
-    
+
     if (!sessionId) {
-      console.error('[CheckInView] No session ID available for SSE listener');
+      console.error('[CheckInView] No session ID available for polling');
       return;
     }
-    
-    const eventSource = new EventSource('/api/events');
-    
-    eventSource.addEventListener('JOIN_REQUEST_APPROVED', (event) => {
-      const data = JSON.parse(event.data);
-      console.log('[CheckInView] JOIN_REQUEST_APPROVED received:', data);
-      // The SSEBus wraps the payload in { type, payload, timestamp }
-      const payload = data.payload || data;
-      console.log('[CheckInView] Payload:', payload);
-      if (payload.joinRequestId === pendingJoinRequest.id) {
+
+    try {
+      const res = await fetch(
+        `/api/participant-join-requests/${pendingJoinRequest.id}`,
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.status === 'APPROVED') {
         setApprovalMessage('Check-in aprovado! Carregando...');
         // Fetch the updated session to get the tableSession data
         fetchTableSession(sessionId, customerName);
-        eventSource.close();
       }
-    });
-    
-    eventSource.onerror = (err) => {
-      console.error('[CheckInView] SSE error:', err);
-      eventSource.close();
-    };
-
-    return () => {
-      eventSource.close();
-    };
+    } catch (err) {
+      console.error('[CheckInView] Error polling join request status:', err);
+    }
   }, [pendingJoinRequest, existingSession, joinRequestSessionId, name, fetchTableSession]);
+
+  usePolling(checkJoinRequestApproval, 4000);
 
   // Load geolocation settings on mount
   React.useEffect(() => {

@@ -23,7 +23,7 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:password@db:5432/devxp?schema=public
       NEXT_PUBLIC_CDN_URL: http://localhost:3000
-      AWS_S3_BUCKET_NAME: devxp-media-local
+      S3_MEDIA_BUCKET_NAME: devxp-media-local
     # Dummy values so the app starts; S3 is not available locally
 
 # Volume removed - using bind mount instead (./postgres-data)

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
-import { sseBus } from '../../../lib/sse-bus';
 import { randomBytes } from 'crypto';
 
 // Generate a unique session token
@@ -126,13 +125,6 @@ export async function POST(req: NextRequest) {
       });
 
       return { tableSession, hostParticipant, deviceSession };
-    });
-
-    // Publish SSE event for new session
-    sseBus.publish('TABLE_SESSION_CREATED', {
-      sessionId: session.tableSession.id,
-      tableId: session.tableSession.tableId,
-      tableNumber: session.tableSession.table.number,
     });
 
     return NextResponse.json(

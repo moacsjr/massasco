@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { OrderItemDTO, OrderDTO } from '../types';
+import { usePolling } from './use-polling';
 
 export interface UseOrdersDeliveryDataReturn {
   activeOrders: OrderDTO[] | null;
@@ -61,16 +62,8 @@ export const useOrdersDeliveryData = (): UseOrdersDeliveryDataReturn => {
     loadActiveOrders();
   }, [loadActiveOrders]);
 
-  // SSE listener for real-time updates
-  useEffect(() => {
-    const es = new EventSource('/api/events');
-    es.addEventListener('ITEM_UPDATED', loadActiveOrders);
-    es.addEventListener('ORDER_CREATED', loadActiveOrders);
-
-    return () => {
-      es.close();
-    };
-  }, [loadActiveOrders]);
+  // Polling for real-time updates (replaces the old SSE listener)
+  usePolling(loadActiveOrders, 4000);
 
   const markDelivered = async (itemId: string): Promise<void> => {
     try {

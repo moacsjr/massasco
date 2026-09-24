@@ -20,7 +20,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    const bucketName = process.env.AWS_S3_BUCKET_NAME;
+    const bucketName = process.env.S3_MEDIA_BUCKET_NAME;
     const cdnUrl = process.env.NEXT_PUBLIC_CDN_URL;
 
     if (!bucketName || !cdnUrl) {

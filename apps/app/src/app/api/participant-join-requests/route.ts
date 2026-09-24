@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
-import { sseBus } from '../../../lib/sse-bus';
 import { randomBytes } from 'crypto';
 
 // Generate a unique session token
@@ -66,13 +65,6 @@ export async function POST(req: NextRequest) {
           },
         },
       },
-    });
-
-    // Publish SSE event for new join request
-    sseBus.publish('JOIN_REQUEST_CREATED', {
-      joinRequestId: joinRequest.id,
-      tableSessionId: joinRequest.tableSessionId,
-      requesterName: joinRequest.requesterName,
     });
 
     return NextResponse.json(joinRequest, { status: 201 });
@@ -237,20 +229,6 @@ export async function PUT(req: NextRequest) {
         });
       }
 
-      // Publish SSE event for approved join request
-      sseBus.publish('JOIN_REQUEST_APPROVED', {
-        joinRequestId: joinRequest.id,
-        tableSessionId: joinRequest.tableSessionId,
-        participantId: participant.id,
-        participantName: joinRequest.requesterName,
-      });
-    } else {
-      // Publish SSE event for rejected join request
-      sseBus.publish('JOIN_REQUEST_REJECTED', {
-        joinRequestId: joinRequest.id,
-        tableSessionId: joinRequest.tableSessionId,
-        requesterName: joinRequest.requesterName,
-      });
     }
 
     // Return updated request with participant info if approved

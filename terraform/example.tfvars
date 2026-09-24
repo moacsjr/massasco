@@ -1,10 +1,17 @@
-# GitHub provider — PAT with `repo` scope (or `write:org` for org repos)
-github_devxp_pat_token = "ghp_YOUR_PERSONAL_ACCESS_TOKEN"
-github_owner           = "moacsjr"
+# Copy to terraform.tfvars (gitignored) and fill in.
 
-# Repository in "owner/repo" format
+environment = "staging"
 github_repo = "moacsjr/massasco"
 
-# GitHub Environment name where secrets/variables will be created
-# Must match the `environment:` key in .github/workflows/deploy.yml
-github_environment = "staging"
+# GitHub PAT with read access to the repo (Amplify uses it to clone and set up the build webhook)
+github_access_token = "ghp_YOUR_PERSONAL_ACCESS_TOKEN"
+
+# Leave empty to use only the default *.amplifyapp.com domain
+custom_domain = "seudominio.com.br"
+
+# Neon pooled connection string (host contains "-pooler")
+database_url = "postgresql://USER:PASSWORD@ep-xxxx-pooler.us-east-1.aws.neon.tech/massasco?sslmode=require"
+
+stripe_secret_key      = "sk_test_..."
+stripe_webhook_secret  = "whsec_..."
+stripe_publishable_key = "pk_test_..."

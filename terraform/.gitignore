@@ -5,6 +5,10 @@
 terraform.tfstate
 terraform.tfstate.backup
 
+# Saved plans embed variable values (secrets) in plaintext
+tfplan
+*.tfplan
+
 # Variable overrides (may contain secrets)
 *.tfvars
 *.tfvars.json

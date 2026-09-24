@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { sseBus } from '@/lib/sse-bus';
 
 // Deactivate a table
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -66,9 +65,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         isActive: false,
       },
     });
-
-    // Publish SSE event for table update
-    sseBus.publish('TABLE_UPDATED', { tableId: id, isActive: false });
 
     return NextResponse.json(updatedTable);
   } catch (error) {
