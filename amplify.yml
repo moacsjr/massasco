@@ -7,7 +7,9 @@ applications:
           commands:
             - (cd ../.. && npm install -g pnpm@10)
             # Build scripts are allow-listed via allowBuilds in pnpm-workspace.yaml.
-            - (cd ../.. && pnpm install --frozen-lockfile)
+            # Hoisted: Amplify's SSR packaging cannot follow pnpm's symlinked node_modules,
+            # so external server packages (@prisma/client, @aws-sdk/*) were missing at runtime.
+            - (cd ../.. && pnpm install --frozen-lockfile --config.node-linker=hoisted)
             - (cd ../.. && npx prisma generate --schema=prisma/schema.prisma)
         build:
           commands:
