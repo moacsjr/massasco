@@ -1,3 +1,40 @@
+# Service role Amplify uses to write SSR logs to CloudWatch.
+resource "aws_iam_role" "amplify_service" {
+  name = "${var.project_name}-amplify-service-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action    = "sts:AssumeRole"
+        Effect    = "Allow"
+        Principal = { Service = "amplify.amazonaws.com" }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "amplify_service_logs" {
+  name = "${var.project_name}-amplify-ssr-logs"
+  role = aws_iam_role.amplify_service.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogGroups"
+        ]
+        Resource = "arn:aws:logs:${var.aws_region}:*:log-group:/aws/amplify/*"
+      }
+    ]
+  })
+}
+
 # Role assumed by the Amplify SSR compute (Next.js server/route handlers).
 resource "aws_iam_role" "amplify_compute" {
   name = "${var.project_name}-amplify-compute-role"

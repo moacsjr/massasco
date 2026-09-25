@@ -43,7 +43,8 @@ export function proxy(request: NextRequest) {
     path.startsWith('/api/participant-join-requests') ||
     path.startsWith('/api/device-sessions') ||
     path.startsWith('/api/system-settings/') ||
-    path === '/api/events' ||
+    // Stripe authenticates via the stripe-signature header, not a session
+    path === '/api/stripe/webhook' ||
     // Menu catalog (read-only for customer portal)
     path.startsWith('/api/categories') ||
     path.startsWith('/api/products') ||

@@ -5,6 +5,8 @@ resource "aws_amplify_app" "app" {
   platform         = "WEB_COMPUTE"
   compute_role_arn = aws_iam_role.amplify_compute.arn
 
+  iam_service_role_arn = aws_iam_role.amplify_service.arn
+
   # Monorepo: amplify.yml at the repo root declares appRoot = apps/app.
   environment_variables = {
     AMPLIFY_MONOREPO_APP_ROOT          = "apps/app"
