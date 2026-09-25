@@ -30,11 +30,6 @@ async function login(page: any) {
 }
 
 test.describe('Customer Portal - Check-In Flow', () => {
-  test.beforeEach(async ({ request }) => {
-    // Clean DB before each test
-    await request.post('/api/test/reset').catch(() => {});
-  });
-
   test('customer can select table and create check-in', async ({ page }) => {
     // Navigate to customer portal
     await page.goto('/plugins/customer-portal/');
@@ -91,11 +86,6 @@ test.describe('Customer Portal - Check-In Flow', () => {
 });
 
 test.describe('Customer Portal - Checkout', () => {
-  test.beforeEach(async ({ request }) => {
-    // Clean DB before each test
-    await request.post('/api/test/reset').catch(() => {});
-  });
-
   test('checkout page shows consolidated check-in summary', async ({ page, request }) => {
     // Create a product first
     const catRes = await request.post('/api/menu/categories', {
@@ -247,11 +237,6 @@ test.describe('Customer Portal - Checkout', () => {
 });
 
 test.describe('Payment System - Check-In Auto-Close', () => {
-  test.beforeEach(async ({ request }) => {
-    // Clean DB before each test
-    await request.post('/api/test/reset').catch(() => {});
-  });
-
   test('check-in closes when fully paid and items delivered', async ({ page, request }) => {
     // Create product
     const catRes = await request.post('/api/menu/categories', {

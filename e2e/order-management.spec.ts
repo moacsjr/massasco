@@ -119,11 +119,7 @@ test.describe('Orders & Delivery Plugin', () => {
     await expect(page.getByText('Total:')).toBeVisible();
   });
 
-  test('active tab shows no active orders initially', async ({
-    page,
-    request,
-  }) => {
-    await request.post('/api/test/reset');
+  test('active tab shows no active orders initially', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
@@ -197,8 +193,7 @@ test.describe('Payments Plugin', () => {
     ).toBeVisible();
   });
 
-  test('shows no open orders initially', async ({ page, request }) => {
-    await request.post('/api/test/reset');
+  test('shows no open orders initially', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
@@ -209,12 +204,6 @@ test.describe('Payments Plugin', () => {
 });
 
 test.describe('Full Order Flow', () => {
-  test.beforeEach(async ({ request }) => {
-    // Clean DB before each test to avoid data pollution
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    await request.post('/api/test/reset', { data: {} }).catch(() => {});
-  });
-
   test('complete order lifecycle: create → kitchen → deliver → pay', async ({
     page,
     request,
