@@ -86,6 +86,18 @@ export async function POST(request: Request) {
       );
     }
 
+    // Malformed session or missing required user attributes.
+    if (error?.name === 'InvalidParameterException') {
+      console.warn('[Auth] new-password invalid parameter:', error.message);
+      return NextResponse.json(
+        {
+          error:
+            'Não foi possível trocar a senha. Faça login novamente com a senha temporária.',
+        },
+        { status: 400 },
+      );
+    }
+
     console.error('[Auth Error] new-password', error);
     return NextResponse.json(
       { error: 'Erro interno ao definir a nova senha.' },
