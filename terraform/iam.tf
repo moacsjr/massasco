@@ -22,14 +22,20 @@ resource "aws_iam_role_policy" "amplify_service_logs" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
-        Action = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents",
-          "logs:DescribeLogGroups"
-        ]
+        Effect   = "Allow"
+        Action   = "logs:CreateLogGroup"
         Resource = "arn:aws:logs:${var.aws_region}:*:log-group:/aws/amplify/*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogStream", "logs:PutLogEvents"]
+        Resource = "arn:aws:logs:${var.aws_region}:*:log-group:/aws/amplify/*:log-stream:*"
+      },
+      {
+        # DescribeLogGroups cannot be scoped to a prefix; Amplify skips logging if it is denied.
+        Effect   = "Allow"
+        Action   = "logs:DescribeLogGroups"
+        Resource = "arn:aws:logs:${var.aws_region}:*:log-group:*"
       }
     ]
   })
