@@ -3,6 +3,7 @@ import {
   CognitoIdentityProviderClient,
   InitiateAuthCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
+import { setAuthCookies } from '../../../../lib/auth-cookies';
 
 function createMockJwt(email: string, name: string): string {
   const header = Buffer.from(
@@ -19,6 +20,9 @@ function createMockJwt(email: string, name: string): string {
   return `${header}.${payload}.mock_signature`;
 }
 
+// Same message for unknown user and wrong password, so the API does not reveal which e-mails exist.
+const INVALID_CREDENTIALS = 'E-mail ou senha inválidos.';
+
 export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();
@@ -29,10 +33,6 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-
-    // Verificar se a requisição veio via HTTPS (diretamente ou via proxy/ALB)
-    const forwardedProto = request.headers.get('x-forwarded-proto');
-    const isSecure = forwardedProto === 'https' || new URL(request.url).protocol === 'https:';
 
     const userPoolId = process.env.COGNITO_USER_POOL_ID;
     const clientId = process.env.COGNITO_CLIENT_ID;
@@ -51,7 +51,10 @@ export async function POST(request: Request) {
         accessToken = createMockJwt(email, 'Administrador Massas.co');
       } else {
         return NextResponse.json(
-          { error: 'Credenciais inválidas no modo desenvolvimento (use admin@massas.co / admin123).' },
+          {
+            error:
+              'Credenciais inválidas no modo desenvolvimento (use admin@massas.co / admin123).',
+          },
           { status: 401 },
         );
       }
@@ -69,6 +72,13 @@ export async function POST(request: Request) {
 
       const response = await client.send(command);
 
+      if (response.ChallengeName === 'NEW_PASSWORD_REQUIRED') {
+        return NextResponse.json(
+          { challenge: 'NEW_PASSWORD_REQUIRED', session: response.Session },
+          { status: 200 },
+        );
+      }
+
       if (
         !response.AuthenticationResult ||
         !response.AuthenticationResult.IdToken ||
@@ -84,35 +94,30 @@ export async function POST(request: Request) {
       accessToken = response.AuthenticationResult.AccessToken;
     }
 
-    // Retornar os cookies HTTP-Only e de sessão
-    const nextResponse = NextResponse.json(
-      { success: true, user: { email } },
-      { status: 200 },
+    return setAuthCookies(
+      NextResponse.json({ success: true, user: { email } }, { status: 200 }),
+      request,
+      idToken,
+      accessToken,
     );
-
-    // Cookie de ID Token (utilizado pelo Middleware e pelo frontend)
-    nextResponse.cookies.set('id_token', idToken, {
-      httpOnly: false, // Permitir leitura no client do monorepo se necessário
-      secure: isSecure, // Usar secure apenas se a conexão for HTTPS
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 3600 * 24, // 24h
-    });
-
-    // Cookie de Access Token (HTTP-Only para requisições de API)
-    nextResponse.cookies.set('access_token', accessToken, {
-      httpOnly: true,
-      secure: isSecure, // Usar secure apenas se a conexão for HTTPS
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 3600 * 24,
-    });
-
-    return nextResponse;
   } catch (error: any) {
+    if (
+      error?.name === 'NotAuthorizedException' ||
+      error?.name === 'UserNotFoundException'
+    ) {
+      return NextResponse.json({ error: INVALID_CREDENTIALS }, { status: 401 });
+    }
+
+    if (error?.name === 'PasswordResetRequiredException') {
+      return NextResponse.json(
+        { error: 'É necessário redefinir a senha. Procure um administrador.' },
+        { status: 401 },
+      );
+    }
+
     console.error('[Auth Error]', error);
     return NextResponse.json(
-      { error: error.message || 'Erro interno ao realizar autenticação.' },
+      { error: 'Erro interno ao realizar autenticação.' },
       { status: 500 },
     );
   }

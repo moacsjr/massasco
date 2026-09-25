@@ -14,6 +14,47 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  // Set when Cognito requires a new password (first login with a temporary password).
+  const [challengeSession, setChallengeSession] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const handleNewPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      setError('As senhas não conferem.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/auth/new-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, session: challengeSession, newPassword }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          // Session expired: back to the login form.
+          setChallengeSession(null);
+          setNewPassword('');
+          setConfirmPassword('');
+        }
+        throw new Error(data.error || 'Erro ao definir a nova senha');
+      }
+
+      window.location.href = '/';
+    } catch (err: any) {
+      setError(err.message || 'Erro ao definir a nova senha.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +77,12 @@ const LoginPage: React.FC = () => {
 
       if (!response.ok) {
         throw new Error(data.error || 'Erro ao realizar login');
+      }
+
+      if (data.challenge === 'NEW_PASSWORD_REQUIRED') {
+        setChallengeSession(data.session);
+        setPassword('');
+        return;
       }
 
       // Login bem-sucedido: recarrega a página para atualizar o estado do app/middleware e redireciona
@@ -75,44 +122,94 @@ const LoginPage: React.FC = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5 text-left">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                E-mail
-              </label>
-              <input
-                name="email"
-                type="email"
-                placeholder="exemplo@massas.co"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-10 px-3 py-2 bg-slate-800/80 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
-                autoComplete="email"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                Senha
-              </label>
-              <input
-                name="password"
-                type="password"
-                placeholder="Sua senha secreta"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-10 px-3 py-2 bg-slate-800/80 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
-                autoComplete="current-password"
-                required
-              />
-            </div>
+          {challengeSession ? (
+            <form onSubmit={handleNewPassword} className="space-y-5 text-left">
+              <p className="text-sm text-slate-300">
+                Primeiro acesso de <span className="text-white">{email}</span>.
+                Defina uma nova senha para continuar.
+              </p>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                  Nova senha
+                </label>
+                <input
+                  name="newPassword"
+                  type="password"
+                  placeholder="Mínimo 8 caracteres"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full h-10 px-3 py-2 bg-slate-800/80 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                />
+                <p className="text-xs text-slate-500 mt-1.5">
+                  Use letra maiúscula, minúscula, número e símbolo.
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                  Confirmar nova senha
+                </label>
+                <input
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="Repita a nova senha"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full h-10 px-3 py-2 bg-slate-800/80 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                />
+              </div>
 
-            <div className="pt-2">
-              <Button variant="primary" size="lg" isLoading={isLoading}>
-                Entrar no Portal
-              </Button>
-            </div>
-          </form>
+              <div className="pt-2">
+                <Button variant="primary" size="lg" isLoading={isLoading}>
+                  Definir senha e entrar
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-5 text-left">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                  E-mail
+                </label>
+                <input
+                  name="email"
+                  type="email"
+                  placeholder="exemplo@massas.co"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full h-10 px-3 py-2 bg-slate-800/80 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                  autoComplete="email"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                  Senha
+                </label>
+                <input
+                  name="password"
+                  type="password"
+                  placeholder="Sua senha secreta"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full h-10 px-3 py-2 bg-slate-800/80 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                  autoComplete="current-password"
+                  required
+                />
+              </div>
+
+              <div className="pt-2">
+                <Button variant="primary" size="lg" isLoading={isLoading}>
+                  Entrar no Portal
+                </Button>
+              </div>
+            </form>
+          )}
 
           {/* Footer note */}
           <div className="text-center mt-6 text-xs text-slate-500">
