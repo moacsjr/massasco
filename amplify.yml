@@ -7,8 +7,8 @@ applications:
           commands:
             - (cd ../.. && npm install -g pnpm@10)
             # Build scripts are allow-listed via allowBuilds in pnpm-workspace.yaml.
-            # Hoisted: Amplify's SSR packaging cannot follow pnpm's symlinked node_modules,
-            # so external server packages (@prisma/client, @aws-sdk/*) were missing at runtime.
+            # Hoisted: server-external packages are required from node_modules at runtime,
+            # so keep them as real directories rather than pnpm symlinks.
             - (cd ../.. && pnpm install --frozen-lockfile --config.node-linker=hoisted)
             - (cd ../.. && npx prisma generate --schema=prisma/schema.prisma)
         build:
@@ -17,7 +17,9 @@ applications:
             - env | grep -E '^(DATABASE_URL|STRIPE_|COGNITO_|SQS_QUEUE_URL|S3_MEDIA_BUCKET_NAME|NEXT_PUBLIC_)' >> .env.production
             - echo "NEXT_PUBLIC_COMMIT_HASH=$AWS_COMMIT_ID" >> .env.production
             - echo "NEXT_PUBLIC_DEPLOYED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> .env.production
-            - (cd ../.. && pnpm exec nx build app --verbose=false)
+            # Webpack, not Turbopack: Turbopack requires externals via hashed aliases
+            # (.next/node_modules/@prisma/client-<hash>) that Amplify does not deploy.
+            - (cd ../.. && pnpm exec nx build app --verbose=false -- --webpack)
       artifacts:
         baseDirectory: .next
         files:
